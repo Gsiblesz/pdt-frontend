@@ -2,298 +2,1673 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Calculadora de Procesos de Panadería</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-	<script src="https://cdn.tailwindcss.com"></script>
-	<style>
-	  body { font-family: 'Inter', system-ui, sans-serif; }
-	  .tab-btn { padding:0.5rem 1rem; font-size:.875rem; font-weight:600; border-radius:.75rem; border:1px solid #d6d3d1; background:#fff; color:#57534e; transition:all .18s; }
-	  .tab-btn:hover { background:#f5f5f4; color:#111827; }
-	  .tab-btn-active { background:#2563eb; color:#fff; border-color:#2563eb; box-shadow:0 1px 2px rgba(0,0,0,.08); }
-	  .metric-badge { display:inline-block; padding:2px 6px; border-radius:6px; font-size:.625rem; font-weight:600; background:#e7e5e4; color:#44403c; }
-	  .metric-badge.warn { background:#fee2e2; color:#dc2626; }
-	.chart-desc { display:none; font-size:.75rem; line-height:1.1rem; color:#475569; font-style:italic; margin-top:-6px; margin-bottom:10px; padding-left:.75rem; border-left:3px solid #2563eb20; }
-	.chart-title { cursor:pointer; }
-	.chart-title:hover .info-hint { text-decoration:underline; }
-	</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Procesos de Panadería</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body { font-family: 'Inter', system-ui, sans-serif; }
+      .tab-btn { padding:0.5rem 1rem; font-size:.875rem; font-weight:600; border-radius:.75rem; border:1px solid #d6d3d1; background:#fff; color:#57534e; transition:all .18s; }
+      .tab-btn:hover { background:#f5f5f4; color:#111827; }
+      .tab-btn-active { background:#2563eb; color:#fff; border-color:#2563eb; box-shadow:0 1px 2px rgba(0,0,0,.08); }
+      .metric-badge { display:inline-block; padding:2px 6px; border-radius:6px; font-size:.625rem; font-weight:600; background:#e7e5e4; color:#44403c; }
+      .metric-badge.warn { background:#fee2e2; color:#dc2626; }
+    .chart-desc { display:none; font-size:.75rem; line-height:1.1rem; color:#475569; font-style:italic; margin-top:-6px; margin-bottom:10px; padding-left:.75rem; border-left:3px solid #2563eb20; }
+    .chart-title { cursor:pointer; }
+    .chart-title:hover .info-hint { text-decoration:underline; }
+    </style>
 </head>
 <body class="bg-stone-50 text-stone-800 min-h-screen">
-	<!-- ======================= CONTENIDO DEL ORIGINAL ======================= -->
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-	<div class="hidden">
-		<button id="main-amasadoras" class="px-4 py-2 rounded-l-lg bg-blue-600 text-white font-bold focus:outline-none">Amasadoras</button>
-	</div>
-	<!-- Section views -->
-	...[contenido completo del original leído, ver bloque leído]...
-	</div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="hidden">
+        <button id="main-amasadoras" class="px-4 py-2 rounded-l-lg bg-blue-600 text-white font-bold focus:outline-none">Amasadoras</button>
+    </div>
+    <!-- Section views -->
+    <div id="section-amasadoras">
+        <div class="flex flex-wrap justify-center gap-3 mb-6">
+            <button id="tab-medicion" class="tab-btn tab-btn-active">Medición</button>
+            <button id="tab-resultados" class="tab-btn">Resultados</button>
+            <button id="tab-tablas" class="tab-btn">Tablas</button>
+        </div>
+        <div id="view-tablas" class="hidden">
+            <div class="mb-6 text-center">
+                <h2 class="text-3xl font-extrabold mb-2 text-stone-900 tracking-tight">Tablas y Gráficas</h2>
+                <p class="text-stone-600 max-w-2xl mx-auto">Promedios, desviaciones y distribución visual por tipo de masa, amasadora y procesos.</p>
+            </div>
+            <div class="mb-8 max-w-3xl mx-auto">
+                <details open class="bg-white border border-stone-300 rounded-xl p-4 shadow-sm">
+                    <summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg">Mapeo de gráficas y propósito analítico</summary>
+                    <div class="mt-3 text-sm space-y-3 text-stone-700">
+                        <ul class="list-disc ml-5 space-y-1">
+                            <li><span class="font-medium">Benchmark entre recetas (1 y 6)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo de masa.</li>
+                            <li><span class="font-medium">Detecta dónde optimizar (2, 3 y 7)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
+                            <li><span class="font-medium">Control de consistencia y calidad (4, 5 y 6)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Temp. masa por tipo.</li>
+                            <li><span class="font-medium">Validar hipótesis de proceso (8)</span>: Relación temperatura de masa vs tiempo total (scatter + regresión).</li>
+                        </ul>
+                        <p class="text-xs text-stone-500">Los números refieren al orden visual aproximado de las secciones inferiores.</p>
+                    </div>
+                </details>
+            </div>
+            <div id="tablas-wrapper" class="space-y-10">
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Resumen de tiempos (s) <span class="info-hint text-blue-600 cursor-help align-middle" title="Indicadores globales: registros, promedio total y variabilidad.">ℹ️</span></h3>
+                    <p class="chart-desc">Muestra KPIs globales: número de registros, promedio total y dispersión (desviación y %). Punto de partida para ver si el proceso se estabiliza.</p>
+                    <div id="tabla-resumen" class="overflow-x-auto text-sm"></div>
+                </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por tipo de masa <span class="info-hint text-blue-600 cursor-help align-middle" title="Tiempo total promedio por receta.">ℹ️</span></h3>
+                    <p class="chart-desc">Compara recetas y ayuda a detectar cuáles requieren más tiempo total. Útil para priorizar mejoras o ajustar programación.</p>
+                    <div id="tabla-pan" class="overflow-x-auto text-sm mb-4"></div>
+                    <canvas id="chart-pan" height="140"></canvas>
+                </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por amasadora <span class="info-hint text-blue-600 cursor-help align-middle" title="Comparación entre equipos.">ℹ️</span></h3>
+                    <p class="chart-desc">Identifica máquinas más lentas o con tiempos fuera de rango para redistribuir cargas o revisar mantenimiento.</p>
+                    <div id="tabla-amasadora" class="overflow-x-auto text-sm mb-4"></div>
+                    <canvas id="chart-amasadora" height="140"></canvas>
+                </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por proceso <span class="info-hint text-blue-600 cursor-help align-middle" title="Duración típica de cada etapa.">ℹ️</span></h3>
+                    <p class="chart-desc">Revela cuál de las 3 etapas domina el ciclo y dónde un ajuste reduciría más el tiempo total.</p>
+                    <div id="tabla-proceso" class="overflow-x-auto text-sm mb-4"></div>
+                    <canvas id="chart-proceso" height="140"></canvas>
+                </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Temperatura de masa <span class="info-hint text-blue-600 cursor-help align-middle" title="Temperatura promedio por tipo de masa.">ℹ️</span></h3>
+                    <p class="chart-desc">Controla la consistencia térmica: variaciones grandes pueden afectar fermentación o calidad final.</p>
+                    <div id="tabla-temp" class="overflow-x-auto text-sm mb-4"></div>
+                    <canvas id="chart-temp-pan" height="140" class="mb-8"></canvas>
+                </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Temp. masa (Amasadora vs Tipo de masa) <span class="info-hint text-blue-600 cursor-help align-middle" title="Cruce equipo vs receta.">ℹ️</span></h3>
+                    <p class="chart-desc">Detecta si ciertas máquinas generan sistemáticamente temperaturas distintas para la misma receta.</p>
+                    <div id="tabla-temp-cruzada" class="overflow-x-auto text-sm"></div>
+                </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Distribución tiempos por tipo de masa (Boxplot) <span class="info-hint text-blue-600 cursor-help align-middle" title="Variabilidad por receta.">ℹ️</span></h3>
+                    <p class="chart-desc">Mide estabilidad operativa: IQR reducido indica proceso controlado; valores altos sugieren inconsistencia.</p>
+                    <canvas id="chart-boxplot-tipo" height="140"></canvas>
+                </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Tiempos productivos vs muertos por amasadora <span class="info-hint text-blue-600 cursor-help align-middle" title="Proporción de inactividad.">ℹ️</span></h3>
+                    <p class="chart-desc">Cuantifica ineficiencia: mayor porcentaje de tiempo muerto = oportunidad directa de optimización.</p>
+                    <canvas id="chart-stacked-muertos" height="140"></canvas>
+                </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Relación temperatura de masa vs tiempo total <span class="info-hint text-blue-600 cursor-help align-middle" title="Correlación tiempo vs calor.">ℹ️</span></h3>
+                    <p class="chart-desc">Evalúa si la temperatura final se asocia a mayor o menor duración (r cercano a 0 indica poca relación).</p>
+                    <canvas id="chart-scatter-temp-tiempo" height="160"></canvas>
+                </section>
+            </div>
+            </div>
+        </div>
+        <div id="view-medicion" class="block">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-extrabold text-stone-900 tracking-tight mb-2">Cálculo de Amasadoras</h1>
+                    <p class="text-stone-600 text-sm md:text-base">Cómo operar el programa: registra primero las variables generales (fecha, TA, H, personal). Luego en cada tarjeta de amasadora define el tipo de masa y controla los tres procesos secuencialmente. Guarda cada máquina al terminar para formar un conjunto que luego podrás analizar y exportar.</p>
+                </div>
+                <!-- Instrucciones (migradas desde Resultados) -->
+                <div id="instrucciones-medicion" class="mb-8">
+                    <details open class="bg-white border border-stone-300 rounded-xl p-4 shadow-sm">
+                        <summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg flex items-center gap-2">
+                            <span>Instrucciones (crear conjunto, analizar y exportar)</span>
+                        </summary>
+                        <div class="mt-3 space-y-3 text-sm leading-relaxed text-stone-700">
+                            <p><span class="font-semibold">¿Qué es un conjunto?</span> Cada conjunto es un registro de una fecha con una o varias amasadoras (máquinas) y sus 3 procesos: Esponja, Masa y Mantequilla, incluyendo tiempos, temperaturas y observaciones.</p>
+                            <ol class="list-decimal ml-5 space-y-1">
+                                <li>Completa <strong>Fecha</strong>, <strong>TA</strong>, <strong>H</strong> y <strong>N° Personal</strong>.</li>
+                                <li>En cada amasadora define <strong>Tipo de masa</strong>, marca <strong>Hielo</strong> si aplica y al finalizar registra <strong>Temp. de masa</strong> y <strong>Observaciones</strong>.</li>
+                                <li>Ejecuta los procesos en orden (Iniciar / Detener). Sólo puede estar activo uno por máquina; iniciar otro detiene el previo.</li>
+                                <li>Se guardan inicio, fin y duración. El <strong>Total máquina</strong> va desde el inicio del primer proceso al fin del tercero. <strong>TM1 / TM2</strong> son los huecos entre procesos.</li>
+                                <li>Pulsa <strong>Guardar resultados</strong> al terminar los 3 procesos de la máquina. Repite para otras.</li>
+                                <li>Pasa a la pestaña <strong>Resultados</strong> para ver, filtrar y revisar los conjuntos. Usa filtros para acotar.</li>
+                                <li><strong>Borrar todo</strong> elimina definitivamente todos los registros guardados.</li>
+                                <li><strong>Exportar PDF</strong>: reporte visual de la vista de resultados (sin botones).</li>
+                                <li><strong>Exportar CSV</strong>: filas compactadas (una por proceso) con factores diarios y de máquina sólo en la primera fila de cada máquina. Incluye TM1, TM2, TM.Total y Total(s).</li>
+                                <li>Si el total supera 45 min (>2700 s) aparece un ícono de advertencia.</li>
+                            </ol>
+                            <p class="text-stone-600">Consejo: Usa CSV para análisis (Excel / Power BI) y PDF para difusión rápida.</p>
+                            <div class="pt-3 border-t border-stone-200"></div>
+                            <h4 class="font-semibold text-stone-800">Mapeo de gráficas y propósito analítico</h4>
+                            <ul class="list-disc ml-5 space-y-1">
+                                <li><span class="font-medium">Benchmark entre recetas (1 y 6)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo de masa.</li>
+                                <li><span class="font-medium">Detecta dónde optimizar (2, 3 y 7)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
+                                <li><span class="font-medium">Control de consistencia y calidad (4, 5 y 6)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Temp. masa por tipo.</li>
+                                <li><span class="font-medium">Validar hipótesis de proceso (8)</span>: Relación temperatura de masa vs tiempo total (scatter + regresión).</li>
+                            </ul>
+                            <p class="text-xs text-stone-500">Los números refieren al orden aproximado dentro de la pestaña Tablas y Gráficas.</p>
+                        </div>
+                    </details>
+                </div>
+            <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+                <div>
+                    <label for="fecha" class="block mb-1 text-sm font-semibold text-stone-700">Fecha</label>
+                    <input type="date" id="fecha" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                </div>
+                <div>
+                    <label for="ta" class="block mb-1 text-sm font-semibold text-stone-700">Temp. ambiente (°C)</label>
+                    <input type="number" id="ta" step="0.1" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="TA" />
+                </div>
+                <div>
+                    <label for="h" class="block mb-1 text-sm font-semibold text-stone-700">Humedad (%)</label>
+                    <input type="number" id="h" step="0.1" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="H" />
+                </div>
+                <div>
+                    <label for="personal-general" class="block mb-1 text-sm font-semibold text-stone-700">N° Personal</label>
+                    <input type="number" min="0" id="personal-general" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Cantidad" />
+                </div>
+            </div>
+            <main id="machine-cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-7 mb-10"></main>
+            <div id="msg-guardar" class="mt-2 text-center text-sm"></div>
+        </div>
+    <!-- Vista de resultados (única) -->
+    <div id="view-resultados" class="hidden">
+            <div class="mb-4 flex flex-wrap gap-3 justify-end">
+                <button id="btn-export-resultados-pdf" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition-colors">Exportar Resultados (PDF)</button>
+                <button id="btn-export-resultados-csv" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-emerald-700 transition-colors">Exportar Resultados (CSV)</button>
+            </div>
+            <!-- Filtros para resultados -->
+            <div class="flex flex-wrap gap-4 mb-4">
+                <input type="date" id="filtro-fecha" class="border rounded px-2 py-1" placeholder="Filtrar por fecha" />
+                <input type="text" id="filtro-tipo" class="border rounded px-2 py-1" placeholder="Filtrar por tipo de masa" />
+                <input type="text" id="filtro-maquina" class="border rounded px-2 py-1" placeholder="Filtrar por amasadora" />
+                <button id="btn-clear-resultados" class="bg-red-500 text-white px-3 py-1 rounded">Borrar todo</button>
+            </div>
+            <div id="promedios" class="mb-4"></div>
+            <div id="resultados-lista"></div>
+        </div>
+        </div>
+    </div>
 </body>
 <script>
-// ...JS embebido exacto del original, ver bloque leído...
-</script>
-</html>
-<!-- ======================= HTML STRUCTURE ======================= -->
-<!-- ======================= HTML STRUCTURE ======================= -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Calculadora de Procesos de Panadería</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-	<script src="https://cdn.tailwindcss.com"></script>
-	<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-	<style>
-	  body { font-family: 'Inter', system-ui, sans-serif; }
-	  .tab-btn { padding:0.5rem 1rem; font-size:.875rem; font-weight:600; border-radius:.75rem; border:1px solid #d6d3d1; background:#fff; color:#57534e; transition:all .18s; }
-	  .tab-btn:hover { background:#f5f5f4; color:#111827; }
-	  .tab-btn-active { background:#2563eb; color:#fff; border-color:#2563eb; box-shadow:0 1px 2px rgba(0,0,0,.08); }
-	  .metric-badge { display:inline-block; padding:2px 6px; border-radius:6px; font-size:.625rem; font-weight:600; background:#e7e5e4; color:#44403c; }
-	  .metric-badge.warn { background:#fee2e2; color:#dc2626; }
-	.chart-desc { display:none; font-size:.75rem; line-height:1.1rem; color:#475569; font-style:italic; margin-top:-6px; margin-bottom:10px; padding-left:.75rem; border-left:3px solid #2563eb20; }
-	.chart-title { cursor:pointer; }
-	.chart-title:hover .info-hint { text-decoration:underline; }
-	</style>
-</head>
-<body class="bg-stone-50 text-stone-800 min-h-screen">
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-	<div class="hidden">
-		<button id="main-amasadoras" class="px-4 py-2 rounded-l-lg bg-blue-600 text-white font-bold focus:outline-none">Amasadoras</button>
-	</div>
-	<!-- Section views -->
-	<div id="section-amasadoras">
-		<div class="flex flex-wrap justify-center gap-3 mb-6">
-			<button id="tab-medicion" class="tab-btn tab-btn-active">Medición</button>
-			<button id="tab-resultados" class="tab-btn">Resultados</button>
-			<button id="tab-tablas" class="tab-btn">Tablas</button>
-		</div>
-		<div id="view-tablas" class="hidden">
-			<div class="mb-6 text-center">
-				<h2 class="text-3xl font-extrabold mb-2 text-stone-900 tracking-tight">Tablas y Gráficas</h2>
-				<p class="text-stone-600 max-w-2xl mx-auto">Promedios, desviaciones y distribución visual por tipo de masa, amasadora y procesos.</p>
-			</div>
-			<div class="mb-8 max-w-3xl mx-auto">
-				<details open class="bg-white border border-stone-300 rounded-xl p-4 shadow-sm">
-					<summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg">Mapeo de gráficas y propósito analítico</summary>
-					<div class="mt-3 text-sm space-y-3 text-stone-700">
-						<ul class="list-disc ml-5 space-y-1">
-							<li><span class="font-medium">Benchmark entre recetas (1 y 6)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo de masa.</li>
-							<li><span class="font-medium">Detecta dónde optimizar (2, 3 y 7)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
-							<li><span class="font-medium">Control de consistencia y calidad (4, 5 y 6)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Temp. masa por tipo.</li>
-							<li><span class="font-medium">Validar hipótesis de proceso (8)</span>: Relación temperatura de masa vs tiempo total (scatter + regresión).</li>
-						</ul>
-						<p class="text-xs text-stone-500">Los números refieren al orden visual aproximado de las secciones inferiores.</p>
+// Cargar libs si faltan
+window.html2canvas || document.write('<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"><\/script>');
+window.jspdf || document.write('<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"><\/script>');
+// CDN Chart.js
+window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"><\/script>');
+// ======================= GLOBAL VARIABLES AND DATA =======================
+    // Datos de amasadoras
+    const machineData = [
+        {
+            id: '3',
+            name: 'Amasadora 3',
+            processes: [
+                { id: '1', name: 'Esponja' },
+                { id: '2', name: 'Masa' },
+                { id: '3', name: 'Mantequilla' }
+            ]
+        },
+        {
+            id: '1',
+            name: 'Amasadora 1',
+            processes: [
+                { id: '1', name: 'Esponja' },
+                { id: '2', name: 'Masa' },
+                { id: '3', name: 'Mantequilla' }
+            ]
+        },
+        {
+            id: '2',
+            name: 'Amasadora 2',
+            processes: [
+                { id: '1', name: 'Esponja' },
+                { id: '2', name: 'Masa' },
+                { id: '3', name: 'Mantequilla' }
+            ]
+        }
+    ];
+
+    const machineCardsContainer = document.getElementById('machine-cards');
+    let timers = {};
+    let machineTotals = {};
+    let completedProcessTimes = {};
+
+    function formatTime(seconds) {
+        if (isNaN(seconds) || seconds === null) return '00:00:00';
+        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+        const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+    function createMachineCards() {
+        machineCardsContainer.innerHTML = '';
+        let sortedMachines = [...machineData];
+        const ordenIds = ['3', '1', '2'];
+        sortedMachines.sort((a, b) => ordenIds.indexOf(a.id) - ordenIds.indexOf(b.id));
+        sortedMachines.forEach(machine => {
+            // Calcular el total restando el inicio del primer proceso y el fin del último proceso
+            let primerStart = completedProcessTimes[`m${machine.id}-p1`]?.startTime || null;
+            let ultimoEnd = completedProcessTimes[`m${machine.id}-p3`]?.endTime || null;
+            let totalTime = null;
+            if (primerStart && ultimoEnd) {
+                totalTime = Math.max(0, Math.floor((ultimoEnd - primerStart)/1000));
+            }
+            // Calcular tiempos muertos
+            let t1End = completedProcessTimes[`m${machine.id}-p1`]?.endTime || null;
+            let t2Start = completedProcessTimes[`m${machine.id}-p2`]?.startTime || null;
+            let t2End = completedProcessTimes[`m${machine.id}-p2`]?.endTime || null;
+            let t3Start = completedProcessTimes[`m${machine.id}-p3`]?.startTime || null;
+            let tiempoMuerto1 = (t1End && t2Start) ? Math.max(0, Math.floor((t2Start - t1End)/1000)) : null;
+            let tiempoMuerto2 = (t2End && t3Start) ? Math.max(0, Math.floor((t3Start - t2End)/1000)) : null;
+            let sumaMuertos = (tiempoMuerto1 || 0) + (tiempoMuerto2 || 0);
+            const isOverThreshold = totalTime !== null && totalTime > 2700;
+            const totalColorClass = isOverThreshold ? 'text-red-600' : 'text-stone-800';
+            let processesHtml = '';
+            machine.processes.forEach(process => {
+                const timerId = `m${machine.id}-p${process.id}`;
+                const processTime = completedProcessTimes[timerId] || { time: 0, startTime: null, endTime: null };
+                const isRunning = timers[timerId] !== undefined;
+                processesHtml += `
+                    <div class="p-4 bg-stone-50 rounded-lg border border-stone-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-bold text-stone-800">${process.name}</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-sm mb-4">
+                            <div class="text-stone-600">Inicio: <span id="start-${timerId}" class="font-mono font-medium text-stone-800">${processTime.startTime ? new Date(processTime.startTime).toLocaleTimeString() : '--:--:--'}</span></div>
+                            <div class="text-stone-600">Fin: <span id="end-${timerId}" class="font-mono font-medium text-stone-800">${processTime.endTime ? new Date(processTime.endTime).toLocaleTimeString() : '--:--:--'}</span></div>
+                            <div class="text-stone-600 col-span-2">T. Real: <span id="real-${timerId}" class="font-mono font-medium text-stone-800">${formatTime(processTime.time)}</span></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button data-action="start" data-timer-id="${timerId}" class="col-span-1 text-sm bg-emerald-500 text-white py-2 px-3 rounded-md hover:bg-emerald-600 transition-colors ${isRunning ? 'disabled:bg-stone-300' : ''}" ${isRunning ? 'disabled' : ''}>Iniciar</button>
+                            <button data-action="stop" data-timer-id="${timerId}" class="col-span-1 text-sm bg-red-500 text-white py-2 px-3 rounded-md hover:bg-red-600 transition-colors ${!isRunning ? 'disabled:bg-stone-300' : ''}" ${!isRunning ? 'disabled' : ''}>Detener</button>
+                            <button data-action="reset" data-timer-id="${timerId}" class="col-span-1 text-sm bg-stone-500 text-white py-2 px-3 rounded-md hover:bg-stone-600 transition-colors">Reset</button>
+                        </div>
+                    </div>
+                `;
+            });
+            const cardHtml = `
+                <div class="relative bg-white p-6 rounded-2xl shadow-sm border border-stone-200 flex flex-col hover:shadow-md transition-shadow">
+                    <h3 class="text-xl font-bold mb-4 text-stone-900 tracking-tight">${machine.name}</h3>
+                    <div class="mb-4 flex flex-col items-center">
+                        <label for="tipoMasa-${machine.id}" class="block mb-2 text-base font-semibold text-stone-800">Tipo de masa:</label>
+                        <select id="tipoMasa-${machine.id}" data-machine="${machine.id}" class="px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-masa-select">
+                            <option value="">-- Seleccionar --</option>
+                            <option value="Tradicional">Tradicional</option>
+                            <option value="Brioche">Brioche</option>
+                            <option value="Bs.">Bs.</option>
+                            <option value="__OTRO__">Otro...</option>
+                        </select>
+                        <input type="text" id="tipoMasaOtro-${machine.id}" placeholder="Especificar otro" class="mt-2 px-3 py-2 rounded-lg border border-dashed border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 hidden tipo-masa-otro" />
+                        <div class="flex items-center gap-4 mt-4 mb-2">
+                            <span class="text-base font-semibold text-stone-800">Hielo:</span>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="hielo-${machine.id}" id="hielo-si-${machine.id}" value="Si" class="form-radio text-blue-600" />
+                                <span class="ml-2">Si</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="hielo-${machine.id}" id="hielo-no-${machine.id}" value="No" class="form-radio text-blue-600" />
+                                <span class="ml-2">No</span>
+                            </label>
+                        </div>
+                        <div class="flex flex-col items-center mt-2 w-48">
+                            <!-- Campo de personal eliminado, ahora está arriba -->
+                        </div>
+                    </div>
+                    <div class="space-y-4 mb-4">
+                        ${processesHtml}
+                    </div>
+                    <div class="mb-4 p-3 rounded-xl bg-gradient-to-br from-blue-50 to-stone-50 border border-blue-200/70 text-blue-900 text-xs flex flex-col gap-1 shadow-inner">
+                        <div class="flex justify-between"><span class="font-semibold">T. Muerto 1</span><span id="tm1-${machine.id}" class="font-mono">${tiempoMuerto1 !== null ? formatTime(tiempoMuerto1) : '--:--:--'}</span></div>
+                        <div class="flex justify-between"><span class="font-semibold">T. Muerto 2</span><span id="tm2-${machine.id}" class="font-mono">${tiempoMuerto2 !== null ? formatTime(tiempoMuerto2) : '--:--:--'}</span></div>
+                        <div class="flex justify-between"><span class="font-semibold">Muertos Total</span><span id="tmT-${machine.id}" class="font-mono">${(tiempoMuerto1 !== null || tiempoMuerto2 !== null) ? formatTime(sumaMuertos) : '--:--:--'}</span></div>
+                        <div class="flex justify-between text-blue-700 font-bold"><span>Total máquina</span><span id="ttot-${machine.id}" class="font-mono">${totalTime !== null ? formatTime(totalTime) : '--:--:--'}</span></div>
+                    </div>
+                    <div class="flex flex-col gap-2 mb-4 w-48 mx-auto">
+                        <label class="text-base font-semibold text-stone-800">Temperatura de la masa (C):</label>
+                        <input type="number" step="0.1" id="tempMasa-${machine.id}" class="px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div class="mb-4">
+                        <label for="obs-${machine.id}" class="block mb-2 text-base font-semibold text-stone-800">Observaciones:</label>
+                        <textarea id="obs-${machine.id}" rows="2" class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                    </div>
+                                        <div class="text-center mt-auto pt-4 border-t border-stone-200">
+                                                <p class="text-base font-bold text-stone-900">Total amasadora: <span id="total-m${machine.id}" class="${totalColorClass} font-mono text-lg">${totalTime !== null ? formatTime(totalTime) : '--:--:--'}</span></p>
+                                                <div class="flex flex-col gap-2 mt-3">
+                                                    <button class="guardar-maquina bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-sm" data-machine-id="${machine.id}">Guardar resultados</button>
+                                                    <button class="clear-maquina bg-stone-400 text-white px-4 py-2 rounded-lg hover:bg-stone-500 transition-colors font-semibold" data-machine-id="${machine.id}">Limpiar</button>
+                                                </div>
+                        <div id="msg-guardar-${machine.id}" class="mt-2 text-center"></div>
+                            </div>
+                        </div>
+            `;
+            machineCardsContainer.innerHTML += cardHtml;
+        });
+    }
+    // Actualizar dinámicamente los tiempos muertos y total al detener procesos
+    function updateMuertosYTotal(machineId) {
+        let t1End = completedProcessTimes[`m${machineId}-p1`]?.endTime || null;
+        let t2Start = completedProcessTimes[`m${machineId}-p2`]?.startTime || null;
+        let t2End = completedProcessTimes[`m${machineId}-p2`]?.endTime || null;
+        let t3Start = completedProcessTimes[`m${machineId}-p3`]?.startTime || null;
+        let primerStart = completedProcessTimes[`m${machineId}-p1`]?.startTime || null;
+        let ultimoEnd = completedProcessTimes[`m${machineId}-p3`]?.endTime || null;
+        let tiempoMuerto1 = (t1End && t2Start) ? Math.max(0, Math.floor((t2Start - t1End)/1000)) : null;
+        let tiempoMuerto2 = (t2End && t3Start) ? Math.max(0, Math.floor((t3Start - t2End)/1000)) : null;
+        let sumaMuertos = (tiempoMuerto1 || 0) + (tiempoMuerto2 || 0);
+        let totalTime = (primerStart && ultimoEnd) ? Math.max(0, Math.floor((ultimoEnd - primerStart)/1000)) : null;
+        if(document.getElementById(`tm1-${machineId}`)) document.getElementById(`tm1-${machineId}`).textContent = tiempoMuerto1 !== null ? formatTime(tiempoMuerto1) : '--:--:--';
+        if(document.getElementById(`tm2-${machineId}`)) document.getElementById(`tm2-${machineId}`).textContent = tiempoMuerto2 !== null ? formatTime(tiempoMuerto2) : '--:--:--';
+        if(document.getElementById(`tmT-${machineId}`)) document.getElementById(`tmT-${machineId}`).textContent = (tiempoMuerto1 !== null || tiempoMuerto2 !== null) ? formatTime(sumaMuertos) : '--:--:--';
+        if(document.getElementById(`ttot-${machineId}`)) document.getElementById(`ttot-${machineId}`).textContent = totalTime !== null ? formatTime(totalTime) : '--:--:--';
+    }
+
+    // Evento para botón Clear de cada amasadora
+    machineCardsContainer.addEventListener('click', function(e) {
+        const btn = e.target.closest('.clear-maquina');
+        if (!btn) return;
+        const machineId = btn.getAttribute('data-machine-id');
+        if (!machineId) return;
+        // Limpiar campos de la tarjeta
+    const tipoMasaSelect = document.getElementById(`tipoMasa-${machineId}`); if(tipoMasaSelect) tipoMasaSelect.value = '';
+    const tipoMasaOtro = document.getElementById(`tipoMasaOtro-${machineId}`); if(tipoMasaOtro){ tipoMasaOtro.value=''; tipoMasaOtro.classList.add('hidden'); }
+        document.getElementById(`tempMasa-${machineId}`).value = '';
+        document.getElementById(`obs-${machineId}`).value = '';
+        if (document.getElementById(`hielo-si-${machineId}`)) document.getElementById(`hielo-si-${machineId}`).checked = false;
+        if (document.getElementById(`hielo-no-${machineId}`)) document.getElementById(`hielo-no-${machineId}`).checked = false;
+        // Limpiar tiempos de procesos
+        for (let i = 1; i <= 3; i++) {
+            const timerId = `m${machineId}-p${i}`;
+            if (timers[timerId] && timers[timerId].interval) {
+                clearInterval(timers[timerId].interval);
+                delete timers[timerId];
+            }
+            delete completedProcessTimes[timerId];
+            document.getElementById(`start-${timerId}`).textContent = '--:--:--';
+            document.getElementById(`end-${timerId}`).textContent = '--:--:--';
+            document.getElementById(`real-${timerId}`).textContent = '00:00:00';
+            document.querySelector(`button[data-action="start"][data-timer-id="${timerId}"]`).disabled = false;
+            document.querySelector(`button[data-action="stop"][data-timer-id="${timerId}"]`).disabled = true;
+    }
+        // Resetear total
+        const totalSpan = document.getElementById(`total-m${machineId}`);
+        if (totalSpan) {
+            totalSpan.textContent = '00:00:00';
+            totalSpan.classList.remove('text-red-600');
+            totalSpan.classList.add('text-stone-800');
+        }
+    });
+
+    function updateTimerDisplay(timerId) {
+        const realTimeEl = document.getElementById(`real-${timerId}`);
+        if (timers[timerId] && timers[timerId].interval) {
+            const elapsed = Math.floor((Date.now() - timers[timerId].startTime) / 1000);
+            realTimeEl.textContent = formatTime(elapsed);
+        }
+    }
+
+    function stopProcess(timerId, skipTotalUpdate = false) {
+        if (!timers[timerId] || !timers[timerId].interval) return;
+
+        clearInterval(timers[timerId].interval);
+
+        const endTime = Date.now();
+        const startTime = timers[timerId].startTime;
+        const realTimeSeconds = Math.floor((endTime - startTime) / 1000);
+
+        const startEl = document.getElementById(`start-${timerId}`);
+        const endEl = document.getElementById(`end-${timerId}`);
+        const realEl = document.getElementById(`real-${timerId}`);
+
+        endEl.textContent = new Date(endTime).toLocaleTimeString();
+        realEl.textContent = formatTime(realTimeSeconds);
+
+        const [machineId, processId] = timerId.replace('m', '').replace('p', '').split('-');
+
+        if (!skipTotalUpdate) {
+            const prevTime = (completedProcessTimes[timerId] && typeof completedProcessTimes[timerId].time === 'number' ? completedProcessTimes[timerId].time : 0);
+            if (!machineTotals[machineId]) {
+                machineTotals[machineId] = 0;
+            }
+            machineTotals[machineId] = machineTotals[machineId] - prevTime + realTimeSeconds;
+            completedProcessTimes[timerId] = { time: realTimeSeconds, startTime: startTime, endTime: endTime };
+            // Actualizar solo el total de la máquina en el DOM (solo suma los tiempos detenidos)
+            let totalTime = 0;
+            for (let i = 1; i <= 3; i++) {
+                const tId = `m${machineId}-p${i}`;
+                const t = completedProcessTimes[tId];
+                if (t && typeof t.time === 'number' && !isNaN(t.time)) {
+                    totalTime += t.time;
+                }
+            }
+            // Actualizar el span del total de la máquina usando el id único
+            const totalSpan = document.getElementById(`total-m${machineId}`);
+            if (totalSpan) {
+                totalSpan.textContent = formatTime(totalTime);
+                if (totalTime > 2700) {
+                    totalSpan.classList.add('text-red-600');
+                    totalSpan.classList.remove('text-stone-800');
+                } else {
+                    totalSpan.classList.remove('text-red-600');
+                    totalSpan.classList.add('text-stone-800');
+                }
+            }
+            // Actualizar tiempos muertos y total dinámicamente
+            updateMuertosYTotal(machineId);
+        }
+
+        delete timers[timerId];
+        document.querySelector(`button[data-action="start"][data-timer-id="${timerId}"]`).disabled = false;
+        document.querySelector(`button[data-action="stop"][data-timer-id="${timerId}"]`).disabled = true;
+    }
+
+    function handleButtonClick(e) {
+        const target = e.target.closest('button');
+        if (!target) return;
+
+        const { action, timerId } = target.dataset;
+        if (!action || !timerId) return;
+
+        const [machineId, processId] = timerId.replace('m', '').replace('p', '').split('-');
+
+        if (action === 'start') {
+            // Detener y guardar cualquier proceso corriendo en la misma máquina
+            machineData.find(m => m.id === machineId).processes.forEach(process => {
+                const existingTimerId = `m${machineId}-p${process.id}`;
+                if (existingTimerId !== timerId && timers[existingTimerId]) {
+                    stopProcess(existingTimerId, false); // Guardar el tiempo
+                }
+            });
+
+            if (timers[timerId] && timers[timerId].interval) return;
+            timers[timerId] = {
+                startTime: Date.now(),
+                interval: setInterval(() => updateTimerDisplay(timerId), 1000)
+            };
+            document.getElementById(`start-${timerId}`).textContent = new Date(timers[timerId].startTime).toLocaleTimeString();
+            document.getElementById(`end-${timerId}`).textContent = '--:--:--';
+            document.getElementById(`real-${timerId}`).textContent = '00:00:00';
+            document.querySelector(`button[data-action="start"][data-timer-id="${timerId}"]`).disabled = true;
+            document.querySelector(`button[data-action="stop"][data-timer-id="${timerId}"]`).disabled = false;
+        } else if (action === 'stop') {
+            stopProcess(timerId);
+        } else if (action === 'reset') {
+            if (timers[timerId] && timers[timerId].interval) {
+                clearInterval(timers[timerId].interval);
+                delete timers[timerId];
+            }
+            completedProcessTimes[timerId] = { time: 0, startTime: null, endTime: null };
+            document.getElementById(`start-${timerId}`).textContent = '--:--:--';
+            document.getElementById(`end-${timerId}`).textContent = '--:--:--';
+            document.getElementById(`real-${timerId}`).textContent = '00:00:00';
+            document.querySelector(`button[data-action="start"][data-timer-id="${timerId}"]`).disabled = false;
+            document.querySelector(`button[data-action="stop"][data-timer-id="${timerId}"]`).disabled = true;
+        }
+    }
+
+    // Delegación global de botones de procesos
+    document.addEventListener('click', function(e){
+        if (e.target.closest('button[data-action]')) {
+            handleButtonClick(e);
+        }
+    });
+
+    // Cambio de tipo de masa (select) para mostrar campo "Otro"
+    document.addEventListener('change', function(e){
+        const sel = e.target.closest('select.tipo-masa-select');
+        if(!sel) return;
+        const machineId = sel.getAttribute('data-machine');
+        if(!machineId) return;
+        const otroInput = document.getElementById(`tipoMasaOtro-${machineId}`);
+        if(!otroInput) return;
+        if(sel.value === '__OTRO__'){
+            otroInput.classList.remove('hidden');
+            otroInput.focus();
+        } else {
+            otroInput.classList.add('hidden');
+            otroInput.value='';
+        }
+    });
+
+    // Bloque eliminado: código huérfano de guardado general (sustituido por guardarResultadosPorMaquina)
+
+    // Guardar resultados por máquina
+    machineCardsContainer.addEventListener('click', function(e) {
+        const btn = e.target.closest('.guardar-maquina');
+        if (!btn) return;
+        const machineId = btn.getAttribute('data-machine-id');
+        if (!machineId) return;
+        guardarResultadosPorMaquina(machineId, btn);
+    });
+
+    function guardarResultadosPorMaquina(machineId, btn) {
+        const fecha = document.getElementById('fecha').value;
+        if (!fecha) {
+            mostrarMsgMaquina(machineId, 'Selecciona una fecha para guardar.', false);
+            return;
+        }
+        const machine = machineData.find(m => m.id === machineId);
+        if (!machine) return;
+        const procesos = {};
+        machine.processes.forEach(process => {
+            const timerId = `m${machine.id}-p${process.id}`;
+            const tiempo = completedProcessTimes[timerId]?.time || 0;
+            const minutos = Math.floor(tiempo / 60);
+            const segundos = tiempo % 60;
+            const startTime = completedProcessTimes[timerId]?.startTime || null;
+            const endTime = completedProcessTimes[timerId]?.endTime || null;
+            procesos[`proceso${process.id}`] = { minutos, segundos, startTime, endTime };
+        });
+    const tipoMasa = document.getElementById(`tipoMasa-${machine.id}`)?.value || '';
+    let tipoMasaFinal = tipoMasa;
+    if(tipoMasa === '__OTRO__'){
+        const otroVal = document.getElementById(`tipoMasaOtro-${machine.id}`)?.value.trim();
+        tipoMasaFinal = otroVal || '';
+    }
+        // Obtener valor de hielo
+        let hielo = '';
+        if (document.getElementById(`hielo-si-${machine.id}`).checked) hielo = 'Si';
+        else if (document.getElementById(`hielo-no-${machine.id}`).checked) hielo = 'No';
+        // Obtener número de personal
+        const personal = document.getElementById('personal-general')?.value || '';
+        // Obtener observaciones
+        const observaciones = document.getElementById(`obs-${machine.id}`).value || '';
+        // Obtener variables nuevas
+        const tempAmbiente = document.getElementById('ta').value || '';
+        const humedad = document.getElementById('h').value || '';
+        const tempMasa = document.getElementById(`tempMasa-${machine.id}`).value || '';
+        const maquinaObj = {
+            id: machine.id,
+            nombre: machine.name,
+            tipoMasa: tipoMasaFinal,
+            hielo,
+            personal,
+            tempAmbiente,
+            humedad,
+            tempMasa,
+            observaciones,
+            ...procesos
+        };
+    let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
+    resultados.push({ fecha, maquinas: [maquinaObj] });
+    localStorage.setItem('resultadosMezclado', JSON.stringify(resultados));
+    mostrarMsgMaquina(machineId, '¡Resultados guardados correctamente!', true);
+    // Evento para limpiar campo de personal con botón Clear
+    machineCardsContainer.addEventListener('click', function(e) {
+        const btn = e.target.closest('.clear-maquina');
+        if (!btn) return;
+        const machineId = btn.getAttribute('data-machine-id');
+        if (!machineId) return;
+        if (document.getElementById(`personal-${machineId}`)) document.getElementById(`personal-${machineId}`).value = '';
+    });
+    }
+
+    function mostrarMsgMaquina(machineId, msg, ok) {
+        const msgDiv = document.getElementById('msg-guardar-' + machineId);
+        if (msgDiv) {
+            msgDiv.textContent = msg;
+            msgDiv.className = 'mt-2 text-center ' + (ok ? 'text-green-700 bg-green-100 border border-green-300 rounded p-2' : 'text-red-700 bg-red-100 border border-red-300 rounded p-2');
+            setTimeout(() => { msgDiv.textContent = ''; }, 3000);
+        }
+    }
+
+    function cargarResultados() {
+    // Botón Clear para borrar todos los resultados
+    document.getElementById('btn-clear-resultados')?.addEventListener('click', function() {
+        if (confirm('¿Seguro que deseas borrar TODOS los resultados de mezclado?')) {
+            localStorage.removeItem('resultadosMezclado');
+            cargarResultados();
+            document.getElementById('promedios').innerHTML = '';
+        }
+    });
+    // Obtener el contenedor de la lista de resultados
+    const resultadosLista = document.getElementById('resultados-lista');
+    if (!resultadosLista) return;
+    resultadosLista.innerHTML = '<div class="text-stone-500 text-center">Cargando...</div>';
+    let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
+    if (!resultados.length) {
+        resultadosLista.innerHTML = '<div class="text-stone-500 text-center">No hay resultados registrados.</div>';
+        return;
+    }
+    resultadosLista.innerHTML = '';
+    // Filtros
+    const filtroFecha = document.getElementById('filtro-fecha')?.value;
+    const filtroTipo = document.getElementById('filtro-tipo')?.value?.toLowerCase() || '';
+    const filtroMaquina = document.getElementById('filtro-maquina')?.value?.toLowerCase() || '';
+    let sumaTotales = 0, cuentaTotales = 0, sumaProc = [0,0,0], cuentaProc = [0,0,0];
+    let totalesArr = [], procArr = [[],[],[]];
+        resultados.forEach((res, idx) => {
+            const fecha = res.fecha || '--';
+            if (filtroFecha && fecha !== filtroFecha) return;
+            // Mostrar N° Personal general si existe
+            let personalGeneral = '';
+            if (res.maquinas && res.maquinas.length > 0 && 'personal' in res.maquinas[0]) {
+                personalGeneral = res.maquinas[0].personal || '';
+            }
+            const maquinas = res.maquinas || [];
+            maquinas.forEach((maq, maqIdx) => {
+                const tipoPan = maq.tipoMasa || maq.tipoPan || '--';
+                const nombre = maq.nombre || maq.id || '--';
+                if (filtroTipo && !tipoPan.toLowerCase().includes(filtroTipo)) return;
+                if (filtroMaquina && !nombre.toLowerCase().includes(filtroMaquina)) return;
+                let procesosHtml = '';
+                let tiempoMuerto1 = 0, tiempoMuerto2 = 0;
+                // Calcular tiempos muertos
+                if (maq.proceso1 && maq.proceso2 && maq.proceso1.endTime && maq.proceso2.startTime) {
+                    tiempoMuerto1 = Math.max(0, Math.floor((maq.proceso2.startTime - maq.proceso1.endTime)/1000));
+                }
+                if (maq.proceso2 && maq.proceso3 && maq.proceso2.endTime && maq.proceso3.startTime) {
+                    tiempoMuerto2 = Math.max(0, Math.floor((maq.proceso3.startTime - maq.proceso2.endTime)/1000));
+                }
+                let primerStart = maq.proceso1 && maq.proceso1.startTime ? maq.proceso1.startTime : null;
+                let ultimoEnd = maq.proceso3 && maq.proceso3.endTime ? maq.proceso3.endTime : null;
+                let totalSeg = null;
+                if (primerStart && ultimoEnd) {
+                    totalSeg = Math.max(0, Math.floor((ultimoEnd - primerStart)/1000));
+                }
+                // Sumar a promedios solo si hay total válido
+                if (totalSeg !== null) {
+                    sumaTotales += totalSeg;
+                    cuentaTotales++;
+                    totalesArr.push(totalSeg);
+                }
+                // Procesos individuales y promedios
+                for (let i = 1; i <= 3; i++) {
+                    const proc = maq[`proceso${i}`] || {};
+                    const t = (parseInt(proc.minutos) || 0) * 60 + (parseInt(proc.segundos) || 0);
+                    sumaProc[i-1] += t;
+                    cuentaProc[i-1]++;
+                    procArr[i-1].push(t);
+                    let inicio = proc.startTime ? new Date(proc.startTime).toLocaleTimeString() : '--:--:--';
+                    let fin = proc.endTime ? new Date(proc.endTime).toLocaleTimeString() : '--:--:--';
+                    procesosHtml += `
+                        <div class='flex flex-col py-3'>
+                            <div class='flex justify-between items-center mb-1'>
+                                <span class='font-bold text-lg text-stone-700 tooltip'>${['Esponja','Masa','Mantequilla'][i-1]}:
+                                    <span class="tooltiptext">Tiempo de proceso ${['Esponja','Masa','Mantequilla'][i-1]}</span>
+                                </span>
+                                <span class='font-mono text-lg text-stone-900'>${(proc.minutos+'').padStart(2,'0')}:${(proc.segundos+'').padStart(2,'0')}</span>
+                            </div>
+                            <div class='flex justify-between text-sm text-stone-500 mb-0.5'><span>Inicio:</span> <span>${inicio}</span></div>
+                            <div class='flex justify-between text-sm text-stone-500'><span>Fin:</span> <span>${fin}</span></div>
+                        </div>
+                        `;
+                }
+                // Calcular total de tiempos muertos
+                let totalMuertos = tiempoMuerto1 + tiempoMuerto2;
+                // Día de la semana
+                let diaSemana = '--';
+                if (fecha && fecha.length === 10) {
+                    const dias = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sábado'];
+                    // Ajustar para zona local y evitar desfase por UTC
+                    const [anio, mes, dia] = fecha.split('-').map(Number);
+                    const fechaLocal = new Date(anio, mes - 1, dia);
+                    diaSemana = dias[fechaLocal.getDay()];
+                }
+                // Alternar color de fondo
+                const bgAlt = (idx+maqIdx)%2===0 ? 'bg-white' : 'bg-stone-100';
+                // Icono advertencia si pasa de 45 min
+                const advertencia = totalSeg > 2700 ? `<span title="Supera 45 minutos" class="ml-2 text-red-600 text-2xl align-middle">&#9888;</span>` : '';
+                // Mostrar hielo
+                const hielo = maq.hielo ? maq.hielo : '--';
+                resultadosLista.innerHTML += `
+                <div class="${bgAlt} rounded-2xl shadow-lg p-8 border border-stone-200 mb-6 fade-in">
+                    <div class="mb-6 flex flex-wrap gap-8 justify-between items-center">
+                        <span class="text-stone-800 font-bold text-xl">Fecha: <span class="font-mono text-lg">${fecha}</span> <span class="text-base text-stone-500">(${diaSemana})</span></span>
+                        <span class="text-stone-800 font-bold text-xl">Tipo de masa: <span class="font-mono text-lg">${tipoPan}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">Amasadora: <span class="font-mono text-lg">${nombre.replace(/[^0-9]/g, '')}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">Hielo: <span class="font-mono text-lg">${hielo}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">H: <span class="font-mono text-lg">${maq.humedad || '--'}%</span></span>
+                        <span class="text-stone-800 font-bold text-xl">TM: <span class="font-mono text-lg">${maq.tempMasa || '--'}C</span></span>
+                        <span class="text-stone-800 font-bold text-xl">TA: <span class="font-mono text-lg">${maq.tempAmbiente || '--'}C</span></span>
+                        <span class="text-stone-800 font-bold text-xl">T. Muerto 1: <span class="font-mono text-lg">${formatTime(tiempoMuerto1)}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">T. Muerto 2: <span class="font-mono text-lg">${formatTime(tiempoMuerto2)}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">T. Muertos Total: <span class="font-mono text-lg">${formatTime(totalMuertos)}</span></span>
+                        ${maqIdx === 0 && personalGeneral ? `<span class='text-stone-800 font-bold text-xl'>N° Personal: <span class='font-mono text-lg'>${personalGeneral}</span></span>` : ''}
+                    </div>
+                    <div class="mb-4 divide-y divide-stone-200">
+                        ${procesosHtml}
+                    </div>
+                    <div class="mb-4">
+                        <span class="block text-base font-semibold text-stone-800">Obs:</span>
+                        <div class="bg-stone-100 rounded p-2 min-h-[2rem]">${maq.observaciones ? maq.observaciones : '<span class=\"text-stone-400\">(Sin observaciones)</span>'}</div>
+                    </div>
+                    <div class="mt-4 font-extrabold text-2xl text-blue-700 text-right">Total: ${totalSeg !== null ? formatTime(totalSeg) : '--:--:--'} ${advertencia}</div>
+                    <div class="mt-6 text-center">
+                        <button class="borrar-resultado bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-bold text-lg shadow" data-idx="${idx}" data-maqidx="${maqIdx}">Borrar</button>
+                    </div>
+                </div>
+                `;
+            });
+        });
+    // Mostrar promedios generales y por tipo de masa
+        let promediosHtml = '';
+        function stddev(arr) {
+            if (!arr.length) return 0;
+            const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
+            return Math.sqrt(arr.reduce((a,b)=>a+Math.pow(b-mean,2),0)/arr.length);
+        }
+        function relStddev(std, mean) {
+            if (!mean) return '0%';
+            return ((std/mean)*100).toFixed(1) + '%';
+        }
+        // Promedios generales
+        if (cuentaTotales > 0) {
+            const prom = Math.round(sumaTotales/cuentaTotales);
+            const std = Math.round(stddev(totalesArr));
+            const rel = relStddev(std, prom);
+            promediosHtml += `<span>Promedio total: <span class=\"font-mono\">${formatTime(prom)}</span> (±${formatTime(std)}, ${rel})</span> &nbsp;`;
+            for (let i=0; i<3; i++) {
+                if (cuentaProc[i]) {
+                    const promP = Math.round(sumaProc[i]/cuentaProc[i]);
+                    const stdP = Math.round(stddev(procArr[i]));
+                    const relP = relStddev(stdP, promP);
+                    promediosHtml += `<span>${['Esponja','Masa','Mantequilla'][i]}: <span class=\"font-mono\">${formatTime(promP)}</span> (±${formatTime(stdP)}, ${relP})</span> &nbsp;`;
+                }
+            }
+        }
+    // (Tabla de promedios por tipo de masa movida solo a gráficas)
+        document.getElementById('promedios').innerHTML = promediosHtml;
+    // Evento para borrar resultado
+    resultadosLista.addEventListener('click', function(e) {
+        const btn = e.target.closest('.borrar-resultado');
+        if (!btn) return;
+        if (!confirm('¿Seguro que deseas borrar este resultado?')) return;
+        const card = btn.closest('div.rounded-2xl');
+        if (card) {
+            card.classList.remove('fade-in');
+            card.classList.add('fade-out');
+            setTimeout(() => {
+                const idx = parseInt(btn.getAttribute('data-idx'));
+                const maqIdx = parseInt(btn.getAttribute('data-maqidx'));
+                let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
+                if (resultados[idx] && resultados[idx].maquinas && resultados[idx].maquinas[maqIdx]) {
+                    resultados[idx].maquinas.splice(maqIdx, 1);
+                    if (resultados[idx].maquinas.length === 0) {
+                        resultados.splice(idx, 1);
+                    }
+                    localStorage.setItem('resultadosMezclado', JSON.stringify(resultados));
+                    cargarResultados();
+                }
+            }, 500);
+        }
+    });
+    // Exportar CSV
+    document.getElementById('btn-exportar-csv')?.addEventListener('click', function() {
+        let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
+        let rows = [];
+        let sumaTiemposMuertos = 0;
+        let sumaTotalGeneral = 0;
+        // Utilidad para limpiar caracteres raros
+        function limpiarTexto(txt) {
+            if (!txt) return '';
+            // Eliminar caracteres no imprimibles, tildes, símbolos y todo lo no ASCII
+            return String(txt)
+                .replace(/[\uFFFD\uFEFF\u200B\u00A0]/g, '') // invisibles
+                .replace(/[±]/g, '+/-')
+                .replace(/[°]/g, ' deg')
+                .replace(/[ÁÀÂÃÄáàâãä]/g, 'a')
+                .replace(/[ÉÈÊËéèêë]/g, 'e')
+                .replace(/[ÍÌÎÏíìîï]/g, 'i')
+                .replace(/[ÓÒÔÕÖóòôõö]/g, 'o')
+                .replace(/[ÚÙÛÜúùûü]/g, 'u')
+                .replace(/[Ññ]/g, 'n')
+                .replace(/[^A-Za-z0-9 %.,;:_\-\(\)\[\]\{\}/\\+\/=<>\?\!\|\'\"]+/g, '') // solo ASCII seguro
+                .normalize('NFC');
+        }
+        resultados.forEach(res => {
+            const fecha = limpiarTexto(res.fecha || '');
+            (res.maquinas||[]).forEach(maq => {
+                let totalSegundos = 0;
+                let firstRow = true;
+                // Calcular tiempos muertos entre procesos
+                let tiempoMuerto1 = '';
+                let tiempoMuerto2 = '';
+                if (maq.proceso1 && maq.proceso2 && maq.proceso1.endTime && maq.proceso2.startTime) {
+                    tiempoMuerto1 = Math.max(0, Math.floor((maq.proceso2.startTime - maq.proceso1.endTime)/1000));
+                }
+                if (maq.proceso2 && maq.proceso3 && maq.proceso2.endTime && maq.proceso3.startTime) {
+                    tiempoMuerto2 = Math.max(0, Math.floor((maq.proceso3.startTime - maq.proceso2.endTime)/1000));
+                }
+                let totalMuertos = (tiempoMuerto1 || 0) + (tiempoMuerto2 || 0);
+                sumaTiemposMuertos += totalMuertos;
+                for (let i=1; i<=3; i++) {
+                    const proc = maq[`proceso${i}`] || {};
+                    const t = (parseInt(proc.minutos)||0)*60 + (parseInt(proc.segundos)||0);
+                    totalSegundos += t;
+                    // Día de la semana limpio
+                    let diaSemana = '';
+                    if (firstRow && fecha && fecha.length===10) {
+                        const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+                        const [anio, mes, dia] = fecha.split('-').map(Number);
+                        const fechaLocal = new Date(anio, mes - 1, dia);
+                        diaSemana = dias[fechaLocal.getDay()];
+                        diaSemana = limpiarTexto(diaSemana);
+                    }
+                    rows.push({
+                        Fecha: firstRow ? fecha : '',
+                        Dia: firstRow ? diaSemana : '',
+                        Maquina: firstRow ? limpiarTexto(maq.nombre||maq.id||'') : '',
+                        TipoMasa: firstRow ? limpiarTexto(maq.tipoMasa||maq.tipoPan||'') : '',
+                        Hielo: firstRow ? limpiarTexto(maq.hielo||'') : '',
+                        'TA': firstRow ? limpiarTexto(maq.tempAmbiente||'') : '',
+                        'H': firstRow ? limpiarTexto(maq.humedad||'') : '',
+                        'TM': firstRow ? limpiarTexto(maq.tempMasa||'') : '',
+                        Personal: firstRow ? limpiarTexto(maq.personal||'') : '',
+                        Proceso: ['Esponja','Masa','Mantequilla'][i-1],
+                        Minutos: proc.minutos||0,
+                        Segundos: proc.segundos||0,
+                        Inicio: proc.startTime ? new Date(proc.startTime).toLocaleTimeString() : '',
+                        Fin: proc.endTime ? new Date(proc.endTime).toLocaleTimeString() : '',
+                        SegT: '',
+                        TM1: firstRow ? tiempoMuerto1 : '',
+                        TM2: firstRow ? tiempoMuerto2 : '',
+                        'TTot (s)': firstRow ? (totalSegundos + totalMuertos) : '',
+                        'TTot (m)': firstRow ? ((totalSegundos + totalMuertos) ? formatTime(totalSegundos + totalMuertos) : '') : '',
+                        Obs: firstRow ? limpiarTexto(maq.observaciones||'') : ''
+                    });
+                    firstRow = false;
+                }
+                // Agregar fila de total
+                sumaTotalGeneral += totalSegundos + totalMuertos;
+                rows.push({
+                    Fecha: '',
+                    Dia: '',
+                    Maquina: '',
+                    TipoMasa: '',
+                    Hielo: '',
+                    'TA': '',
+                    'H': '',
+                    'TM': '',
+                    Proceso: 'TOTAL',
+                    Minutos: Math.floor(totalSegundos/60),
+                    Segundos: totalSegundos%60,
+                    Inicio: '',
+                    Fin: '',
+                    SegT: totalSegundos,
+                    TM1: tiempoMuerto1,
+                    TM2: tiempoMuerto2,
+                    TMTot: totalMuertos,
+                    TTot: totalSegundos + totalMuertos,
+                    Obs: ''
+                });
+            });
+        });
+        // Agregar bloque resumen de tiempos muertos y total general
+        rows.push({});
+        rows.push({Pro: 'RESUMEN TIEMPOS MUERTOS'});
+        rows.push({Pro: 'Suma total de tiempos muertos (s)', Valor: sumaTiemposMuertos});
+        rows.push({Pro: 'Suma total general (incluye tiempos muertos) (s)', Valor: sumaTotalGeneral});
+        // Utilidades
+        function stddev(arr) {
+            if (!arr.length) return 0;
+            const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
+            return Math.sqrt(arr.reduce((a,b)=>a+Math.pow(b-mean,2),0)/arr.length);
+        }
+        function relStddev(std, mean) {
+            if (!mean) return '0%';
+            return ((std/mean)*100).toFixed(1) + '%';
+        }
+    // Promedios por tipo de masa (tiempo)
+        let panStats = {};
+        resultados.forEach(res => {
+            (res.maquinas||[]).forEach(maq => {
+                const tipo = maq.tipoMasa || maq.tipoPan || 'Sin especificar';
+                let total = 0;
+                for (let i=1; i<=3; i++) {
+                    const proc = maq[`proceso${i}`];
+                    if (proc) total += (parseInt(proc.minutos)||0)*60 + (parseInt(proc.segundos)||0);
+                }
+                if (!panStats[tipo]) panStats[tipo] = [];
+                panStats[tipo].push(total);
+            });
+        });
+        rows.push({});
+        rows.push({TipoMasa: 'Promedios por tipo de masa (tiempo)', Minutos: 'Promedio', Segundos: '±Desv', Inicio: '%Desv'});
+    rows.push({TipoMasa: 'Promedios por tipo de masa (tiempo)', Minutos: 'Promedio (s)', Segundos: '+/-Desv (s)', Inicio: '%Desv'});
+        for (const tipo in panStats) {
+            const arr = panStats[tipo];
+            if (!arr.length) continue;
+            const prom = Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+            const std = Math.round(stddev(arr));
+            const rel = relStddev(std, prom);
+            rows.push({TipoMasa: tipo, Minutos: prom, Segundos: std, Inicio: rel});
+        }
+
+        // Promedios por amasadora (tiempo)
+        let amasadoraStats = {};
+        resultados.forEach(res => {
+            (res.maquinas||[]).forEach(maq => {
+                const amasadora = maq.nombre || maq.nombreMaquina || 'Sin nombre';
+                let total = 0;
+                for (let i=1; i<=3; i++) {
+                    const proc = maq[`proceso${i}`];
+                    if (proc) total += (parseInt(proc.minutos)||0)*60 + (parseInt(proc.segundos)||0);
+                }
+                if (!amasadoraStats[amasadora]) amasadoraStats[amasadora] = [];
+                amasadoraStats[amasadora].push(total);
+            });
+        });
+        rows.push({});
+        rows.push({Maquina: 'Promedios por amasadora (tiempo)', Minutos: 'Promedio', Segundos: '±Desv', Inicio: '%Desv'});
+    rows.push({Maquina: 'Promedios por amasadora (tiempo)', Minutos: 'Promedio (s)', Segundos: '+/-Desv (s)', Inicio: '%Desv'});
+        for (const amasadora in amasadoraStats) {
+            const arr = amasadoraStats[amasadora];
+            if (!arr.length) continue;
+            const prom = Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+            const std = Math.round(stddev(arr));
+            const rel = relStddev(std, prom);
+            rows.push({Maquina: amasadora, Minutos: prom, Segundos: std, Inicio: rel});
+        }
+
+        // Temperatura por amasadora
+        let tempAmasadoraStats = {};
+        resultados.forEach(res => {
+            (res.maquinas||[]).forEach(maq => {
+                const amasadora = maq.nombre || maq.nombreMaquina || 'Sin nombre';
+                const temp = parseFloat(maq.tempMasa);
+                if (!isNaN(temp)) {
+                    if (!tempAmasadoraStats[amasadora]) tempAmasadoraStats[amasadora] = [];
+                    tempAmasadoraStats[amasadora].push(temp);
+                }
+            });
+        });
+        rows.push({});
+        rows.push({Maquina: 'Temperatura de masa por amasadora', Minutos: 'Promedio (°C)', Segundos: '±Desv', Inicio: '%Desv'});
+    rows.push({Maquina: 'Temperatura de masa por amasadora', Minutos: 'Promedio (grados C)', Segundos: '+/-Desv (grados C)', Inicio: '%Desv'});
+        for (const amasadora in tempAmasadoraStats) {
+            const arr = tempAmasadoraStats[amasadora];
+            if (!arr.length) continue;
+            const prom = arr.reduce((a,b)=>a+b,0)/arr.length;
+            const std = stddev(arr);
+            const rel = relStddev(std, prom);
+            rows.push({Maquina: amasadora, Minutos: prom.toFixed(1), Segundos: std.toFixed(1), Inicio: rel});
+        }
+
+    // Temperatura por tipo de masa
+        let tempPanStats = {};
+        resultados.forEach(res => {
+            (res.maquinas||[]).forEach(maq => {
+                const tipo = maq.tipoMasa || maq.tipoPan || 'Sin especificar';
+                const temp = parseFloat(maq.tempMasa);
+                if (!isNaN(temp)) {
+                    if (!tempPanStats[tipo]) tempPanStats[tipo] = [];
+                    tempPanStats[tipo].push(temp);
+                }
+            });
+        });
+        rows.push({});
+        rows.push({TipoMasa: 'Temperatura de masa por tipo de masa', Minutos: 'Promedio (°C)', Segundos: '±Desv', Inicio: '%Desv'});
+    rows.push({TipoMasa: 'Temperatura de masa por tipo de masa', Minutos: 'Promedio (grados C)', Segundos: '+/-Desv (grados C)', Inicio: '%Desv'});
+        for (const tipo in tempPanStats) {
+            const arr = tempPanStats[tipo];
+            if (!arr.length) continue;
+            const prom = arr.reduce((a,b)=>a+b,0)/arr.length;
+            const std = stddev(arr);
+            const rel = relStddev(std, prom);
+            rows.push({TipoMasa: tipo, Minutos: prom.toFixed(1), Segundos: std.toFixed(1), Inicio: rel});
+        }
+
+    // Tabla cruzada: amasadora vs tipo de masa (temperatura)
+        let tempAmasadoraLabels = Object.keys(tempAmasadoraStats);
+        let tempPanLabels = Object.keys(tempPanStats);
+        rows.push({});
+    let cruzadaHeader = {Maquina: 'Temp. masa por amasadora y tipo de masa'};
+        tempPanLabels.forEach(tipo => cruzadaHeader[tipo] = tipo);
+        rows.push(cruzadaHeader);
+        tempAmasadoraLabels.forEach(amasadora => {
+            let row = {Maquina: amasadora};
+            tempPanLabels.forEach(tipo => {
+                let arr = [];
+                resultados.forEach(res => {
+                    (res.maquinas||[]).forEach(maq => {
+                        if ((maq.nombre||maq.nombreMaquina||'Sin nombre') === amasadora && ((maq.tipoMasa||maq.tipoPan)||'Sin especificar') === tipo) {
+                            const temp = parseFloat(maq.tempMasa);
+                            if (!isNaN(temp)) arr.push(temp);
+                        }
+                    });
+                });
+                row[tipo] = arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1) : '';
+            });
+            rows.push(row);
+        });
+
+    // (Tabla cruzada tipo de masa vs amasadora eliminada)
+        // Ordenar columnas para que Obs quede al extremo derecho despues de SegundosTotales
+        if (rows.length > 0) {
+            let cols = Object.keys(rows[0]);
+            // Quitar Obs y TTot si existen
+            const idxObs = cols.indexOf('Obs');
+            if (idxObs !== -1) cols.splice(idxObs, 1);
+            // Quitar TTot (s) y TTot (m) si existen
+            const idxTTotS = cols.indexOf('TTot (s)');
+            if (idxTTotS !== -1) cols.splice(idxTTotS, 1);
+            const idxTTotM = cols.indexOf('TTot (m)');
+            if (idxTTotM !== -1) cols.splice(idxTTotM, 1);
+            // Mover Personal antes de Proceso
+            const idxPersonal = cols.indexOf('Personal');
+            if (idxPersonal !== -1) cols.splice(idxPersonal, 1);
+            const idxProceso = cols.indexOf('Proceso');
+            if (idxProceso !== -1) cols.splice(idxProceso, 0, 'Personal');
+            // Insertar TTot (s) y TTot (m) antes de Obs
+            cols.push('TTot (s)');
+            cols.push('TTot (m)');
+            cols.push('Obs');
+            // Limpiar todos los encabezados y valores
+            cols = cols.map(c => limpiarTexto(c));
+            rows = rows.map(r => {
+                const nuevo = {};
+                cols.forEach(c => {
+                    // Buscar la clave original (sin limpiar) que corresponde a este encabezado limpio
+                    let claveOriginal = Object.keys(r).find(k => limpiarTexto(k) === c);
+                    nuevo[c] = limpiarTexto(claveOriginal ? r[claveOriginal] : '');
+                });
+                return nuevo;
+            });
+        }
+        const csv = Papa.unparse(rows);
+        const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+        saveAs(blob, 'resultados_mezclado.csv');
+    });
+    }
+
+    // Si necesitas cargar resultados de amasadoras automáticamente al iniciar:
+    document.addEventListener('DOMContentLoaded', function() {
+        // Migración de datos legacy: copiar tipoPan -> tipoMasa si falta
+        try {
+            let legacy = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+            let mod=false;
+            legacy.forEach(r=> (r.maquinas||[]).forEach(m=>{ if(!m.tipoMasa && m.tipoPan){ m.tipoMasa = m.tipoPan; mod=true; } }));
+            if(mod) localStorage.setItem('resultadosMezclado', JSON.stringify(legacy));
+        } catch(_){}
+        const viewMedicion = document.getElementById('view-medicion');
+        const viewResultados = document.getElementById('view-resultados');
+        const viewTablas = document.getElementById('view-tablas');
+        const tabMedicion = document.getElementById('tab-medicion');
+        const tabResultados = document.getElementById('tab-resultados');
+        const tabTablas = document.getElementById('tab-tablas');
+
+        // Estado inicial
+        if (viewMedicion && viewResultados && viewTablas) {
+            viewMedicion.classList.remove('hidden');
+            viewResultados.classList.add('hidden');
+            viewTablas.classList.add('hidden');
+        }
+        if (typeof createMachineCards === 'function') createMachineCards();
+
+        // Listeners de pestañas seguros
+        if (tabMedicion) tabMedicion.addEventListener('click', () => {
+            if (!viewMedicion) return;
+            viewMedicion.classList.remove('hidden');
+            viewResultados?.classList.add('hidden');
+            viewTablas?.classList.add('hidden');
+            tabMedicion.classList.add('tab-btn-active');
+            tabResultados?.classList.remove('tab-btn-active');
+            tabTablas?.classList.remove('tab-btn-active');
+            if (typeof createMachineCards === 'function') createMachineCards();
+        });
+        if (tabResultados) tabResultados.addEventListener('click', () => {
+            viewMedicion?.classList.add('hidden');
+            viewResultados?.classList.remove('hidden');
+            viewTablas?.classList.add('hidden');
+            tabResultados.classList.add('tab-btn-active');
+            tabMedicion?.classList.remove('tab-btn-active');
+            tabTablas?.classList.remove('tab-btn-active');
+            if (typeof cargarResultados === 'function') cargarResultados();
+        });
+        if (tabTablas) tabTablas.addEventListener('click', () => {
+            viewMedicion?.classList.add('hidden');
+            viewResultados?.classList.add('hidden');
+            viewTablas?.classList.remove('hidden');
+            tabTablas.classList.add('tab-btn-active');
+            tabMedicion?.classList.remove('tab-btn-active');
+            tabResultados?.classList.remove('tab-btn-active');
+            if (typeof buildTablasVista === 'function') buildTablasVista();
+        });
+    });
+
+    // ================= TABLAS Y GRAFICOS =================
+    let chartsCache = [];
+    function destroyCharts(){ chartsCache.forEach(c=>{try{c.destroy();}catch(_){}}); chartsCache=[]; }
+    function fmt(n){return typeof n==='number'&&!isNaN(n)?n:0;}
+    function std(arr){ if(!arr.length) return 0; const m=arr.reduce((a,b)=>a+b,0)/arr.length; return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length);} 
+    function percent(a,b){ return b? (a*100/b).toFixed(1)+'%':'0%'; }
+    function tableFromRows(headers, rows){
+        return `<table class='min-w-full border border-stone-300 text-xs md:text-sm bg-white rounded-lg overflow-hidden'><thead class='bg-stone-100 text-stone-700'><tr>${headers.map(h=>`<th class='px-3 py-2 border-b border-stone-300 text-left font-semibold'>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r,i)=>`<tr class='${i%2?'bg-stone-50':''}'>${r.map(c=>`<td class='px-3 py-1 border-b border-stone-200 font-mono'>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    }
+    function buildTablasVista(){
+        destroyCharts();
+        const datos = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+        if(!datos.length){
+            ['tabla-resumen','tabla-pan','tabla-amasadora','tabla-proceso','tabla-temp'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML='<div class="text-stone-500">Sin datos</div>';});
+            return;
+        }
+        // Estructuras
+        const procesosNombres=['Esponja','Masa','Mantequilla'];
+        let totalGenerales=[]; let procesoStats=[[],[],[]];
+    let masaStats={}, amasadoraStats={}, tempMasaStats={}, tempCrossRaw=[];
+        datos.forEach(reg=>{
+            (reg.maquinas||[]).forEach(maq=>{
+                // total máquina (primer start a último end)
+                const p1=maq.proceso1, p3=maq.proceso3;
+                if(p1&&p1.startTime && p3 && p3.endTime){
+                    const total = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000));
+                    totalGenerales.push(total);
+                }
+                for(let i=1;i<=3;i++){
+                    const p=maq['proceso'+i];
+                    if(p){ const t=(parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0); procesoStats[i-1].push(t); }
+                }
+                const tipo=maq.tipoMasa||maq.tipoPan||'Sin tipo';
+                const ama=maq.nombre||maq.id||'Amasadora';
+                let totalSimple = 0; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ totalSimple += (parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0);} }
+                (masaStats[tipo]=masaStats[tipo]||[]).push(totalSimple);
+                (amasadoraStats[ama]=amasadoraStats[ama]||[]).push(totalSimple);
+                const tm = parseFloat(maq.tempMasa); if(!isNaN(tm)) { (tempMasaStats[tipo]=tempMasaStats[tipo]||[]).push(tm); tempCrossRaw.push({tipo, ama, tm}); }
+            });
+        });
+        // Resumen tabla
+        const resumenHeaders=['Métrica','Valor'];
+        const resumenRows=[];
+        if(totalGenerales.length){
+            const prom=Math.round(totalGenerales.reduce((a,b)=>a+b,0)/totalGenerales.length);
+            const desv=Math.round(std(totalGenerales));
+            resumenRows.push(['N registros', totalGenerales.length]);
+            resumenRows.push(['Promedio total (s)', prom]);
+            resumenRows.push(['Desv (s)', desv]);
+            resumenRows.push(['%Desv', percent(desv,prom)]);
+        }
+        procesoStats.forEach((arr,i)=>{
+            if(arr.length){
+                const prom=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+                const desv=Math.round(std(arr));
+                resumenRows.push([`Prom ${procesosNombres[i]} (s)`, prom]);
+                resumenRows.push([`Desv ${procesosNombres[i]} (s)`, desv]);
+                resumenRows.push([`%Desv ${procesosNombres[i]}`, percent(desv,prom)]);
+            }
+        });
+        const tblResumen=document.getElementById('tabla-resumen'); if(tblResumen) tblResumen.innerHTML=tableFromRows(resumenHeaders,resumenRows);
+        // Pan table
+    const panHeaders=['Tipo masa','N','Prom (s)','Desv (s)','%Desv'];
+    const panRows=Object.keys(masaStats).map(k=>{const a=masaStats[k]; const m=Math.round(a.reduce((x,y)=>x+y,0)/a.length); const d=Math.round(std(a)); return [k,a.length,m,d,percent(d,m)];});
+        document.getElementById('tabla-pan').innerHTML = tableFromRows(panHeaders, panRows);
+        // Amasadora table
+        const amaHeaders=['Amasadora','N','Prom (s)','Desv (s)','%Desv'];
+        const amaRows=Object.keys(amasadoraStats).map(k=>{const a=amasadoraStats[k]; const m=Math.round(a.reduce((x,y)=>x+y,0)/a.length); const d=Math.round(std(a)); return [k.replace(/[^0-9]/g,'')||k,a.length,m,d,percent(d,m)];});
+        document.getElementById('tabla-amasadora').innerHTML = tableFromRows(amaHeaders, amaRows);
+        // Proceso table
+        const procHeaders=['Proceso','N','Prom (s)','Desv (s)','%Desv'];
+        const procRows=procesoStats.map((a,i)=> a.length? [procesosNombres[i], a.length, Math.round(a.reduce((x,y)=>x+y,0)/a.length), Math.round(std(a)), percent(Math.round(std(a)), Math.round(a.reduce((x,y)=>x+y,0)/a.length))]: null).filter(Boolean);
+        document.getElementById('tabla-proceso').innerHTML = tableFromRows(procHeaders, procRows);
+    // Temp masa por tipo de masa
+    const tempHeaders=['Tipo masa','N','Prom (°C)','Desv (°C)','%Desv'];
+    const tempRows=Object.keys(tempMasaStats).map(k=>{const a=tempMasaStats[k]; const m=a.reduce((x,y)=>x+y,0)/a.length; const d=std(a); return [k,a.length,m.toFixed(1),d.toFixed(1),percent(d,m)];});
+        document.getElementById('tabla-temp').innerHTML = tableFromRows(tempHeaders, tempRows);
+    // Tabla cruzada temp masa (amasadora vs tipo de masa)
+        const tiposOrden = Array.from(new Set(tempCrossRaw.map(r=>r.tipo)));
+        const amasOrden = Array.from(new Set(tempCrossRaw.map(r=>r.ama)));
+        const cruzHeaders=['Amasadora', ...tiposOrden];
+        const cruzRows = amasOrden.map(a=>{
+            const c=[a.replace(/[^0-9]/g,'')||a];
+            tiposOrden.forEach(t=>{
+                const subset = tempCrossRaw.filter(r=>r.ama===a && r.tipo===t).map(r=>r.tm);
+                if(subset.length){ const avg = subset.reduce((x,y)=>x+y,0)/subset.length; c.push(avg.toFixed(1)); } else { c.push(''); }
+            });
+            return c;
+        });
+        const cruzEl=document.getElementById('tabla-temp-cruzada'); if(cruzEl) cruzEl.innerHTML= tableFromRows(cruzHeaders, cruzRows);
+
+        // Charts
+        function mkChart(ctx,type,data,options){ const c=new Chart(ctx,{type,data,options}); chartsCache.push(c); return c; }
+        const palette=['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0d9488','#d946ef'];
+        // Pan chart
+        const panCtx=document.getElementById('chart-pan'); if(panCtx){ mkChart(panCtx,'bar',{labels:panRows.map(r=>r[0]),datasets:[{label:'Prom (s)',data:panRows.map(r=>r[2]),backgroundColor:palette}]},{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}); }
+        // Amasadora chart
+        const amaCtx=document.getElementById('chart-amasadora'); if(amaCtx){ mkChart(amaCtx,'bar',{labels:amaRows.map(r=>r[0]),datasets:[{label:'Prom (s)',data:amaRows.map(r=>r[2]),backgroundColor:palette}]},{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}); }
+        // Proceso chart
+        const procCtx=document.getElementById('chart-proceso'); if(procCtx){ mkChart(procCtx,'bar',{labels:procRows.map(r=>r[0]),datasets:[{label:'Prom (s)',data:procRows.map(r=>r[2]),backgroundColor:palette}]},{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}); }
+        // Temp chart
+        const tempCtx=document.getElementById('chart-temp-pan'); if(tempCtx){ mkChart(tempCtx,'bar',{labels:tempRows.map(r=>r[0]),datasets:[{label:'Temp (°C)',data:tempRows.map(r=>parseFloat(r[2])),backgroundColor:palette}]},{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}); }
+
+        // ====== Nuevas gráficas analíticas ======
+        // 1. Boxplot por tipo de masa (implementación simplificada: muestra min, Q1, mediana, Q3, max usando barras superpuestas)
+    (function(){
+            const boxEl = document.getElementById('chart-boxplot-tipo'); if(!boxEl) return;
+            const tipoValoresMap={};
+            datos.forEach(reg=> (reg.maquinas||[]).forEach(maq=>{
+                const tipo=maq.tipoMasa||maq.tipoPan||'Sin tipo';
+                let primerStart=maq.proceso1?.startTime; let ultimoEnd=maq.proceso3?.endTime; if(primerStart&&ultimoEnd){
+                    const total=Math.max(0,Math.floor((ultimoEnd-primerStart)/1000));
+                    (tipoValoresMap[tipo]=tipoValoresMap[tipo]||[]).push(total);
+                }
+            }));
+            const labels=Object.keys(tipoValoresMap);
+            function quantiles(arr){ if(!arr.length) return {min:0,q1:0,med:0,q3:0,max:0}; const a=[...arr].sort((x,y)=>x-y); const q=(p)=>{const pos=(a.length-1)*p; const b=Math.floor(pos); const rest=pos-b; return rest? a[b]+(a[b+1]-a[b])*rest : a[b];}; return {min:a[0],q1:q(0.25),med:q(0.5),q3:q(0.75),max:a[a.length-1]}; }
+            const stats=labels.map(l=>quantiles(tipoValoresMap[l]));
+            // Representaremos: rango (min-max) como línea (dataset1), caja (q1-q3) como barra apilada invisible + visible, mediana como línea
+            const rango=stats.map(s=>s.max - s.min);
+            const caja=stats.map(s=>s.q3 - s.q1);
+            const offsetsMin=stats.map(s=>s.min);
+            const offsetsQ1=stats.map(s=>s.q1 - s.min);
+            const medianas=stats.map(s=>s.med);
+            mkChart(boxEl,'bar',{
+                labels,
+                datasets:[
+                    {label:'OffsetMin', data:offsetsMin, backgroundColor:'rgba(0,0,0,0)', stack:'bx', borderWidth:0},
+                    {label:'Rango visible', data:rango, backgroundColor:'rgba(148,163,184,0.25)', stack:'bx'},
+                    {label:'OffsetQ1', data:offsetsQ1, backgroundColor:'rgba(0,0,0,0)', stack:'cx', borderWidth:0},
+                    {label:'Caja IQR', data:caja, backgroundColor:'rgba(37,99,235,0.35)', stack:'cx'}
+                ]
+            },{responsive:true, plugins:{legend:{display:false}, tooltip:{
+                callbacks:{
+                    label:function(ctx){
+                        if(ctx.dataset.label!=='Caja IQR') return null;
+                        const s=ctx.chart.$boxStats?.[ctx.dataIndex];
+                        if(!s) return null;
+                        const iqr = s.q3 - s.q1; const span = s.max - s.min || 1; const pct = (iqr*100/span).toFixed(1)+'%';
+                        return [
+                            'min: '+s.min+'s',
+                            'Q1: '+s.q1.toFixed(0)+'s',
+                            'Med: '+s.med.toFixed(0)+'s',
+                            'Q3: '+s.q3.toFixed(0)+'s',
+                            'max: '+s.max+'s',
+                            'IQR% rango: '+pct
+                        ];
+                    }
+                }
+            }}, scales:{y:{beginAtZero:true}}, animation:false});
+            // Medianas como línea overlay
+            const ctx = boxEl.getContext('2d');
+            boxEl.addEventListener('mousemove',()=>{}); // dummy to ensure draw
+            setTimeout(()=>{ // dibujar medianas tras render
+                const chart=chartsCache.find(c=>c.canvas===boxEl);
+                if(chart) chart.$boxStats=stats;
+                if(!chart) return; const yScale=chart.scales.y; const xScale=chart.scales.x;
+                ctx.save(); ctx.strokeStyle='#dc2626'; ctx.lineWidth=2;
+                medianas.forEach((m,i)=>{
+                    const xCenter = xScale.getPixelForValue(i);
+                    const y = yScale.getPixelForValue(m);
+                    ctx.beginPath(); ctx.moveTo(xCenter-12,y); ctx.lineTo(xCenter+12,y); ctx.stroke();
+                });
+                ctx.restore();
+            },50);
+        })();
+
+        // 2. Stacked productivo vs muertos por amasadora
+        (function(){
+            const el=document.getElementById('chart-stacked-muertos'); if(!el) return;
+            const amaMap={};
+            datos.forEach(reg=> (reg.maquinas||[]).forEach(maq=>{
+                const ama=maq.nombre||maq.id||'Amasadora';
+                let tm1=0,tm2=0; if(maq.proceso1 && maq.proceso2 && maq.proceso1.endTime && maq.proceso2.startTime) tm1=Math.max(0,Math.floor((maq.proceso2.startTime - maq.proceso1.endTime)/1000));
+                if(maq.proceso2 && maq.proceso3 && maq.proceso2.endTime && maq.proceso3.startTime) tm2=Math.max(0,Math.floor((maq.proceso3.startTime - maq.proceso2.endTime)/1000));
+                let primerStart=maq.proceso1?.startTime; let ultimoEnd=maq.proceso3?.endTime; let totalProd=0; if(primerStart&&ultimoEnd){ totalProd=Math.max(0,Math.floor((ultimoEnd-primerStart)/1000)) - (tm1+tm2); }
+                const rec = amaMap[ama] = amaMap[ama] || {prod:0, muertos:0};
+                rec.prod += totalProd; rec.muertos += (tm1+tm2);
+            }));
+            const labels=Object.keys(amaMap).map(a=>a.replace(/[^0-9]/g,'')||a);
+            const prod=labels.map(l=>amaMap[Object.keys(amaMap).find(k=> (k.replace(/[^0-9]/g,'')||k)===l)].prod);
+            const muertos=labels.map(l=>amaMap[Object.keys(amaMap).find(k=> (k.replace(/[^0-9]/g,'')||k)===l)].muertos);
+            const chart = mkChart(el,'bar',{labels,datasets:[
+                {label:'Productivo (s)', data:prod, backgroundColor:'#16a34a', stack:'t'},
+                {label:'Muertos (s)', data:muertos, backgroundColor:'#dc2626', stack:'t'}
+            ]},{responsive:true,plugins:{legend:{position:'bottom'}},
+                animation:{onComplete:function(){
+                    const c=this; const ctx=c.ctx; ctx.save(); ctx.font='10px Inter'; ctx.textAlign='center'; ctx.fillStyle='#111827';
+                    const metaMuertos=c.getDatasetMeta(1); // top segment
+                    muertos.forEach((m,i)=>{
+                        const total = (prod[i]||0)+(m||0); if(!total) return;
+                        const pct = (m*100/total).toFixed(1)+'% TM';
+                        const bar = metaMuertos.data[i]; if(!bar) return;
+                        const y = bar.y - 4; const x = bar.x; ctx.fillText(pct,x,y);
+                    });
+                    ctx.restore();
+                }},
+                scales:{x:{stacked:true}, y:{stacked:true, beginAtZero:true}}});
+            chart.$stackVals={prod,muertos};
+        })();
+
+        // 3. Scatter temperatura masa vs tiempo total
+        (function(){
+            const el=document.getElementById('chart-scatter-temp-tiempo'); if(!el) return;
+            const puntos=[];
+            datos.forEach(reg=> (reg.maquinas||[]).forEach(maq=>{
+                const tm=parseFloat(maq.tempMasa); if(isNaN(tm)) return;
+                let primerStart=maq.proceso1?.startTime; let ultimoEnd=maq.proceso3?.endTime; if(!(primerStart&&ultimoEnd)) return;
+                const total=Math.max(0,Math.floor((ultimoEnd-primerStart)/1000));
+                puntos.push({x:tm,y:total});
+            }));
+            // Regresión lineal simple
+            if(puntos.length>1){
+                const n=puntos.length; let sumX=0,sumY=0,sumXY=0,sumX2=0,sumY2=0; puntos.forEach(p=>{sumX+=p.x; sumY+=p.y; sumXY+=p.x*p.y; sumX2+=p.x*p.x; sumY2+=p.y*p.y;});
+                const denom = (n*sumX2 - sumX*sumX);
+                let m=0,b=0,r=0; if(denom!==0){ m=(n*sumXY - sumX*sumY)/denom; b=(sumY - m*sumX)/n; const rDen=Math.sqrt((n*sumX2 - sumX*sumX)*(n*sumY2 - sumY*sumY)); if(rDen) r=(n*sumXY - sumX*sumY)/rDen; }
+                const xs=puntos.map(p=>p.x); const minX=Math.min(...xs); const maxX=Math.max(...xs);
+                const regData=[{x:minX,y:m*minX+b},{x:maxX,y:m*maxX+b}];
+                const chart = mkChart(el,'scatter',{datasets:[
+                    {label:'Temp vs Tiempo (s)', data:puntos, backgroundColor:'#2563eb'},
+                    {type:'line', label:'Regresión', data:regData, borderColor:'#f59e0b', borderWidth:2, pointRadius:0, fill:false}
+                ]},{responsive:true, scales:{x:{title:{display:true,text:'Temp masa (°C)'}}, y:{title:{display:true,text:'Tiempo total (s)'}, beginAtZero:true}}, plugins:{legend:{position:'bottom'}}});
+                // Mostrar r en esquina superior
+                setTimeout(()=>{
+                    const ctx = chart.ctx; ctx.save(); ctx.font='12px Inter'; ctx.fillStyle='#1f2937';
+                    ctx.fillText('r = '+r.toFixed(3), 50, 20); ctx.restore();
+                },60);
+            } else {
+                mkChart(el,'scatter',{datasets:[{label:'Temp vs Tiempo (s)', data:puntos, backgroundColor:'#2563eb'}]},{responsive:true, scales:{x:{title:{display:true,text:'Temp masa (°C)'}}, y:{title:{display:true,text:'Tiempo total (s)'}, beginAtZero:true}}, plugins:{legend:{position:'bottom'}}});
+            }
+        })();
+    }
+
+    // ================= EXPORT SOLO RESULTADOS =================
+    async function exportResultadosTabPDF(){
+        const { jsPDF } = window.jspdf || {};
+        if(!jsPDF){ alert('jsPDF no cargó'); return; }
+        const resultados = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+        if(!resultados.length){ alert('No hay resultados'); return; }
+        const pdf = new jsPDF('p','pt','a4');
+        const marginX=32, marginY=40; const pageW=pdf.internal.pageSize.getWidth(); const pageH=pdf.internal.pageSize.getHeight();
+        let y=marginY; let page=1;
+        function header(){
+            pdf.setFontSize(14); pdf.setTextColor(30); pdf.text('Reporte de Resultados (Tabla)', marginX, 28);
+            pdf.setFontSize(9); pdf.setTextColor(90); pdf.text(new Date().toLocaleString(), marginX, 40);
+        }
+        function footer(){
+            const total=pdf.internal.getNumberOfPages();
+            pdf.setFontSize(9); pdf.setTextColor(110);
+            const foot='Página '+page+' / '+total; const w=pdf.getTextWidth(foot);
+            pdf.text(foot, pageW - marginX - w, pageH - 12);
+        }
+        header();
+        // Construir filas normalizadas como en CSV
+    const diasN=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+        // Encabezados
+    const cols=['Fecha','Dia','TA','H','Pers','Am','Tipo','Hi','TM','Pr','Min','Seg','Ini','Fin','T1','T2','TMT','Tot(s)','Obs'];
+        const colWidths=[55,40,25,25,30,40,55,35,40,36,24,24,40,40,28,28,36,42,90];
+        function drawHeaderRow(){
+            pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(20);
+            let x=marginX; const h=14; pdf.setDrawColor(200); pdf.setLineWidth(0.25);
+            cols.forEach((c,i)=>{ pdf.rect(x,y-10,colWidths[i],h,'S'); pdf.text(c, x+2, y); x+=colWidths[i]; });
+            y+=2; pdf.setFont('helvetica','normal');
+        }
+        y+=20; drawHeaderRow(); y+=6;
+        let prevFecha=null;
+        resultados.sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+        resultados.forEach(reg=>{
+            const fecha=reg.fecha||''; let dia='';
+            if(fecha && fecha.length===10){ const [Y,M,D]=fecha.split('-').map(Number); dia=diasN[new Date(Y,M-1,D).getDay()]||''; }
+            let dailyTA='', dailyH='', dailyPers='';
+            if(reg.maquinas && reg.maquinas.length){ const m0=reg.maquinas[0]; dailyTA=m0.tempAmbiente||''; dailyH=m0.humedad||''; dailyPers=m0.personal||''; }
+            (reg.maquinas||[]).forEach(maq=>{
+                let tm1='', tm2='';
+                if(maq.proceso1 && maq.proceso2 && maq.proceso1.endTime && maq.proceso2.startTime){ tm1=Math.max(0,Math.floor((maq.proceso2.startTime-maq.proceso1.endTime)/1000)); }
+                if(maq.proceso2 && maq.proceso3 && maq.proceso2.endTime && maq.proceso3.startTime){ tm2=Math.max(0,Math.floor((maq.proceso3.startTime-maq.proceso2.endTime)/1000)); }
+                let primerStart=maq.proceso1?.startTime; let ultimoEnd=maq.proceso3?.endTime; let totalSeg=null; if(primerStart&&ultimoEnd) totalSeg=Math.max(0,Math.floor((ultimoEnd-primerStart)/1000));
+                const tmTot=(tm1||0)+(tm2||0);
+                for(let i=1;i<=3;i++){
+                    const proc=maq['proceso'+i]||{}; const min=proc.minutos||0; const seg=proc.segundos||0; const ini=proc.startTime? new Date(proc.startTime).toLocaleTimeString():''; const fin=proc.endTime? new Date(proc.endTime).toLocaleTimeString():'';
+                    const row=[
+                        i===1? (prevFecha===fecha?'':fecha):'',
+                        i===1? (prevFecha===fecha?'':dia):'',
+                        i===1? (prevFecha===fecha?'':dailyTA):'',
+                        i===1? (prevFecha===fecha?'':dailyH):'',
+                        i===1? (prevFecha===fecha?'':dailyPers):'',
+                        i===1? ((maq.nombre||maq.id||'').replace(/Amasadora\s*/i,'Am ') ):'',
+                        i===1? (maq.tipoMasa||maq.tipoPan||''):'',
+                        i===1? (maq.hielo||''):'',
+                        i===1? (maq.tempMasa||''):'',
+                        ['Esp','Mas','Mant'][i-1],
+                        min, seg, ini, fin,
+                        i===1? tm1:'', i===1? tm2:'', i===1? tmTot:'', i===1? (totalSeg??''):'', i===1? (maq.observaciones||''):''
+                    ];
+                    // Salto de página si necesario
+                    if(y+14>pageH-30){ footer(); pdf.addPage(); page++; header(); y=marginY+10; drawHeaderRow(); y+=6; }
+                    let x=marginX; const h=12; pdf.setFontSize(7.5); pdf.setDrawColor(225); pdf.setFillColor(255,255,255); pdf.setTextColor(40);
+                    row.forEach((cell,ci)=>{
+                        let txt=(''+(cell==null?'':cell));
+                        if(txt.length>18) txt=txt.slice(0,17)+'…';
+                        pdf.rect(x,y-9,colWidths[ci],h,'S');
+                        pdf.text(txt, x+2, y);
+                        x+=colWidths[ci];
+                    });
+                    y+=h-2;
+                }
+                prevFecha=fecha;
+            });
+        });
+        footer();
+        const stamp=new Date().toISOString().replace(/[:T]/g,'-').split('.')[0];
+        pdf.save('resultados_tabla_'+stamp+'.pdf');
+    }
+    // CSV ordenado y compactando factores solo una vez
+    function exportResultadosTabCSV(){
+        let resultados = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+        if(!resultados.length){ alert('No hay resultados'); return; }
+        // Ordenar por fecha
+        resultados.sort((a,b)=> (a.fecha||'').localeCompare(b.fecha||''));
+        const rows=[];
+        // Encabezados principales
+        const headers=[
+            'Fecha','Dia','TA','H','Pers',
+            'Am','Tipo','Hi','TM',
+            'Pr','Min','Seg','Ini','Fin','T1','T2','TMT','Tot(s)','Obs'
+        ];
+        rows.push(headers);
+    const diasN=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+        let fechaPrev=null;
+        resultados.forEach(reg=>{
+            const fecha=reg.fecha||'';
+            let dia='';
+            if(fecha && fecha.length===10){ const [y,m,d]=fecha.split('-').map(Number); dia=diasN[new Date(y,m-1,d).getDay()]||''; }
+            // Factores diarios (TA,H,Personal) tomar de primera máquina si existe
+            let dailyTA=''; let dailyH=''; let dailyPers='';
+            if(reg.maquinas && reg.maquinas.length){ const m0=reg.maquinas[0]; dailyTA=m0.tempAmbiente||''; dailyH=m0.humedad||''; dailyPers=m0.personal||''; }
+            (reg.maquinas||[]).forEach(maq=>{
+                const baseFecha = (fechaPrev===fecha)? '' : fecha; // solo primera vez del día
+                const baseDia = (baseFecha? dia : '');
+                const baseTA = (baseFecha? dailyTA : '');
+                const baseH = (baseFecha? dailyH : '');
+                const basePers = (baseFecha? dailyPers : '');
+                fechaPrev=fecha; // marcar
+                // Calcular tiempos muertos máquina
+                let tm1='', tm2='';
+                if(maq.proceso1 && maq.proceso2 && maq.proceso1.endTime && maq.proceso2.startTime){ tm1 = Math.max(0, Math.floor((maq.proceso2.startTime - maq.proceso1.endTime)/1000)); }
+                if(maq.proceso2 && maq.proceso3 && maq.proceso2.endTime && maq.proceso3.startTime){ tm2 = Math.max(0, Math.floor((maq.proceso3.startTime - maq.proceso2.endTime)/1000)); }
+                let primerStart=maq.proceso1?.startTime; let ultimoEnd=maq.proceso3?.endTime; let totalSeg=null; if(primerStart && ultimoEnd){ totalSeg=Math.max(0, Math.floor((ultimoEnd - primerStart)/1000)); }
+                const tmTotal = (tm1||0)+(tm2||0);
+                for(let i=1;i<=3;i++){
+                    const proc=maq['proceso'+i]||{};
+                    const minutos=proc.minutos||0; const segundos=proc.segundos||0;
+                    const inicio=proc.startTime? new Date(proc.startTime).toLocaleTimeString():'';
+                    const fin=proc.endTime? new Date(proc.endTime).toLocaleTimeString():'';
+                    rows.push([
+                        i===1? baseFecha:'',
+                        i===1? baseDia:'',
+                        i===1? baseTA:'',
+                        i===1? baseH:'',
+                        i===1? basePers:'',
+                        i===1? ((maq.nombre||maq.id||'').replace(/Amasadora\s*/i,'Am ')):'',
+                        i===1? (maq.tipoMasa||maq.tipoPan||''):'',
+                        i===1? (maq.hielo||''):'',
+                        i===1? (maq.tempMasa||''):'',
+                        ['Esp','Mas','Mant'][i-1],
+                        minutos, segundos, inicio, fin,
+                        i===1? tm1:'', i===1? tm2:'', i===1? tmTotal:'', i===1? (totalSeg??''):'', i===1? (maq.observaciones||''):'']);
+                }
+            });
+        });
+        // Convertir a CSV manualmente para evitar dependencias
+        const csv = rows.map(r=> r.map(v=>{
+            const s = (v===null||v===undefined)? '' : (''+v).replace(/"/g,'""');
+            return '"'+s+'"';
+        }).join(',')).join('\r\n');
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        const stamp = new Date().toISOString().replace(/[:T]/g,'-').split('.')[0];
+        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='resultados_ordenado_'+stamp+'.csv'; a.click(); URL.revokeObjectURL(a.href);
+    }
+    document.addEventListener('DOMContentLoaded', ()=>{
+        document.getElementById('btn-export-resultados-pdf')?.addEventListener('click', exportResultadosTabPDF);
+        document.getElementById('btn-export-resultados-csv')?.addEventListener('click', exportResultadosTabCSV);
+            // Toggle descripciones de gráficas
+            document.querySelectorAll('#view-tablas .chart-title').forEach(h=>{
+                h.addEventListener('click', ()=>{
+                    const desc = h.nextElementSibling;
+                    if(desc && desc.classList.contains('chart-desc')){
+                        desc.style.display = (desc.style.display==='none'|| !desc.style.display)?'block':'none';
+                    }
+                });
+                // iniciar oculto siempre
+                const d=h.nextElementSibling; if(d && d.classList.contains('chart-desc')) d.style.display='none';
+            });
+		// Inyección de controles BD si aún no existen
+		if(!document.getElementById('sync-status')){
+			const filtros = document.querySelector('#view-resultados .flex.flex-wrap.gap-4');
+			if(filtros){
+				const extra = document.createElement('div');
+				extra.className='flex flex-wrap gap-2 items-center';
+				extra.innerHTML = `
+					<div class="flex flex-wrap gap-2 items-center">
+						<button id="btn-sync-bd" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700">Sync BD ➜ Local</button>
+						<button id="btn-pasar-fecha-bd" class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-amber-700" title="Enviar todos los registros de la fecha seleccionada en 'Fecha' a la base de datos">Pasar fecha a BD</button>
+						<input id="api-url-override" placeholder="API override" class="border rounded px-2 py-1 text-sm w-40" title="URL manual de la API (vaciar para volver por defecto)" />
+						<button id="btn-guardar-api" class="bg-stone-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-stone-700">Guardar API</button>
 					</div>
-				</details>
-			</div>
-			<div id="tablas-wrapper" class="space-y-10">
-				<section>
-					<h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Resumen de tiempos (s) <span class="info-hint text-blue-600 cursor-help align-middle" title="Indicadores globales: registros, promedio total y variabilidad.">ℹ️</span></h3>
-					<p class="chart-desc">Muestra KPIs globales: número de registros, promedio total y dispersión (desviación y %). Punto de partida para ver si el proceso se estabiliza.</p>
-					<div id="tabla-resumen" class="overflow-x-auto text-sm"></div>
-				</section>
-				...existing code from original index.html (todo el HTML y JS embebido real aquí)...
-			</div>
-		</div>
-	</div>
-</body>
-<script>
-// ...todo el JS embebido real del index.html original aquí...
-</script>
-</html>
-<!-- ======================= HTML STRUCTURE ======================= -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Calculadora de Procesos de Panadería</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-	<script src="https://cdn.tailwindcss.com"></script>
-	<style>
-	  body { font-family: 'Inter', system-ui, sans-serif; }
-	  .tab-btn { padding:0.5rem 1rem; font-size:.875rem; font-weight:600; border-radius:.75rem; border:1px solid #d6d3d1; background:#fff; color:#57534e; transition:all .18s; }
-	  .tab-btn:hover { background:#f5f5f4; color:#111827; }
-	  .tab-btn-active { background:#2563eb; color:#fff; border-color:#2563eb; box-shadow:0 1px 2px rgba(0,0,0,.08); }
-	  .metric-badge { display:inline-block; padding:2px 6px; border-radius:6px; font-size:.625rem; font-weight:600; background:#e7e5e4; color:#44403c; }
-	  .metric-badge.warn { background:#fee2e2; color:#dc2626; }
-	.chart-desc { display:none; font-size:.75rem; line-height:1.1rem; color:#475569; font-style:italic; margin-top:-6px; margin-bottom:10px; padding-left:.75rem; border-left:3px solid #2563eb20; }
-	.chart-title { cursor:pointer; }
-	.chart-title:hover .info-hint { text-decoration:underline; }
-	</style>
-</head>
-<body class="bg-stone-50 text-stone-800 min-h-screen">
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-	<div class="hidden">
-		<button id="main-amasadoras" class="px-4 py-2 rounded-l-lg bg-blue-600 text-white font-bold focus:outline-none">Amasadoras</button>
-	</div>
-	<!-- Section views -->
-	<div id="section-amasadoras">
-		<div class="flex flex-wrap justify-center gap-3 mb-6">
-			<button id="tab-medicion" class="tab-btn tab-btn-active">Medición</button>
-			<button id="tab-resultados" class="tab-btn">Resultados</button>
-			<button id="tab-tablas" class="tab-btn">Tablas</button>
-		</div>
-		<div id="view-tablas" class="hidden">
-			<div class="mb-6 text-center">
-				<h2 class="text-3xl font-extrabold mb-2 text-stone-900 tracking-tight">Tablas y Gráficas</h2>
-				<p class="text-stone-600 max-w-2xl mx-auto">Promedios, desviaciones y distribución visual por tipo de masa, amasadora y procesos.</p>
-			</div>
-			<div class="mb-8 max-w-3xl mx-auto">
-				<details open class="bg-white border border-stone-300 rounded-xl p-4 shadow-sm">
-					<summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg">Mapeo de gráficas y propósito analítico</summary>
-					<div class="mt-3 text-sm space-y-3 text-stone-700">
-						<ul class="list-disc ml-5 space-y-1">
-							<li><span class="font-medium">Benchmark entre recetas (1 y 6)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo de masa.</li>
-							<li><span class="font-medium">Detecta dónde optimizar (2, 3 y 7)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
-							<li><span class="font-medium">Control de consistencia y calidad (4, 5 y 6)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Temp. masa por tipo.</li>
-							<li><span class="font-medium">Validar hipótesis de proceso (8)</span>: Relación temperatura de masa vs tiempo total (scatter + regresión).</li>
-						</ul>
-						<p class="text-xs text-stone-500">Los números refieren al orden visual aproximado de las secciones inferiores.</p>
-					</div>
-				</details>
-			</div>
-			<div id="tablas-wrapper" class="space-y-10">
-				<section>
-					<h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Resumen de tiempos (s) <span class="info-hint text-blue-600 cursor-help align-middle" title="Indicadores globales: registros, promedio total y variabilidad.">ℹ️</span></h3>
-					<p class="chart-desc">Muestra KPIs globales: número de registros, promedio total y dispersión (desviación y %). Punto de partida para ver si el proceso se estabiliza.</p>
-					<div id="tabla-resumen" class="overflow-x-auto text-sm"></div>
-				</section>
-				<section>
-					<h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por tipo de masa <span class="info-hint text-blue-600 cursor-help align-middle" title="Tiempo total promedio por receta.">ℹ️</span></h3>
-					<p class="chart-desc">Compara recetas y ayuda a detectar cuáles requieren más tiempo total. Útil para priorizar mejoras o ajustar programación.</p>
-					<div id="tabla-pan" class="overflow-x-auto text-sm mb-4"></div>
-					<canvas id="chart-pan" height="140"></canvas>
-				</section>
-				<section>
-					<h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por amasadora <span class="info-hint text-blue-600 cursor-help align-middle" title="Comparación entre equipos.">ℹ️</span></h3>
-					<p class="chart-desc">Identifica máquinas más lentas o con tiempos fuera de rango para redistribuir cargas o revisar mantenimiento.</p>
-					<div id="tabla-amasadora" class="overflow-x-auto text-sm mb-4"></div>
-					<canvas id="chart-amasadora" height="140"></canvas>
-				</section>
-				<section>
-					<h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por proceso <span class="info-hint text-blue-600 cursor-help align-middle" title="Duración típica de cada etapa.">ℹ️</span></h3>
-					<p class="chart-desc">Revela cuál de las 3 etapas domina el ciclo y dónde un ajuste reduciría más el tiempo total.</p>
-					<div id="tabla-proceso" class="overflow-x-auto text-sm mb-4"></div>
-					<canvas id="chart-proceso" height="140"></canvas>
-				</section>
-				<section>
-					<h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Temperatura de masa <span class="info-hint text-blue-600 cursor-help align-middle" title="Temperatura promedio por tipo de masa.">ℹ️</span></h3>
-					<p class="chart-desc">Controla la consistencia térmica: variaciones grandes pueden afectar fermentación o calidad final.</p>
-					<div id="tabla-temp" class="overflow-x-auto text-sm mb-4"></div>
-					<canvas id="chart-temp-pan" height="140" class="mb-8"></canvas>
-				</section>
-				<section>
-					<h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Temp. masa (Amasadora vs Tipo de masa) <span class="info-hint text-blue-600 cursor-help align-middle" title="Cruce equipo vs receta.">ℹ️</span></h3>
-					<p class="chart-desc">Detecta si ciertas máquinas generan sistemáticamente temperaturas distintas para la misma receta.</p>
-					<div id="tabla-temp-cruzada" class="overflow-x-auto text-sm"></div>
-				</section>
-				<section>
-					<h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Distribución tiempos por tipo de masa (Boxplot) <span class="info-hint text-blue-600 cursor-help align-middle" title="Variabilidad por receta.">ℹ️</span></h3>
-					<p class="chart-desc">Mide estabilidad operativa: IQR reducido indica proceso controlado; valores altos sugieren inconsistencia.</p>
-					<canvas id="chart-boxplot-tipo" height="140"></canvas>
-				</section>
-				<section>
-					<h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Tiempos productivos vs muertos por amasadora <span class="info-hint text-blue-600 cursor-help align-middle" title="Proporción de inactividad.">ℹ️</span></h3>
-					<p class="chart-desc">Cuantifica ineficiencia: mayor porcentaje de tiempo muerto = oportunidad directa de optimización.</p>
-					<canvas id="chart-stacked-muertos" height="140"></canvas>
-				</section>
-				<section>
-					<h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Relación temperatura de masa vs tiempo total <span class="info-hint text-blue-600 cursor-help align-middle" title="Correlación tiempo vs calor.">ℹ️</span></h3>
-					<p class="chart-desc">Evalúa si la temperatura final se asocia a mayor o menor duración (r cercano a 0 indica poca relación).</p>
-					<canvas id="chart-scatter-temp-tiempo" height="160"></canvas>
-				</section>
-			</div>
-			</div>
-		</div>
-		<div id="view-medicion" class="block">
-				<div class="mb-8">
-					<h1 class="text-3xl font-extrabold text-stone-900 tracking-tight mb-2">Cálculo de Amasadoras</h1>
-					<p class="text-stone-600 text-sm md:text-base">Cómo operar el programa: registra primero las variables generales (fecha, TA, H, personal). Luego en cada tarjeta de amasadora define el tipo de masa y controla los tres procesos secuencialmente. Guarda cada máquina al terminar para formar un conjunto que luego podrás analizar y exportar.</p>
-				</div>
-				<!-- Instrucciones (migradas desde Resultados) -->
-				<div id="instrucciones-medicion" class="mb-8">
-					<details open class="bg-white border border-stone-300 rounded-xl p-4 shadow-sm">
-						<summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg flex items-center gap-2">
-							<span>Instrucciones (crear conjunto, analizar y exportar)</span>
-						</summary>
-						<div class="mt-3 space-y-3 text-sm leading-relaxed text-stone-700">
-							<p><span class="font-semibold">¿Qué es un conjunto?</span> Cada conjunto es un registro de una fecha con una o varias amasadoras (máquinas) y sus 3 procesos: Esponja, Masa y Mantequilla, incluyendo tiempos, temperaturas y observaciones.</p>
-							<ol class="list-decimal ml-5 space-y-1">
-								<li>Completa <strong>Fecha</strong>, <strong>TA</strong>, <strong>H</strong> y <strong>N° Personal</strong>.</li>
-								<li>En cada amasadora define <strong>Tipo de masa</strong>, marca <strong>Hielo</strong> si aplica y al finalizar registra <strong>Temp. de masa</strong> y <strong>Observaciones</strong>.</li>
-								<li>Ejecuta los procesos en orden (Iniciar / Detener). Sólo puede estar activo uno por máquina; iniciar otro detiene el previo.</li>
-								<li>Se guardan inicio, fin y duración. El <strong>Total máquina</strong> va desde el inicio del primer proceso al fin del tercero. <strong>TM1 / TM2</strong> son los huecos entre procesos.</li>
-								<li>Pulsa <strong>Guardar resultados</strong> al terminar los 3 procesos de la máquina. Repite para otras.</li>
-								<li>Pasa a la pestaña <strong>Resultados</strong> para ver, filtrar y revisar los conjuntos. Usa filtros para acotar.</li>
-								<li><strong>Borrar todo</strong> elimina definitivamente todos los registros guardados.</li>
-								<li><strong>Exportar PDF</strong>: reporte visual de la vista de resultados (sin botones).</li>
-								<li><strong>Exportar CSV</strong>: filas compactadas (una por proceso) con factores diarios y de máquina sólo en la primera fila de cada máquina. Incluye TM1, TM2, TM.Total y Total(s).</li>
-								<li>Si el total supera 45 min (>2700 s) aparece un ícono de advertencia.</li>
-							</ol>
-							<p class="text-stone-600">Consejo: Usa CSV para análisis (Excel / Power BI) y PDF para difusión rápida.</p>
-							<div class="pt-3 border-t border-stone-200"></div>
-							<h4 class="font-semibold text-stone-800">Mapeo de gráficas y propósito analítico</h4>
-							<ul class="list-disc ml-5 space-y-1">
-								<li><span class="font-medium">Benchmark entre recetas (1 y 6)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo de masa.</li>
-								<li><span class="font-medium">Detecta dónde optimizar (2, 3 y 7)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
-								<li><span class="font-medium">Control de consistencia y calidad (4, 5 y 6)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Temp. masa por tipo.</li>
-								<li><span class="font-medium">Validar hipótesis de proceso (8)</span>: Relación temperatura de masa vs tiempo total (scatter + regresión).</li>
-							</ul>
-							<p class="text-xs text-stone-500">Los números refieren al orden aproximado dentro de la pestaña Tablas y Gráficas.</p>
-						</div>
-					</details>
-				</div>
-			<div class="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
-				<div>
-					<label for="fecha" class="block mb-1 text-sm font-semibold text-stone-700">Fecha</label>
-					<input type="date" id="fecha" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
-				</div>
-				<div>
-					<label for="ta" class="block mb-1 text-sm font-semibold text-stone-700">Temp. ambiente (°C)</label>
-					<input type="number" id="ta" step="0.1" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="TA" />
-				</div>
-				<div>
-					<label for="h" class="block mb-1 text-sm font-semibold text-stone-700">Humedad (%)</label>
-					<input type="number" id="h" step="0.1" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="H" />
-				</div>
-				<div>
-					<label for="personal-general" class="block mb-1 text-sm font-semibold text-stone-700">N° Personal</label>
-					<input type="number" min="0" id="personal-general" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Cantidad" />
-				</div>
-			</div>
-			<main id="machine-cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-7 mb-10"></main>
-			<div id="msg-guardar" class="mt-2 text-center text-sm"></div>
-		</div>
-	<!-- Vista de resultados (única) -->
-	<div id="view-resultados" class="hidden">
-			<div class="mb-4 flex flex-wrap gap-3 justify-end">
-				<button id="btn-export-resultados-pdf" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition-colors">Exportar Resultados (PDF)</button>
-				<button id="btn-export-resultados-csv" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-emerald-700 transition-colors">Exportar Resultados (CSV)</button>
-			</div>
-			<!-- Filtros para resultados -->
-			<div class="flex flex-wrap gap-4 mb-4">
-				<input type="date" id="filtro-fecha" class="border rounded px-2 py-1" placeholder="Filtrar por fecha" />
-				<input type="text" id="filtro-tipo" class="border rounded px-2 py-1" placeholder="Filtrar por tipo de masa" />
-				<input type="text" id="filtro-maquina" class="border rounded px-2 py-1" placeholder="Filtrar por amasadora" />
-				<button id="btn-clear-resultados" class="bg-red-500 text-white px-3 py-1 rounded">Borrar todo</button>
-			</div>
-			<div id="promedios" class="mb-4"></div>
-			<div id="resultados-lista"></div>
-		</div>
-		</div>
-	</div>
-</body>
-<script>
-// ...existing code from original index.html (JS and logic)...
+					<div id="sync-status" class="text-xs text-stone-600 mt-1 w-full"></div>
+				`;
+				filtros.parentNode.insertBefore(extra, filtros.nextSibling);
+			}
+		}
+		initApiLogic();
+    });
+
+    // ================= BACKEND SYNC / API DINÁMICA =================
+    function getDefaultApiBase(){
+        try{
+            if(location.hostname==='localhost' || location.hostname==='127.0.0.1') return 'http://localhost:3001';
+            // Producción: asumir mismo origen o subruta /api
+            return location.origin.replace(/\/$/,'');
+        }catch(_){ return ''; }
+    }
+    function resolveApiBase(){
+        const override = localStorage.getItem('API_URL_OVERRIDE');
+        return (override && override.trim()) || getDefaultApiBase();
+    }
+    function setStatus(msg,type='info'){
+        const el=document.getElementById('sync-status');
+        if(el){ el.textContent = msg; el.className = 'text-xs mt-1 '+(type==='err'?'text-red-600': type==='ok'?'text-green-600':'text-stone-600'); }
+    }
+    function signature(fecha, maq){
+        const p1Start = maq?.proceso1?.startTime || ''; // puede ser null
+        const tipo = (maq?.tipoMasa||maq?.tipoPan||'').trim().toLowerCase();
+        return `${fecha}__${(maq?.nombre||maq?.id||'').trim()}__${tipo}__${p1Start}`;
+    }
+    function mergeLocalRemote(localRegs, remoteRegs){
+        const sigSet = new Set();
+        localRegs.forEach(r=> (r.maquinas||[]).forEach(m=> sigSet.add(signature(r.fecha,m))));
+        let nuevos=0;
+        remoteRegs.forEach(r=>{
+            (r.maquinas||[]).forEach(m=>{
+                const sig = signature(r.fecha,m);
+                if(!sigSet.has(sig)){
+                    // Normalizar objeto remoto a formato local (quitar campos adicionales)
+                    const mLoc = {
+                        id: m.id || m.nombre || '',
+                        nombre: m.nombre || m.id || '',
+                        tipoMasa: m.tipoMasa || m.tipoPan || '',
+                        hielo: m.hielo || '',
+                        personal: m.personal || '',
+                        tempAmbiente: m.tempAmbiente || r.tempAmbiente || '',
+                        humedad: m.humedad || r.humedad || '',
+                        tempMasa: m.tempMasa || '',
+                        observaciones: m.observaciones || '',
+                        proceso1: m.proceso1 ? { minutos: m.proceso1.minutos||0, segundos: m.proceso1.segundos||0, startTime: m.proceso1.startTime||null, endTime: m.proceso1.endTime||null } : undefined,
+                        proceso2: m.proceso2 ? { minutos: m.proceso2.minutos||0, segundos: m.proceso2.segundos||0, startTime: m.proceso2.startTime||null, endTime: m.proceso2.endTime||null } : undefined,
+                        proceso3: m.proceso3 ? { minutos: m.proceso3.minutos||0, segundos: m.proceso3.segundos||0, startTime: m.proceso3.startTime||null, endTime: m.proceso3.endTime||null } : undefined
+                    };
+                    // Insertar en local
+                    let target = localRegs.find(x=>x.fecha===r.fecha);
+                    if(!target){ target = { fecha: r.fecha, maquinas: [] }; localRegs.push(target); }
+                    target.maquinas.push(mLoc); nuevos++;
+                    sigSet.add(sig);
+                }
+            });
+        });
+        return { merged: localRegs, nuevos };
+    }
+    async function fetchRegistrosBD(){
+        const base = resolveApiBase();
+        const url = base.match(/\/api(\b|$)/) ? base + '/registros' : base + '/api/registros';
+        const r = await fetch(url);
+        if(!r.ok) throw new Error('Error HTTP '+r.status);
+        return await r.json();
+    }
+    async function syncDesdeBD(){
+        try{
+            setStatus('Sincronizando...');
+            const rem = await fetchRegistrosBD();
+            let local = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+            const { merged, nuevos } = mergeLocalRemote(local, rem);
+            if(nuevos){
+                localStorage.setItem('resultadosMezclado', JSON.stringify(merged));
+                setStatus(`Sync completado. Nuevos registros: ${nuevos}`, 'ok');
+            } else {
+                setStatus('Sync completado. No había nuevos registros.', 'info');
+            }
+            // Refrescar vistas si están visibles
+            if(!document.getElementById('view-resultados')?.classList.contains('hidden')){ if(typeof cargarResultados==='function') cargarResultados(); }
+            if(!document.getElementById('view-tablas')?.classList.contains('hidden')){ if(typeof buildTablasVista==='function') buildTablasVista(); }
+        }catch(e){ setStatus('Error sync: '+(e.message||e),'err'); }
+    }
+    function construirPayloadFecha(fecha){
+        const todos = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+        const registrosFecha = todos.filter(r=>r.fecha===fecha);
+        if(!registrosFecha.length) return null;
+        const amasadoras=[];
+        registrosFecha.forEach(r=> (r.maquinas||[]).forEach(m=>{
+            const procesos=[];
+            for(let i=1;i<=3;i++){
+                const p=m['proceso'+i];
+                if(p){ procesos.push({ id:i, minutos: parseInt(p.minutos)||0, segundos: parseInt(p.segundos)||0, startTime: p.startTime||null, endTime: p.endTime||null }); }
+            }
+            amasadoras.push({
+                nombre: m.nombre||m.id||'',
+                tipoMasa: m.tipoMasa||m.tipoPan||'',
+                hielo: m.hielo||'',
+                tempMasa: m.tempMasa||'',
+                observaciones: m.observaciones||'',
+                procesos
+            });
+        }));
+        if(!amasadoras.length) return null;
+        // Tomar factores generales de la primera máquina
+        const ref = registrosFecha[0].maquinas[0];
+        return {
+            fecha,
+            tempAmbiente: ref.tempAmbiente||'',
+            humedad: ref.humedad||'',
+            personal: ref.personal||'',
+            amasadoras
+        };
+    }
+    async function pasarFechaABD(){
+        const fecha = document.getElementById('fecha')?.value;
+        if(!fecha){ setStatus('Selecciona una fecha en el campo superior para enviar.', 'err'); return; }
+        const payload = construirPayloadFecha(fecha);
+        if(!payload){ setStatus('No hay registros locales para esa fecha.', 'info'); return; }
+        try{
+            setStatus('Enviando a BD...');
+            const base=resolveApiBase();
+            const url = base.match(/\/api(\b|$)/) ? base + '/registros' : base + '/api/registros';
+            const r = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
+            setStatus('Fecha enviada correctamente.', 'ok');
+        }catch(e){ setStatus('Error enviando: '+(e.message||e),'err'); }
+    }
+    function initApiLogic(){
+        const inp = document.getElementById('api-url-override');
+        if(inp){ inp.value = localStorage.getItem('API_URL_OVERRIDE')||''; }
+        document.getElementById('btn-guardar-api')?.addEventListener('click',()=>{
+            const v = (inp?.value||'').trim();
+            if(v){ localStorage.setItem('API_URL_OVERRIDE', v); setStatus('Override API guardado. '+v,'ok'); }
+            else { localStorage.removeItem('API_URL_OVERRIDE'); setStatus('Override eliminado, usando por defecto.','info'); }
+        });
+        document.getElementById('btn-sync-bd')?.addEventListener('click', syncDesdeBD);
+        document.getElementById('btn-pasar-fecha-bd')?.addEventListener('click', pasarFechaABD);
+        // Auto sync inicial (suave)
+        setTimeout(()=>{ if(!localStorage.getItem('SYNC_INICIAL_REALIZADA')){ syncDesdeBD().finally(()=> localStorage.setItem('SYNC_INICIAL_REALIZADA','1')); } }, 1200);
+    }
 </script>
 </html>
