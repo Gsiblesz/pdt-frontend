@@ -53,19 +53,18 @@
 				</details>
 			</div>
 			<div id="tablas-wrapper" class="space-y-10">
-				<!-- ...resto del contenido, tablas, gráficas y lógica JS embebida... -->
+				<section>
+					<h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Resumen de tiempos (s) <span class="info-hint text-blue-600 cursor-help align-middle" title="Indicadores globales: registros, promedio total y variabilidad.">ℹ️</span></h3>
+					<p class="chart-desc">Muestra KPIs globales: número de registros, promedio total y dispersión (desviación y %). Punto de partida para ver si el proceso se estabiliza.</p>
+					<div id="tabla-resumen" class="overflow-x-auto text-sm"></div>
+				</section>
+				...existing code from original index.html (todo el HTML y JS embebido real aquí)...
 			</div>
 		</div>
-		<!-- ...resto del HTML y JS embebido del index.html original... -->
 	</div>
 </body>
 <script>
-// Cargar libs si faltan
-window.html2canvas || document.write('<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"><\/script>');
-window.jspdf || document.write('<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"><\/script>');
-// CDN Chart.js
-window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"><\/script>');
-// ...todo el JS embebido del index.html original aquí...
+// ...todo el JS embebido real del index.html original aquí...
 </script>
 </html>
 <!-- ======================= HTML STRUCTURE ======================= -->
