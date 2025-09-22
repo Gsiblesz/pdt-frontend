@@ -44,10 +44,17 @@
                         <option value="local">Locales</option>
                         <option value="bd">Base de datos</option>
                     </select>
-                    <div id="tablas-bd-controls" class="hidden flex items-center gap-2">
-                        <label for="tablas-bd-fecha" class="text-sm text-stone-700">Fecha:</label>
-                        <input id="tablas-bd-fecha" type="date" class="border rounded px-2 py-1 text-sm" />
-                        <button id="tablas-bd-clear" class="text-sm text-stone-600 hover:text-stone-900 underline">Quitar filtro</button>
+                    <div id="tablas-bd-controls" class="hidden flex flex-wrap items-center gap-2">
+                        <label class="text-sm text-stone-700">Desde:</label>
+                        <input id="tablas-bd-desde" type="date" class="border rounded px-2 py-1 text-sm" />
+                        <label class="text-sm text-stone-700">Hasta:</label>
+                        <input id="tablas-bd-hasta" type="date" class="border rounded px-2 py-1 text-sm" />
+                        <input id="tablas-bd-lote" placeholder="Lote" class="border rounded px-2 py-1 text-sm w-28" />
+                        <input id="tablas-bd-tipo" placeholder="Tipo de masa" class="border rounded px-2 py-1 text-sm w-36" />
+                        <button id="tablas-bd-clear" class="text-sm text-stone-600 hover:text-stone-900 underline">Quitar filtros</button>
+                        <span class="mx-2 text-stone-300">|</span>
+                        <button id="tablas-export-pdf" class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-blue-700">Exportar (PDF)</button>
+                        <button id="tablas-export-csv" class="bg-emerald-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-emerald-700">Exportar (CSV)</button>
                     </div>
                     <span id="tablas-status" class="text-xs text-stone-600"></span>
                 </div>
@@ -1143,14 +1150,21 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         localStorage.setItem('TABLAS_SOURCE', this.value);
         buildTablasVista();
     });
-    // Cambiar filtro de fecha para Tablas (BD)
-    document.getElementById('tablas-bd-fecha')?.addEventListener('change', function(){
-        localStorage.setItem('TABLAS_BD_FECHA', this.value || '');
-        buildTablasVista();
-    });
+    // Filtros BD para Tablas
+    const bdDesdeEl = document.getElementById('tablas-bd-desde');
+    const bdHastaEl = document.getElementById('tablas-bd-hasta');
+    const bdLoteEl = document.getElementById('tablas-bd-lote');
+    const bdTipoEl = document.getElementById('tablas-bd-tipo');
+    function persistFilters(){
+        if(bdDesdeEl) localStorage.setItem('TABLAS_BD_DESDE', bdDesdeEl.value||'');
+        if(bdHastaEl) localStorage.setItem('TABLAS_BD_HASTA', bdHastaEl.value||'');
+        if(bdLoteEl) localStorage.setItem('TABLAS_BD_LOTE', bdLoteEl.value||'');
+        if(bdTipoEl) localStorage.setItem('TABLAS_BD_TIPO', bdTipoEl.value||'');
+    }
+    [bdDesdeEl, bdHastaEl, bdLoteEl, bdTipoEl].forEach(el=> el?.addEventListener('change', ()=>{ persistFilters(); buildTablasVista(); }));
     document.getElementById('tablas-bd-clear')?.addEventListener('click', function(){
-        const el = document.getElementById('tablas-bd-fecha'); if(el) el.value='';
-        localStorage.removeItem('TABLAS_BD_FECHA');
+        if(bdDesdeEl) bdDesdeEl.value=''; if(bdHastaEl) bdHastaEl.value=''; if(bdLoteEl) bdLoteEl.value=''; if(bdTipoEl) bdTipoEl.value='';
+        ['TABLAS_BD_DESDE','TABLAS_BD_HASTA','TABLAS_BD_LOTE','TABLAS_BD_TIPO'].forEach(k=> localStorage.removeItem(k));
         buildTablasVista();
     });
 
@@ -1508,20 +1522,32 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
     function tableFromRows(headers, rows){
         return `<table class='min-w-full border border-stone-300 text-xs md:text-sm bg-white rounded-lg overflow-hidden'><thead class='bg-stone-100 text-stone-700'><tr>${headers.map(h=>`<th class='px-3 py-2 border-b border-stone-300 text-left font-semibold'>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r,i)=>`<tr class='${i%2?'bg-stone-50':''}'>${r.map(c=>`<td class='px-3 py-1 border-b border-stone-200 font-mono'>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
     }
+    let _TABLAS_DATA_LAST = [];
+    function getTablasData(){ return _TABLAS_DATA_LAST; }
     async function buildTablasVista(){
         destroyCharts();
         const fuenteSel = document.getElementById('tablas-source');
         const statusEl = document.getElementById('tablas-status');
         const bdCtrls = document.getElementById('tablas-bd-controls');
-        const fechaInput = document.getElementById('tablas-bd-fecha');
+        const desdeInput = document.getElementById('tablas-bd-desde');
+        const hastaInput = document.getElementById('tablas-bd-hasta');
+        const loteInput = document.getElementById('tablas-bd-lote');
+        const tipoInput = document.getElementById('tablas-bd-tipo');
         let fuente = (localStorage.getItem('TABLAS_SOURCE')||'local');
         if(fuenteSel){
             if(!fuenteSel.value) fuenteSel.value = fuente; else fuente = fuenteSel.value;
         }
         localStorage.setItem('TABLAS_SOURCE', fuente);
-        if(bdCtrls){ bdCtrls.classList.toggle('hidden', fuente !== 'bd'); }
-        let fechaFiltro = localStorage.getItem('TABLAS_BD_FECHA')||'';
-        if(fechaInput){ if(!fechaInput.value && fechaFiltro) fechaInput.value = fechaFiltro; else fechaFiltro = fechaInput.value || ''; }
+    if(bdCtrls){ bdCtrls.classList.toggle('hidden', fuente !== 'bd'); }
+    // Leer filtros persistidos
+    let fDesde = localStorage.getItem('TABLAS_BD_DESDE')||'';
+    let fHasta = localStorage.getItem('TABLAS_BD_HASTA')||'';
+    let fLote = localStorage.getItem('TABLAS_BD_LOTE')||'';
+    let fTipo = localStorage.getItem('TABLAS_BD_TIPO')||'';
+    if(desdeInput){ if(!desdeInput.value && fDesde) desdeInput.value=fDesde; else fDesde=desdeInput.value||''; }
+    if(hastaInput){ if(!hastaInput.value && fHasta) hastaInput.value=fHasta; else fHasta=hastaInput.value||''; }
+    if(loteInput){ if(!loteInput.value && fLote) loteInput.value=fLote; else fLote=loteInput.value||''; }
+    if(tipoInput){ if(!tipoInput.value && fTipo) tipoInput.value=fTipo; else fTipo=tipoInput.value||''; }
         let datos = [];
         if(statusEl) statusEl.textContent = '';
         if(fuente === 'local'){
@@ -1535,12 +1561,11 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                 const arr = await r.json();
                 const total = Array.isArray(arr)? arr.length: 0;
                 let arrFiltrado = Array.isArray(arr)? arr: [];
-                if(fechaFiltro){
-                    arrFiltrado = arrFiltrado.filter(it=>{
-                        const f = it.data?.fecha || it.fecha || '';
-                        return String(f) === String(fechaFiltro);
-                    });
-                }
+                // Filtros en cliente hasta tener filtros en API
+                if(fDesde){ arrFiltrado = arrFiltrado.filter(it=> (it.data?.fecha||it.fecha||'') >= fDesde); }
+                if(fHasta){ arrFiltrado = arrFiltrado.filter(it=> (it.data?.fecha||it.fecha||'') <= fHasta); }
+                if(fLote){ arrFiltrado = arrFiltrado.filter(it=> (it.data?.amasadoras||[]).some(m=> (m.lote||'').toString().includes(fLote))); }
+                if(fTipo){ const fx=fTipo.toLowerCase(); arrFiltrado = arrFiltrado.filter(it=> (it.data?.amasadoras||[]).some(m=> ((m.tipoMasa||m.tipoPan||'').toLowerCase().includes(fx)))); }
                 // Normalizar cada amasadora: si viene como 'procesos'[] mapear a proceso1..3
                 function normalizeMaq(m){
                     if(!m) return m;
@@ -1565,7 +1590,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                     fecha: it.data?.fecha || it.fecha,
                     maquinas: Array.isArray(it.data?.amasadoras)? it.data.amasadoras.map(normalizeMaq) : []
                 }));
-                if(statusEl) statusEl.textContent = fechaFiltro ? `Fuente: BD · ${datos.length} registros (filtrados por ${fechaFiltro}). Total disponibles: ${total}.` : `Fuente: BD · ${total} registros.`;
+                const filtrosAct = [fDesde?`Desde ${fDesde}`:'', fHasta?`Hasta ${fHasta}`:'', fLote?`Lote ${fLote}`:'', fTipo?`Tipo ${fTipo}`:''].filter(Boolean).join(' · ');
+                if(statusEl) statusEl.textContent = `Fuente: BD · ${datos.length} registros${filtrosAct?` (filtros: ${filtrosAct})`:''}. Total disponibles: ${total}.`;
             }catch(e){
                 const msg = 'Error cargando BD: ' + (e.message||e);
                 if(statusEl) statusEl.textContent = msg;
@@ -1573,6 +1599,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                 return;
             }
         }
+        _TABLAS_DATA_LAST = datos;
         if(!datos.length){
             ['tabla-resumen','tabla-pan','tabla-amasadora','tabla-proceso','tabla-temp','tabla-temp-cruzada'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML='<div class="text-stone-500">Sin datos</div>';});
             return;
@@ -1793,6 +1820,112 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             }
         })();
     }
+
+    // ====== Export Tablas (CSV / PDF) ======
+    function computeTablasStatsFromData(datos){
+        const procesosNombres=['Esponja','Masa','Mantequilla'];
+        let totalGenerales=[]; let procesoStats=[[],[],[]];
+        let masaStats={}, amasadoraStats={}, tempMasaStats={}, tempCrossRaw=[];
+        datos.forEach(reg=>{
+            (reg.maquinas||[]).forEach(maq=>{
+                const p1=maq.proceso1, p3=maq.proceso3;
+                if(p1&&p1.startTime && p3 && p3.endTime){
+                    const total=Math.max(0,Math.floor((p3.endTime-p1.startTime)/1000));
+                    totalGenerales.push(total);
+                }
+                for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ const t=(parseInt(p.minutos)||0)*60+(parseInt(p.segundos)||0); procesoStats[i-1].push(t);} }
+                const tipo=maq.tipoMasa||maq.tipoPan||'Sin tipo';
+                const ama=maq.nombre||maq.id||'Amasadora';
+                let totalSimple=0; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ totalSimple += (parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0);} }
+                (masaStats[tipo]=masaStats[tipo]||[]).push(totalSimple);
+                (amasadoraStats[ama]=amasadoraStats[ama]||[]).push(totalSimple);
+                const tm=parseFloat(maq.tempMasa); if(!isNaN(tm)){ (tempMasaStats[tipo]=tempMasaStats[tipo]||[]).push(tm); tempCrossRaw.push({tipo,ama,tm}); }
+            });
+        });
+        // Resumen
+        const resumenRows=[];
+        if(totalGenerales.length){ const prom=Math.round(totalGenerales.reduce((a,b)=>a+b,0)/totalGenerales.length); const desv=Math.round(std(totalGenerales)); resumenRows.push(['N registros', totalGenerales.length],['Promedio total (s)',prom],['Desv (s)',desv],['%Desv',percent(desv,prom)]);}        
+        procesoStats.forEach((arr,i)=>{ if(arr.length){ const prom=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length); const desv=Math.round(std(arr)); resumenRows.push([`Prom ${procesosNombres[i]} (s)`,prom],[`Desv ${procesosNombres[i]} (s)`,desv],[`%Desv ${procesosNombres[i]}`,percent(desv,prom)]);} });
+        // Pan rows
+        const panRows=Object.keys(masaStats).map(k=>{const a=masaStats[k]; const m=Math.round(a.reduce((x,y)=>x+y,0)/a.length); const d=Math.round(std(a)); return [k,a.length,m,d,percent(d,m)];});
+        // Amasadora rows
+        const amaRows=Object.keys(amasadoraStats).map(k=>{const a=amasadoraStats[k]; const m=Math.round(a.reduce((x,y)=>x+y,0)/a.length); const d=Math.round(std(a)); return [k.replace(/[^0-9]/g,'')||k,a.length,m,d,percent(d,m)];});
+        // Proceso rows
+        const procesosN=['Esponja','Masa','Mantequilla'];
+        const procRows=procesoStats.map((a,i)=> a.length? [procesosN[i], a.length, Math.round(a.reduce((x,y)=>x+y,0)/a.length), Math.round(std(a)), percent(Math.round(std(a)), Math.round(a.reduce((x,y)=>x+y,0)/a.length))]: null).filter(Boolean);
+        // Temp por tipo
+        const tempRows=Object.keys(tempMasaStats).map(k=>{const a=tempMasaStats[k]; const m=a.reduce((x,y)=>x+y,0)/a.length; const d=std(a); return [k,a.length,m.toFixed(1),d.toFixed(1),percent(d,m)];});
+        // Cruzada temp
+        const tiposOrden = Array.from(new Set(tempCrossRaw.map(r=>r.tipo)));
+        const amasOrden = Array.from(new Set(tempCrossRaw.map(r=>r.ama)));
+        const cruzHeaders=['Amasadora', ...tiposOrden];
+        const cruzRows = amasOrden.map(a=>{
+            const c=[a.replace(/[^0-9]/g,'')||a];
+            tiposOrden.forEach(t=>{
+                const subset = tempCrossRaw.filter(r=>r.ama===a && r.tipo===t).map(r=>r.tm);
+                if(subset.length){ const avg=subset.reduce((x,y)=>x+y,0)/subset.length; c.push(avg.toFixed(1)); } else { c.push(''); }
+            });
+            return c;
+        });
+        return { resumenRows, panRows, amaRows, procRows, tempRows, cruzHeaders, cruzRows };
+    }
+
+    function exportTablasCSV(){
+        const datos = getTablasData();
+        if(!datos || !datos.length){ alert('No hay datos para exportar.'); return; }
+        const { resumenRows, panRows, amaRows, procRows, tempRows, cruzHeaders, cruzRows } = computeTablasStatsFromData(datos);
+        const rows=[];
+        rows.push(['Resumen de tiempos (s)']); rows.push(['Métrica','Valor']); resumenRows.forEach(r=> rows.push(r)); rows.push([]);
+        rows.push(['Promedios por tipo de masa']); rows.push(['Tipo masa','N','Prom (s)','Desv (s)','%Desv']); panRows.forEach(r=> rows.push(r)); rows.push([]);
+        rows.push(['Promedios por amasadora']); rows.push(['Amasadora','N','Prom (s)','Desv (s)','%Desv']); amaRows.forEach(r=> rows.push(r)); rows.push([]);
+        rows.push(['Promedios por proceso']); rows.push(['Proceso','N','Prom (s)','Desv (s)','%Desv']); procRows.forEach(r=> rows.push(r)); rows.push([]);
+        rows.push(['Temperatura por tipo de masa']); rows.push(['Tipo masa','N','Prom (°C)','Desv (°C)','%Desv']); tempRows.forEach(r=> rows.push(r)); rows.push([]);
+        rows.push(['Temp. masa (Amasadora vs Tipo de masa)']); rows.push(cruzHeaders); cruzRows.forEach(r=> rows.push(r));
+        // CSV manual
+        const csv = rows.map(r=> r.map(v=> '"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='tablas_bd.csv'; a.click(); URL.revokeObjectURL(a.href);
+    }
+
+    async function exportTablasPDF(){
+        const { jsPDF } = window.jspdf || {};
+        if(!jsPDF){ alert('jsPDF no cargó'); return; }
+        const wrap = document.getElementById('tablas-wrapper') || document.getElementById('view-tablas');
+        if(!wrap){ alert('No se encontró el contenedor de Tablas'); return; }
+        try{
+            const canvas = await html2canvas(wrap, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p','pt','a4');
+            const pageW=pdf.internal.pageSize.getWidth();
+            const pageH=pdf.internal.pageSize.getHeight();
+            const imgW = pageW - 40; // margins
+            const imgH = canvas.height * imgW / canvas.width;
+            let y=20; let x=20;
+            if(imgH <= pageH - 40){
+                pdf.addImage(imgData, 'PNG', x, y, imgW, imgH);
+            }else{
+                // Paginar manualmente cortando el canvas en tramos
+                const pageCanvas = document.createElement('canvas');
+                const pageCtx = pageCanvas.getContext('2d');
+                const ratio = imgW / canvas.width; // scale
+                const pagePixelH = Math.floor((pageH - 40) / ratio);
+                let offsetY = 0; let page=1;
+                while(offsetY < canvas.height){
+                    pageCanvas.width = canvas.width; pageCanvas.height = Math.min(pagePixelH, canvas.height - offsetY);
+                    pageCtx.fillStyle = '#ffffff'; pageCtx.fillRect(0,0,pageCanvas.width,pageCanvas.height);
+                    pageCtx.drawImage(canvas, 0, offsetY, pageCanvas.width, pageCanvas.height, 0, 0, pageCanvas.width, pageCanvas.height);
+                    const segData = pageCanvas.toDataURL('image/png');
+                    if(page>1) pdf.addPage();
+                    pdf.addImage(segData, 'PNG', x, y, imgW, pageCanvas.height * ratio);
+                    offsetY += pagePixelH; page++;
+                }
+            }
+            pdf.save('tablas_bd.pdf');
+        }catch(e){ alert('Error exportando PDF: '+(e.message||e)); }
+    }
+
+    document.getElementById('tablas-export-csv')?.addEventListener('click', exportTablasCSV);
+    document.getElementById('tablas-export-pdf')?.addEventListener('click', exportTablasPDF);
 
     // ================= EXPORT SOLO RESULTADOS =================
     async function exportResultadosTabPDF(){
