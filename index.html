@@ -38,6 +38,19 @@
                 <h2 class="text-3xl font-extrabold mb-2 text-stone-900 tracking-tight">Tablas y Gráficas</h2>
                 <p class="text-stone-600 max-w-2xl mx-auto">Promedios, desviaciones y distribución visual por tipo de masa, amasadora y procesos.</p>
             </div>
+                <div class="mb-4 flex flex-wrap gap-3 justify-center items-center">
+                    <label for="tablas-source" class="text-sm text-stone-700">Fuente:</label>
+                    <select id="tablas-source" class="border rounded px-2 py-1 text-sm">
+                        <option value="local">Locales</option>
+                        <option value="bd">Base de datos</option>
+                    </select>
+                    <div id="tablas-bd-controls" class="hidden flex items-center gap-2">
+                        <label for="tablas-bd-fecha" class="text-sm text-stone-700">Fecha:</label>
+                        <input id="tablas-bd-fecha" type="date" class="border rounded px-2 py-1 text-sm" />
+                        <button id="tablas-bd-clear" class="text-sm text-stone-600 hover:text-stone-900 underline">Quitar filtro</button>
+                    </div>
+                    <span id="tablas-status" class="text-xs text-stone-600"></span>
+                </div>
             <div class="mb-8 max-w-3xl mx-auto">
                 <details open class="bg-white border border-stone-300 rounded-xl p-4 shadow-sm">
                     <summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg">Mapeo de gráficas y propósito analítico</summary>
@@ -956,6 +969,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
     });
 
     // ============ Vista BD remota ============
+    let BD_CACHE = [];
     async function loadBDView(){
         const base = resolveApiBase();
         const url = base + '/registros';
@@ -967,7 +981,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             const r = await fetch(url);
             if(!r.ok) throw new Error('HTTP '+r.status);
             const arr = await r.json();
-            renderBDList(arr);
+            BD_CACHE = Array.isArray(arr) ? arr : [];
+            renderBDList(BD_CACHE);
             status.textContent = `Cargados ${arr.length} registros de la BD.`; status.className='text-xs text-green-600 text-center';
         }catch(e){ cont.innerHTML = '<div class="text-red-600 text-center">Error cargando BD: '+(e.message||e)+'</div>'; status.textContent=''; }
     }
@@ -982,6 +997,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             const count = Array.isArray(amas) ? amas.length : 0;
             const id = it.id;
             const creado = it.createdAt ? new Date(it.createdAt).toLocaleString() : '';
+            const rd = it.data?.resumenDia;
+            const rdTxt = rd ? `Resumen: Am ${rd.cantidadAmasadoras ?? ''} · TM1 ${rd.tm1SegDia ?? ''}s · TM2 ${rd.tm2SegDia ?? ''}s · Muertos ${rd.muertosSegDia ?? ''}s · Total ${rd.totalRealSegDia ?? ''}s` : '';
             const div = document.createElement('div');
             div.className = 'border border-stone-200 rounded-lg p-3 mb-2 bg-white flex flex-wrap justify-between items-center gap-2';
             div.innerHTML = `
@@ -990,8 +1007,10 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                     <div><span class="font-semibold">Fecha:</span> ${fecha}</div>
                     <div><span class="font-semibold">Amasadoras:</span> ${count}</div>
                     <div class="text-stone-500">Creado: ${creado}</div>
+                    ${rd ? `<div class="text-[11px] text-stone-700 mt-1">${rdTxt}</div>` : ''}
                 </div>
                 <div class="flex gap-2">
+                    <button class="bd-view-json bg-stone-600 text-white px-3 py-1 rounded text-sm" data-id="${id}">Ver JSON</button>
                     <button class="bd-delete bg-red-600 text-white px-3 py-1 rounded text-sm" data-id="${id}">Borrar</button>
                 </div>
             `;
@@ -1012,6 +1031,19 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         }catch(e){ status.textContent='Error al borrar: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
     });
     document.getElementById('bd-lista')?.addEventListener('click', async function(e){
+        const viewBtn = e.target.closest('.bd-view-json');
+        if(viewBtn){
+            const id = viewBtn.getAttribute('data-id');
+            const rec = (BD_CACHE||[]).find(x=> String(x.id)===String(id));
+            const modal = document.getElementById('json-modal');
+            const pre = document.getElementById('json-modal-content');
+            if(modal && pre){
+                pre.textContent = JSON.stringify(rec?.data ?? rec ?? {}, null, 2);
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+            return;
+        }
         const btn = e.target.closest('.bd-delete');
         if(!btn) return;
         const id = btn.getAttribute('data-id');
@@ -1026,6 +1058,44 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             status.textContent = 'Registro eliminado.'; status.className='text-xs text-green-600 text-center';
             loadBDView();
         }catch(e){ status.textContent = 'Error al borrar: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
+    });
+
+    // Cierre del modal JSON
+    document.getElementById('json-modal-close')?.addEventListener('click', ()=>{
+        const modal=document.getElementById('json-modal'); if(!modal) return; modal.classList.add('hidden'); modal.classList.remove('flex');
+    });
+    document.getElementById('json-modal')?.addEventListener('click', (e)=>{
+        if(e.target.id==='json-modal'){
+            const modal=document.getElementById('json-modal'); if(!modal) return; modal.classList.add('hidden'); modal.classList.remove('flex');
+        }
+    });
+
+    // Cambio de fuente de datos en Tablas
+    document.getElementById('tablas-source')?.addEventListener('change', function(){
+        localStorage.setItem('TABLAS_SOURCE', this.value);
+        buildTablasVista();
+    });
+    // Cambiar filtro de fecha para Tablas (BD)
+    document.getElementById('tablas-bd-fecha')?.addEventListener('change', function(){
+        localStorage.setItem('TABLAS_BD_FECHA', this.value || '');
+        buildTablasVista();
+    });
+    document.getElementById('tablas-bd-clear')?.addEventListener('click', function(){
+        const el = document.getElementById('tablas-bd-fecha'); if(el) el.value='';
+        localStorage.removeItem('TABLAS_BD_FECHA');
+        buildTablasVista();
+    });
+
+    // Copiar JSON del modal
+    document.getElementById('json-modal-copy')?.addEventListener('click', async function(){
+        const pre = document.getElementById('json-modal-content');
+        const btn = this;
+        const text = pre?.textContent || '';
+        try{
+            if(navigator.clipboard?.writeText){ await navigator.clipboard.writeText(text); }
+            else { const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+            const prev=btn.textContent; btn.textContent='Copiado'; setTimeout(()=>btn.textContent=prev,1200);
+        }catch(_){ const prev=btn.textContent; btn.textContent='Error'; setTimeout(()=>btn.textContent=prev,1200); }
     });
     // Exportar CSV
     document.getElementById('btn-exportar-csv')?.addEventListener('click', function() {
@@ -1370,11 +1440,50 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
     function tableFromRows(headers, rows){
         return `<table class='min-w-full border border-stone-300 text-xs md:text-sm bg-white rounded-lg overflow-hidden'><thead class='bg-stone-100 text-stone-700'><tr>${headers.map(h=>`<th class='px-3 py-2 border-b border-stone-300 text-left font-semibold'>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r,i)=>`<tr class='${i%2?'bg-stone-50':''}'>${r.map(c=>`<td class='px-3 py-1 border-b border-stone-200 font-mono'>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
     }
-    function buildTablasVista(){
+    async function buildTablasVista(){
         destroyCharts();
-        const datos = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+        const fuenteSel = document.getElementById('tablas-source');
+        const statusEl = document.getElementById('tablas-status');
+        const bdCtrls = document.getElementById('tablas-bd-controls');
+        const fechaInput = document.getElementById('tablas-bd-fecha');
+        let fuente = (localStorage.getItem('TABLAS_SOURCE')||'local');
+        if(fuenteSel){
+            if(!fuenteSel.value) fuenteSel.value = fuente; else fuente = fuenteSel.value;
+        }
+        localStorage.setItem('TABLAS_SOURCE', fuente);
+        if(bdCtrls){ bdCtrls.classList.toggle('hidden', fuente !== 'bd'); }
+        let fechaFiltro = localStorage.getItem('TABLAS_BD_FECHA')||'';
+        if(fechaInput){ if(!fechaInput.value && fechaFiltro) fechaInput.value = fechaFiltro; else fechaFiltro = fechaInput.value || ''; }
+        let datos = [];
+        if(statusEl) statusEl.textContent = '';
+        if(fuente === 'local'){
+            try { datos = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]') || []; } catch(_) { datos = []; }
+        } else {
+            const base = resolveApiBase();
+            if(statusEl) statusEl.textContent = 'Cargando datos de la BD...';
+            try{
+                const r = await fetch(base + '/registros');
+                if(!r.ok) throw new Error('HTTP '+r.status);
+                const arr = await r.json();
+                const total = Array.isArray(arr)? arr.length: 0;
+                let arrFiltrado = Array.isArray(arr)? arr: [];
+                if(fechaFiltro){
+                    arrFiltrado = arrFiltrado.filter(it=>{
+                        const f = it.data?.fecha || it.fecha || '';
+                        return String(f) === String(fechaFiltro);
+                    });
+                }
+                datos = (arrFiltrado||[]).map(it=>({ fecha: it.data?.fecha || it.fecha, maquinas: Array.isArray(it.data?.amasadoras)? it.data.amasadoras : [] }));
+                if(statusEl) statusEl.textContent = fechaFiltro ? `Usando ${datos.length} registros de la BD (filtrados por ${fechaFiltro}, total ${total}).` : `Usando ${total} registros de la BD.`;
+            }catch(e){
+                const msg = 'Error cargando BD: ' + (e.message||e);
+                if(statusEl) statusEl.textContent = msg;
+                ['tabla-resumen','tabla-pan','tabla-amasadora','tabla-proceso','tabla-temp','tabla-temp-cruzada'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML='<div class="text-red-600">'+msg+'</div>';});
+                return;
+            }
+        }
         if(!datos.length){
-            ['tabla-resumen','tabla-pan','tabla-amasadora','tabla-proceso','tabla-temp'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML='<div class="text-stone-500">Sin datos</div>';});
+            ['tabla-resumen','tabla-pan','tabla-amasadora','tabla-proceso','tabla-temp','tabla-temp-cruzada'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML='<div class="text-stone-500">Sin datos</div>';});
             return;
         }
         // Estructuras
