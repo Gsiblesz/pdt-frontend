@@ -649,6 +649,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const maquinaObj = {
             id: machine.id,
             nombre: machine.name,
+            numeroAmasadora: machine.id,
             lote,
             tipoMasa: tipoMasaFinal,
             hielo,
@@ -663,14 +664,6 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
     resultados.push({ fecha, maquinas: [maquinaObj] });
     localStorage.setItem('resultadosMezclado', JSON.stringify(resultados));
     mostrarMsgMaquina(machineId, '¡Resultados guardados correctamente!', true);
-    // Evento para limpiar campo de personal con botón Clear
-    machineCardsContainer.addEventListener('click', function(e) {
-        const btn = e.target.closest('.clear-maquina');
-        if (!btn) return;
-        const machineId = btn.getAttribute('data-machine-id');
-        if (!machineId) return;
-        if (document.getElementById(`personal-${machineId}`)) document.getElementById(`personal-${machineId}`).value = '';
-    });
     }
 
     function mostrarMsgMaquina(machineId, msg, ok) {
@@ -879,10 +872,13 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
     })();
 
     // Enviar todo a la BD (local)
+    let _sendingAllInFlight = false;
     document.getElementById('btn-enviar-todo-bd')?.addEventListener('click', async function(){
         const fecha = document.getElementById('filtro-fecha')?.value || document.getElementById('fecha')?.value;
         const status = document.getElementById('local-bd-status');
         try{
+            if(_sendingAllInFlight){ return; }
+            _sendingAllInFlight = true;
             if(!fecha){ status.textContent = 'Selecciona una fecha o filtra una fecha para enviar.'; status.className='text-xs text-red-600 text-center'; return; }
             const payload = construirPayloadFecha(fecha);
             if(!payload){ status.textContent = 'No hay datos locales para esa fecha.'; status.className='text-xs text-stone-600 text-center'; return; }
@@ -892,9 +888,11 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             status.textContent = '¡Enviado a BD correctamente!'; status.className='text-xs text-green-600 text-center';
         }catch(e){ status.textContent = 'Error enviando: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
+        finally{ _sendingAllInFlight = false; }
     });
 
     // Manejar click en "Enviar a BD" por tarjeta
+    let _sendingCardInFlight = false;
     document.getElementById('resultados-lista')?.addEventListener('click', async function(e){
         const btn = e.target.closest('.enviar-bd');
         if(!btn) return;
@@ -902,6 +900,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const maqIdx = parseInt(btn.getAttribute('data-maqidx'));
         const status = document.getElementById('local-bd-status');
         try{
+            if(_sendingCardInFlight){ return; }
+            _sendingCardInFlight = true;
             const resultados = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
             const reg = resultados[idx];
             if(!reg){ throw new Error('Registro no encontrado'); }
@@ -918,7 +918,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             const muertosSeg = (tm1Seg||0) + (tm2Seg||0);
             const totalRealSeg = (p1?.startTime && p3?.endTime) ? Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)) : null;
             const nombreMaq = maq.nombre||maq.id||'';
-            const numeroAmasadora = (nombreMaq.match(/\d+/)?.[0]) || '';
+            const numeroAmasadora = maq.numeroAmasadora || (nombreMaq.match(/\d+/)?.[0]) || '';
             const payload = {
                 fecha: reg.fecha,
                 tempAmbiente: maq.tempAmbiente||reg.maquinas?.[0]?.tempAmbiente||'',
@@ -966,6 +966,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             status.textContent = '¡Tarjeta enviada a BD correctamente!'; status.className='text-xs text-green-600 text-center';
         }catch(err){ status.textContent = 'Error enviando tarjeta: '+(err.message||err); status.className='text-xs text-red-600 text-center'; }
+        finally{ _sendingCardInFlight = false; }
     });
 
     // ============ Vista BD remota ============
@@ -998,7 +999,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             const id = it.id;
             const creado = it.createdAt ? new Date(it.createdAt).toLocaleString() : '';
             const rd = it.data?.resumenDia;
-            const rdTxt = rd ? `Resumen: Am ${rd.cantidadAmasadoras ?? ''} · TM1 ${rd.tm1SegDia ?? ''}s · TM2 ${rd.tm2SegDia ?? ''}s · Muertos ${rd.muertosSegDia ?? ''}s · Total ${rd.totalRealSegDia ?? ''}s` : '';
+            const rdTxt = rd ? `Resumen: Am ${rd.cantidadAmasadoras ?? ''} · TM1 ${rd.tm1SegDia ?? ''}s · TM2 ${rd.tm2SegDia ?? ''}s · Muertos ${rd.muertosSegDia ?? ''}s · Total real ${rd.totalRealSegDia ?? ''}s` : '';
             const div = document.createElement('div');
             div.className = 'border border-stone-200 rounded-lg p-3 mb-2 bg-white flex flex-wrap justify-between items-center gap-2';
             div.innerHTML = `
