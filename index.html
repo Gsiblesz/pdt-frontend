@@ -284,6 +284,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                 <div class="relative bg-white p-6 rounded-2xl shadow-sm border border-stone-200 flex flex-col hover:shadow-md transition-shadow">
                     <h3 class="text-xl font-bold mb-4 text-stone-900 tracking-tight">${machine.name}</h3>
                     <div class="mb-4 flex flex-col items-center">
+                        <label for="lote-${machine.id}" class="block mb-2 text-base font-semibold text-stone-800">Lote:</label>
+                        <input type="text" id="lote-${machine.id}" class="mb-4 px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48" placeholder="Ingrese el número de lote" />
                         <label for="tipoMasa-${machine.id}" class="block mb-2 text-base font-semibold text-stone-800">Tipo de masa:</label>
                         <select id="tipoMasa-${machine.id}" data-machine="${machine.id}" class="px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-masa-select">
                             <option value="">-- Seleccionar --</option>
@@ -570,9 +572,11 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const tempAmbiente = document.getElementById('ta').value || '';
         const humedad = document.getElementById('h').value || '';
         const tempMasa = document.getElementById(`tempMasa-${machine.id}`).value || '';
+        const lote = document.getElementById(`lote-${machine.id}`)?.value || '';
         const maquinaObj = {
             id: machine.id,
             nombre: machine.name,
+            lote,
             tipoMasa: tipoMasaFinal,
             hielo,
             personal,
@@ -642,6 +646,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             maquinas.forEach((maq, maqIdx) => {
                 const tipoPan = maq.tipoMasa || maq.tipoPan || '--';
                 const nombre = maq.nombre || maq.id || '--';
+                const lote = maq.lote || '--';
                 if (filtroTipo && !tipoPan.toLowerCase().includes(filtroTipo)) return;
                 if (filtroMaquina && !nombre.toLowerCase().includes(filtroMaquina)) return;
                 let procesosHtml = '';
@@ -708,6 +713,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                 <div class="${bgAlt} rounded-2xl shadow-lg p-8 border border-stone-200 mb-6 fade-in">
                     <div class="mb-6 flex flex-wrap gap-8 justify-between items-center">
                         <span class="text-stone-800 font-bold text-xl">Fecha: <span class="font-mono text-lg">${fecha}</span> <span class="text-base text-stone-500">(${diaSemana})</span></span>
+                        <span class="text-stone-800 font-bold text-xl">Lote: <span class="font-mono text-lg">${lote}</span></span>
                         <span class="text-stone-800 font-bold text-xl">Tipo de masa: <span class="font-mono text-lg">${tipoPan}</span></span>
                         <span class="text-stone-800 font-bold text-xl">Amasadora: <span class="font-mono text-lg">${nombre.replace(/[^0-9]/g, '')}</span></span>
                         <span class="text-stone-800 font-bold text-xl">Hielo: <span class="font-mono text-lg">${hielo}</span></span>
@@ -1376,8 +1382,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         // Construir filas normalizadas como en CSV
     const diasN=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
         // Encabezados
-    const cols=['Fecha','Dia','TA','H','Pers','Am','Tipo','Hi','TM','Pr','Min','Seg','Ini','Fin','T1','T2','TMT','Tot(s)','Obs'];
-        const colWidths=[55,40,25,25,30,40,55,35,40,36,24,24,40,40,28,28,36,42,90];
+    const cols=['Fecha','Lote','Dia','TA','H','Pers','Am','Tipo','Hi','TM','Pr','Min','Seg','Ini','Fin','T1','T2','TMT','Tot(s)','Obs'];
+        const colWidths=[55,40,40,25,25,30,40,55,35,40,36,24,24,40,40,28,28,36,42,90];
         function drawHeaderRow(){
             pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(20);
             let x=marginX; const h=14; pdf.setDrawColor(200); pdf.setLineWidth(0.25);
@@ -1402,6 +1408,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                     const proc=maq['proceso'+i]||{}; const min=proc.minutos||0; const seg=proc.segundos||0; const ini=proc.startTime? new Date(proc.startTime).toLocaleTimeString():''; const fin=proc.endTime? new Date(proc.endTime).toLocaleTimeString():'';
                     const row=[
                         i===1? (prevFecha===fecha?'':fecha):'',
+                        i===1? (maq.lote||''):'',
                         i===1? (prevFecha===fecha?'':dia):'',
                         i===1? (prevFecha===fecha?'':dailyTA):'',
                         i===1? (prevFecha===fecha?'':dailyH):'',
@@ -1442,7 +1449,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const rows=[];
         // Encabezados principales
         const headers=[
-            'Fecha','Dia','TA','H','Pers',
+            'Fecha','Lote','Dia','TA','H','Pers',
             'Am','Tipo','Hi','TM',
             'Pr','Min','Seg','Ini','Fin','T1','T2','TMT','Tot(s)','Obs'
         ];
@@ -1476,6 +1483,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                     const fin=proc.endTime? new Date(proc.endTime).toLocaleTimeString():'';
                     rows.push([
                         i===1? baseFecha:'',
+                        i===1? (maq.lote||''):'',
                         i===1? baseDia:'',
                         i===1? baseTA:'',
                         i===1? baseH:'',
@@ -1549,6 +1557,30 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
     function setStatus(msg,type='info'){
         const el=document.getElementById('sync-status');
         if(el){ el.textContent = msg; el.className = 'text-xs mt-1 '+(type==='err'?'text-red-600': type==='ok'?'text-green-600':'text-stone-600'); }
+    }
+    // Toast amigable
+    function mostrarToast(msg, tipo='success'){
+        let toast = document.getElementById('toast-msg');
+        if(!toast){
+            toast = document.createElement('div');
+            toast.id = 'toast-msg';
+            toast.style.position = 'fixed';
+            toast.style.bottom = '30px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.zIndex = '9999';
+            toast.style.padding = '16px 32px';
+            toast.style.borderRadius = '12px';
+            toast.style.fontSize = '1.1rem';
+            toast.style.fontWeight = 'bold';
+            toast.style.boxShadow = '0 2px 12px rgba(0,0,0,0.12)';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = msg;
+        toast.style.background = tipo==='success' ? '#22c55e' : '#ef4444';
+        toast.style.color = '#fff';
+        toast.style.opacity = '1';
+        setTimeout(()=>{ toast.style.opacity = '0'; }, 3000);
     }
     function signature(fecha, maq){
         const p1Start = maq?.proceso1?.startTime || ''; // puede ser null
@@ -1657,8 +1689,9 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             const url = base.match(/\/api(\b|$)/) ? base + '/registros' : base + '/api/registros';
             const r = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
-            setStatus('Fecha enviada correctamente.', 'ok');
-        }catch(e){ setStatus('Error enviando: '+(e.message||e),'err'); }
+            setStatus('¡Resultados guardados exitosamente en la base de datos!', 'ok');
+            mostrarToast('¡Resultados guardados exitosamente en la base de datos!', 'success');
+        }catch(e){ setStatus('Error enviando: '+(e.message||e),'err'); mostrarToast('Error enviando: '+(e.message||e),'error'); }
     }
     function initApiLogic(){
         const inp = document.getElementById('api-url-override');
