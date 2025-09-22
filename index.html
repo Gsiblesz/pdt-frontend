@@ -222,6 +222,20 @@
         </div>
     </div>
 </body>
+<!-- JSON Modal for viewing record details -->
+<div id="json-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+        <div class="px-4 py-2 border-b border-stone-200 flex items-center justify-between">
+            <h3 class="font-semibold text-stone-800">Vista JSON del registro</h3>
+            <div class="flex gap-2">
+                <button id="json-modal-copy" class="bg-stone-700 text-white text-xs px-2 py-1 rounded">Copiar JSON</button>
+                <button id="json-modal-close" class="bg-stone-500 text-white text-xs px-2 py-1 rounded">Cerrar</button>
+            </div>
+        </div>
+        <pre id="json-modal-content" class="flex-1 overflow-auto text-xs p-4 bg-stone-50 text-stone-800"></pre>
+    </div>
+  
+</div>
 <script>
 // Cargar libs si faltan
 window.html2canvas || document.write('<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"><\/script>');
@@ -1002,13 +1016,26 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             const rdTxt = rd ? `Resumen: Am ${rd.cantidadAmasadoras ?? ''} · TM1 ${rd.tm1SegDia ?? ''}s · TM2 ${rd.tm2SegDia ?? ''}s · Muertos ${rd.muertosSegDia ?? ''}s · Total real ${rd.totalRealSegDia ?? ''}s` : '';
             const div = document.createElement('div');
             div.className = 'border border-stone-200 rounded-lg p-3 mb-2 bg-white flex flex-wrap justify-between items-center gap-2';
+            // Mostrar variables clave por cada amasadora (compacto)
+            const amasHtml = (amas||[]).map((m,i)=>{
+                const am = (m.nombre||m.id||'').toString().replace(/Amasadora\s*/i,'Am ');
+                const tipo = (m.tipoMasa||m.tipoPan||'')||'--';
+                const lote = m.lote||'--';
+                const tm = (m.tempMasa!=null && m.tempMasa!=='')? `${m.tempMasa}°C`:'--';
+                const ta = (m.tempAmbiente!=null && m.tempAmbiente!=='')? `${m.tempAmbiente}°C`:'--';
+                const h = (m.humedad!=null && m.humedad!=='')? `${m.humedad}%`:'--';
+                const per = m.personal||'';
+                const hielo = m.hielo||'';
+                return `<div class="text-[12px] text-stone-700"><span class="font-semibold">${am}:</span> Lote ${lote} · Tipo ${tipo} · TM ${tm} · TA ${ta} · H ${h} · Pers ${per} · Hielo ${hielo}</div>`;
+            }).join('');
             div.innerHTML = `
-                <div class="text-sm">
+                <div class="text-sm max-w-[72ch]">
                     <div><span class="font-semibold">ID:</span> ${id}</div>
                     <div><span class="font-semibold">Fecha:</span> ${fecha}</div>
                     <div><span class="font-semibold">Amasadoras:</span> ${count}</div>
                     <div class="text-stone-500">Creado: ${creado}</div>
                     ${rd ? `<div class="text-[11px] text-stone-700 mt-1">${rdTxt}</div>` : ''}
+                    ${amasHtml? `<div class="mt-1 space-y-0.5">${amasHtml}</div>`:''}
                 </div>
                 <div class="flex gap-2">
                     <button class="bd-view-json bg-stone-600 text-white px-3 py-1 rounded text-sm" data-id="${id}">Ver JSON</button>
