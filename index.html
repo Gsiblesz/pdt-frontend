@@ -170,15 +170,41 @@
                 <button id="btn-export-resultados-pdf" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition-colors">Exportar Resultados (PDF)</button>
                 <button id="btn-export-resultados-csv" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-emerald-700 transition-colors">Exportar Resultados (CSV)</button>
             </div>
-            <!-- Filtros para resultados -->
-            <div class="flex flex-wrap gap-4 mb-4">
-                <input type="date" id="filtro-fecha" class="border rounded px-2 py-1" placeholder="Filtrar por fecha" />
-                <input type="text" id="filtro-tipo" class="border rounded px-2 py-1" placeholder="Filtrar por tipo de masa" />
-                <input type="text" id="filtro-maquina" class="border rounded px-2 py-1" placeholder="Filtrar por amasadora" />
-                <button id="btn-clear-resultados" class="bg-red-500 text-white px-3 py-1 rounded">Borrar todo</button>
+            <!-- Subpestañas: Locales | Base de datos -->
+            <div class="flex justify-center gap-2 mb-4">
+                <button id="subtab-local" class="tab-btn tab-btn-active">Locales</button>
+                <button id="subtab-bd" class="tab-btn">Base de datos</button>
             </div>
-            <div id="promedios" class="mb-4"></div>
-            <div id="resultados-lista"></div>
+            <!-- Subvista: Resultados locales -->
+            <div id="resultados-local-wrapper">
+                <!-- Filtros para resultados locales -->
+                <div class="flex flex-wrap gap-4 justify-center mb-3">
+                    <input id="filtro-fecha" type="date" class="border rounded px-3 py-1" placeholder="Filtrar por fecha" />
+                    <input id="filtro-tipo" type="text" class="border rounded px-3 py-1" placeholder="Filtrar por tipo de masa" />
+                    <input id="filtro-maquina" type="text" class="border rounded px-3 py-1" placeholder="Filtrar por amasadora" />
+                    <button id="btn-enviar-todo-bd" class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-amber-700" title="Enviar todos los resultados locales a la BD">Enviar todo a la BD</button>
+                    <button id="btn-clear-resultados" class="bg-red-500 text-white px-3 py-1 rounded">Borrar todo</button>
+                </div>
+                <div id="local-bd-status" class="text-xs text-stone-600 mt-1 text-center"></div>
+                <div id="promedios" class="text-sm text-stone-600 text-center mb-4"></div>
+                <div id="resultados-lista"></div>
+            </div>
+            <!-- Subvista: Base de datos remota -->
+            <div id="bd-wrapper" class="hidden">
+                <div class="flex flex-wrap gap-2 justify-center items-center mb-2">
+                    <button id="bd-refresh" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700">Refrescar</button>
+                    <button id="bd-delete-all" class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-red-700" title="Borrar todos los registros en la BD (si la API lo permite)">Borrar todo BD</button>
+                    <details>
+                        <summary class="cursor-pointer text-stone-600 text-sm">Más opciones</summary>
+                        <div class="mt-2 flex gap-2 items-center">
+                            <input id="api-url-override" placeholder="API override" class="border rounded px-2 py-1 text-sm w-52" title="URL manual de la API (vaciar para volver por defecto)" />
+                            <button id="btn-guardar-api" class="bg-stone-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-stone-700">Guardar API</button>
+                        </div>
+                    </details>
+                </div>
+                <div id="sync-status" class="text-xs text-stone-600 mt-1 text-center"></div>
+                <div id="bd-lista" class="max-w-4xl mx-auto mt-3"></div>
+            </div>
         </div>
         </div>
     </div>
@@ -767,7 +793,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                         <div class="bg-stone-100 rounded p-2 min-h-[2rem]">${maq.observaciones ? maq.observaciones : '<span class=\"text-stone-400\">(Sin observaciones)</span>'}</div>
                     </div>
                     <div class="mt-4 font-extrabold text-2xl text-blue-700 text-right">Total: ${totalSeg !== null ? formatTime(totalSeg) : '--:--:--'} ${advertencia}</div>
-                    <div class="mt-6 text-center">
+                    <div class="mt-6 flex flex-wrap gap-3 justify-center">
+                        <button class="enviar-bd bg-amber-600 text-white px-6 py-3 rounded-lg hover:bg-amber-700 transition-colors font-bold text-lg shadow" data-idx="${idx}" data-maqidx="${maqIdx}">Enviar a BD</button>
                         <button class="borrar-resultado bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-bold text-lg shadow" data-idx="${idx}" data-maqidx="${maqIdx}">Borrar</button>
                     </div>
                 </div>
@@ -826,6 +853,72 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             }, 500);
         }
     });
+    // Subpestañas Local/BD
+    (function(){
+        const localW = document.getElementById('resultados-local-wrapper');
+        const bdW = document.getElementById('bd-wrapper');
+        const subLocal = document.getElementById('subtab-local');
+        const subBD = document.getElementById('subtab-bd');
+        function showLocal(){ localW?.classList.remove('hidden'); bdW?.classList.add('hidden'); subLocal?.classList.add('tab-btn-active'); subBD?.classList.remove('tab-btn-active'); }
+        function showBD(){ bdW?.classList.remove('hidden'); localW?.classList.add('hidden'); subBD?.classList.add('tab-btn-active'); subLocal?.classList.remove('tab-btn-active'); }
+        subLocal?.addEventListener('click', showLocal);
+        subBD?.addEventListener('click', showBD);
+    })();
+
+    // Enviar todo a la BD (local)
+    document.getElementById('btn-enviar-todo-bd')?.addEventListener('click', async function(){
+        const fecha = document.getElementById('filtro-fecha')?.value || document.getElementById('fecha')?.value;
+        const status = document.getElementById('local-bd-status');
+        try{
+            if(!fecha){ status.textContent = 'Selecciona una fecha o filtra una fecha para enviar.'; status.className='text-xs text-red-600 text-center'; return; }
+            const payload = construirPayloadFecha(fecha);
+            if(!payload){ status.textContent = 'No hay datos locales para esa fecha.'; status.className='text-xs text-stone-600 text-center'; return; }
+            const base=resolveApiBase();
+            const url = base + '/registros';
+            const r = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
+            status.textContent = '¡Enviado a BD correctamente!'; status.className='text-xs text-green-600 text-center';
+        }catch(e){ status.textContent = 'Error enviando: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
+    });
+
+    // Manejar click en "Enviar a BD" por tarjeta
+    document.getElementById('resultados-lista')?.addEventListener('click', async function(e){
+        const btn = e.target.closest('.enviar-bd');
+        if(!btn) return;
+        const idx = parseInt(btn.getAttribute('data-idx'));
+        const maqIdx = parseInt(btn.getAttribute('data-maqidx'));
+        const status = document.getElementById('local-bd-status');
+        try{
+            const resultados = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+            const reg = resultados[idx];
+            if(!reg){ throw new Error('Registro no encontrado'); }
+            const maq = reg.maquinas?.[maqIdx];
+            if(!maq){ throw new Error('Amasadora no encontrada'); }
+            // Construir payload solo con esa máquina
+            const procesos=[]; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ procesos.push({ id:i, minutos: parseInt(p.minutos)||0, segundos: parseInt(p.segundos)||0, startTime: p.startTime||null, endTime: p.endTime||null }); } }
+            const payload = {
+                fecha: reg.fecha,
+                tempAmbiente: maq.tempAmbiente||reg.maquinas?.[0]?.tempAmbiente||'',
+                humedad: maq.humedad||reg.maquinas?.[0]?.humedad||'',
+                personal: reg.maquinas?.[0]?.personal||'',
+                amasadoras: [{
+                    nombre: maq.nombre||maq.id||'',
+                    tipoMasa: maq.tipoMasa||maq.tipoPan||'',
+                    hielo: maq.hielo||'',
+                    lote: maq.lote||'',
+                    tempMasa: maq.tempMasa||'',
+                    observaciones: maq.observaciones||'',
+                    procesos
+                }]
+            };
+            const base=resolveApiBase();
+            const url = base + '/registros';
+            const r = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
+            status.textContent = '¡Tarjeta enviada a BD correctamente!'; status.className='text-xs text-green-600 text-center';
+        }catch(err){ status.textContent = 'Error enviando tarjeta: '+(err.message||err); status.className='text-xs text-red-600 text-center'; }
+    });
+
     // Exportar CSV
     document.getElementById('btn-exportar-csv')?.addEventListener('click', function() {
         let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
