@@ -1739,18 +1739,21 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         document.getElementById('btn-sync-bd')?.addEventListener('click', syncDesdeBD);
         const btnPasarFecha = document.getElementById('btn-pasar-fecha-bd');
         if(btnPasarFecha){
+            // Mantener siempre clickeable y dar feedback dentro de pasarFechaABD()
             btnPasarFecha.addEventListener('click', pasarFechaABD);
-            // Deshabilitar si no hay datos para la fecha seleccionada
+            // Mostrar una pista informativa si no hay datos guardados para la fecha
             const fechaInput = document.getElementById('fecha');
-            function checkDatosParaFecha(){
+            function hintDatosParaFecha(){
                 const fecha = fechaInput?.value;
                 const todos = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
-                const hayDatos = todos.some(r=>r.fecha===fecha);
-                btnPasarFecha.disabled = !fecha || !hayDatos;
+                const hayDatos = fecha && todos.some(r=>r.fecha===fecha);
+                if(!fecha){ setStatus('Selecciona una fecha para enviar.', 'info'); return; }
+                if(!hayDatos){ setStatus('No hay datos guardados para esa fecha. Guarda al menos una máquina en Medición.', 'info'); }
+                else { setStatus('Listo para enviar a la BD.', 'info'); }
             }
-            fechaInput?.addEventListener('input', checkDatosParaFecha);
-            window.addEventListener('storage', checkDatosParaFecha);
-            checkDatosParaFecha();
+            fechaInput?.addEventListener('input', hintDatosParaFecha);
+            window.addEventListener('storage', hintDatosParaFecha);
+            hintDatosParaFecha();
         }
         // Auto sync inicial (suave)
         setTimeout(()=>{ if(!localStorage.getItem('SYNC_INICIAL_REALIZADA')){ syncDesdeBD().finally(()=> localStorage.setItem('SYNC_INICIAL_REALIZADA','1')); } }, 1200);
