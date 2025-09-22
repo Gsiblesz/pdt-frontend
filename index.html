@@ -1521,8 +1521,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
 				extra.className='flex flex-wrap gap-2 items-center';
 				extra.innerHTML = `
 					<div class="flex flex-wrap gap-2 items-center">
-						<button id="btn-sync-bd" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700">Sync BD ➜ Local</button>
-						<button id="btn-pasar-fecha-bd" class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-amber-700" title="Enviar todos los registros de la fecha seleccionada en 'Fecha' a la base de datos">Pasar fecha a BD</button>
+                        <button id="btn-sync-bd" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700">Ver resultados previos</button>
+                        <button id="btn-pasar-fecha-bd" class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-amber-700" title="Guardar todos los registros de la fecha seleccionada en la base de datos">Guardar resultados en la BD</button>
 						<input id="api-url-override" placeholder="API override" class="border rounded px-2 py-1 text-sm w-40" title="URL manual de la API (vaciar para volver por defecto)" />
 						<button id="btn-guardar-api" class="bg-stone-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-stone-700">Guardar API</button>
 					</div>
@@ -1647,7 +1647,10 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const fecha = document.getElementById('fecha')?.value;
         if(!fecha){ setStatus('Selecciona una fecha en el campo superior para enviar.', 'err'); return; }
         const payload = construirPayloadFecha(fecha);
-        if(!payload){ setStatus('No hay registros locales para esa fecha.', 'info'); return; }
+        if(!payload){
+            setStatus('No hay datos guardados para la fecha seleccionada. Primero guarda al menos una máquina antes de enviar.', 'info');
+            return;
+        }
         try{
             setStatus('Enviando a BD...');
             const base=resolveApiBase();
@@ -1666,7 +1669,21 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             else { localStorage.removeItem('API_URL_OVERRIDE'); setStatus('Override eliminado, usando por defecto.','info'); }
         });
         document.getElementById('btn-sync-bd')?.addEventListener('click', syncDesdeBD);
-        document.getElementById('btn-pasar-fecha-bd')?.addEventListener('click', pasarFechaABD);
+        const btnPasarFecha = document.getElementById('btn-pasar-fecha-bd');
+        if(btnPasarFecha){
+            btnPasarFecha.addEventListener('click', pasarFechaABD);
+            // Deshabilitar si no hay datos para la fecha seleccionada
+            const fechaInput = document.getElementById('fecha');
+            function checkDatosParaFecha(){
+                const fecha = fechaInput?.value;
+                const todos = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+                const hayDatos = todos.some(r=>r.fecha===fecha);
+                btnPasarFecha.disabled = !fecha || !hayDatos;
+            }
+            fechaInput?.addEventListener('input', checkDatosParaFecha);
+            window.addEventListener('storage', checkDatosParaFecha);
+            checkDatosParaFecha();
+        }
         // Auto sync inicial (suave)
         setTimeout(()=>{ if(!localStorage.getItem('SYNC_INICIAL_REALIZADA')){ syncDesdeBD().finally(()=> localStorage.setItem('SYNC_INICIAL_REALIZADA','1')); } }, 1200);
     }
