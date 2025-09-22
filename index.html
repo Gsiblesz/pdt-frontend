@@ -860,7 +860,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const subLocal = document.getElementById('subtab-local');
         const subBD = document.getElementById('subtab-bd');
         function showLocal(){ localW?.classList.remove('hidden'); bdW?.classList.add('hidden'); subLocal?.classList.add('tab-btn-active'); subBD?.classList.remove('tab-btn-active'); }
-        function showBD(){ bdW?.classList.remove('hidden'); localW?.classList.add('hidden'); subBD?.classList.add('tab-btn-active'); subLocal?.classList.remove('tab-btn-active'); }
+        function showBD(){ bdW?.classList.remove('hidden'); localW?.classList.add('hidden'); subBD?.classList.add('tab-btn-active'); subLocal?.classList.remove('tab-btn-active'); loadBDView(); }
         subLocal?.addEventListener('click', showLocal);
         subBD?.addEventListener('click', showBD);
     })();
@@ -919,6 +919,78 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         }catch(err){ status.textContent = 'Error enviando tarjeta: '+(err.message||err); status.className='text-xs text-red-600 text-center'; }
     });
 
+    // ============ Vista BD remota ============
+    async function loadBDView(){
+        const base = resolveApiBase();
+        const url = base + '/registros';
+        const cont = document.getElementById('bd-lista');
+        const status = document.getElementById('sync-status');
+        if(!cont) return;
+        cont.innerHTML = '<div class="text-stone-500 text-center">Cargando...</div>';
+        try{
+            const r = await fetch(url);
+            if(!r.ok) throw new Error('HTTP '+r.status);
+            const arr = await r.json();
+            renderBDList(arr);
+            status.textContent = `Cargados ${arr.length} registros de la BD.`; status.className='text-xs text-green-600 text-center';
+        }catch(e){ cont.innerHTML = '<div class="text-red-600 text-center">Error cargando BD: '+(e.message||e)+'</div>'; status.textContent=''; }
+    }
+    function renderBDList(items){
+        const cont = document.getElementById('bd-lista');
+        if(!cont) return;
+        if(!Array.isArray(items) || !items.length){ cont.innerHTML = '<div class="text-stone-500 text-center">No hay registros en la BD.</div>'; return; }
+        cont.innerHTML = '';
+        items.forEach(it=>{
+            const fecha = it.data?.fecha || it.fecha || '';
+            const amas = it.data?.amasadoras || [];
+            const count = Array.isArray(amas) ? amas.length : 0;
+            const id = it.id;
+            const creado = it.createdAt ? new Date(it.createdAt).toLocaleString() : '';
+            const div = document.createElement('div');
+            div.className = 'border border-stone-200 rounded-lg p-3 mb-2 bg-white flex flex-wrap justify-between items-center gap-2';
+            div.innerHTML = `
+                <div class="text-sm">
+                    <div><span class="font-semibold">ID:</span> ${id}</div>
+                    <div><span class="font-semibold">Fecha:</span> ${fecha}</div>
+                    <div><span class="font-semibold">Amasadoras:</span> ${count}</div>
+                    <div class="text-stone-500">Creado: ${creado}</div>
+                </div>
+                <div class="flex gap-2">
+                    <button class="bd-delete bg-red-600 text-white px-3 py-1 rounded text-sm" data-id="${id}">Borrar</button>
+                </div>
+            `;
+            cont.appendChild(div);
+        });
+    }
+    document.getElementById('bd-refresh')?.addEventListener('click', loadBDView);
+    document.getElementById('bd-delete-all')?.addEventListener('click', async function(){
+        if(!confirm('¿Seguro que deseas borrar TODOS los registros en la BD?')) return;
+        const base=resolveApiBase();
+        const url = base + '/registros';
+        const status = document.getElementById('sync-status');
+        try{
+            const r = await fetch(url,{ method:'DELETE' });
+            if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
+            status.textContent = 'Registros eliminados.'; status.className='text-xs text-green-600 text-center';
+            loadBDView();
+        }catch(e){ status.textContent='Error al borrar: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
+    });
+    document.getElementById('bd-lista')?.addEventListener('click', async function(e){
+        const btn = e.target.closest('.bd-delete');
+        if(!btn) return;
+        const id = btn.getAttribute('data-id');
+        if(!id) return;
+        if(!confirm('¿Borrar registro '+id+'?')) return;
+        const base=resolveApiBase();
+        const url = base + '/registros/'+id;
+        const status = document.getElementById('sync-status');
+        try{
+            const r = await fetch(url,{ method:'DELETE' });
+            if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
+            status.textContent = 'Registro eliminado.'; status.className='text-xs text-green-600 text-center';
+            loadBDView();
+        }catch(e){ status.textContent = 'Error al borrar: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
+    });
     // Exportar CSV
     document.getElementById('btn-exportar-csv')?.addEventListener('click', function() {
         let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
