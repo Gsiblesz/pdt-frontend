@@ -896,18 +896,36 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             if(!maq){ throw new Error('Amasadora no encontrada'); }
             // Construir payload solo con esa máquina
             const procesos=[]; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ procesos.push({ id:i, minutos: parseInt(p.minutos)||0, segundos: parseInt(p.segundos)||0, startTime: p.startTime||null, endTime: p.endTime||null }); } }
+            // Derivados: TM1, TM2, muertos total, total real (primer inicio a último fin) y total procesos
+            const p1 = maq.proceso1||{}; const p2 = maq.proceso2||{}; const p3 = maq.proceso3||{};
+            const toSecs = (pp)=> (parseInt(pp?.minutos)||0)*60 + (parseInt(pp?.segundos)||0);
+            const sumProcesosSeg = toSecs(p1)+toSecs(p2)+toSecs(p3);
+            const tm1Seg = (p1?.endTime && p2?.startTime) ? Math.max(0, Math.floor((p2.startTime - p1.endTime)/1000)) : null;
+            const tm2Seg = (p2?.endTime && p3?.startTime) ? Math.max(0, Math.floor((p3.startTime - p2.endTime)/1000)) : null;
+            const muertosSeg = (tm1Seg||0) + (tm2Seg||0);
+            const totalRealSeg = (p1?.startTime && p3?.endTime) ? Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)) : null;
+            const nombreMaq = maq.nombre||maq.id||'';
+            const numeroAmasadora = (nombreMaq.match(/\d+/)?.[0]) || '';
             const payload = {
                 fecha: reg.fecha,
                 tempAmbiente: maq.tempAmbiente||reg.maquinas?.[0]?.tempAmbiente||'',
                 humedad: maq.humedad||reg.maquinas?.[0]?.humedad||'',
                 personal: reg.maquinas?.[0]?.personal||'',
                 amasadoras: [{
-                    nombre: maq.nombre||maq.id||'',
+                    id: maq.id||numeroAmasadora||'',
+                    nombre: nombreMaq,
+                    numeroAmasadora,
                     tipoMasa: maq.tipoMasa||maq.tipoPan||'',
                     hielo: maq.hielo||'',
                     lote: maq.lote||'',
                     tempMasa: maq.tempMasa||'',
                     observaciones: maq.observaciones||'',
+                    // factores por máquina (también en raíz, pero se duplican aquí para auditoría por máquina)
+                    personal: maq.personal||reg.maquinas?.[0]?.personal||'',
+                    tempAmbiente: maq.tempAmbiente||reg.maquinas?.[0]?.tempAmbiente||'',
+                    humedad: maq.humedad||reg.maquinas?.[0]?.humedad||'',
+                    // métricas derivadas
+                    tm1Seg, tm2Seg, muertosSeg, totalRealSeg, totalProcesosSeg: sumProcesosSeg,
                     procesos
                 }]
             };
@@ -1854,12 +1872,31 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                 const p=m['proceso'+i];
                 if(p){ procesos.push({ id:i, minutos: parseInt(p.minutos)||0, segundos: parseInt(p.segundos)||0, startTime: p.startTime||null, endTime: p.endTime||null }); }
             }
+            // Derivados por máquina
+            const p1 = m.proceso1||{}; const p2 = m.proceso2||{}; const p3 = m.proceso3||{};
+            const toSecs = (pp)=> (parseInt(pp?.minutos)||0)*60 + (parseInt(pp?.segundos)||0);
+            const sumProcesosSeg = toSecs(p1)+toSecs(p2)+toSecs(p3);
+            const tm1Seg = (p1?.endTime && p2?.startTime) ? Math.max(0, Math.floor((p2.startTime - p1.endTime)/1000)) : null;
+            const tm2Seg = (p2?.endTime && p3?.startTime) ? Math.max(0, Math.floor((p3.startTime - p2.endTime)/1000)) : null;
+            const muertosSeg = (tm1Seg||0) + (tm2Seg||0);
+            const totalRealSeg = (p1?.startTime && p3?.endTime) ? Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)) : null;
+            const nombreMaq = m.nombre||m.id||'';
+            const numeroAmasadora = (nombreMaq.match(/\d+/)?.[0]) || '';
             amasadoras.push({
-                nombre: m.nombre||m.id||'',
+                id: m.id||numeroAmasadora||'',
+                nombre: nombreMaq,
+                numeroAmasadora,
                 tipoMasa: m.tipoMasa||m.tipoPan||'',
                 hielo: m.hielo||'',
+                lote: m.lote||'',
                 tempMasa: m.tempMasa||'',
                 observaciones: m.observaciones||'',
+                // factores por máquina (duplicados aquí para conservar contexto por equipo)
+                personal: m.personal||r.maquinas?.[0]?.personal||'',
+                tempAmbiente: m.tempAmbiente||r.tempAmbiente||'',
+                humedad: m.humedad||r.humedad||'',
+                // métricas derivadas
+                tm1Seg, tm2Seg, muertosSeg, totalRealSeg, totalProcesosSeg: sumProcesosSeg,
                 procesos
             });
         }));
