@@ -130,14 +130,16 @@
                             <span>Instrucciones (crear conjunto, analizar y exportar)</span>
                         </summary>
                         <div class="mt-3 space-y-3 text-sm leading-relaxed text-stone-700">
-                            <p><span class="font-semibold">¿Qué es un conjunto?</span> Cada conjunto es un registro de una fecha con una o varias amasadoras (máquinas) y sus 3 procesos: Esponja, Masa y Mantequilla, incluyendo tiempos, temperaturas y observaciones.</p>
+                            <p><span class="font-semibold">¿Qué es un conjunto?</span> Es un registro de una <strong>fecha</strong> con una o varias <strong>amasadoras</strong> y sus 3 procesos: <strong>Esponja</strong>, <strong>Masa</strong> y <strong>Mantequilla</strong> (tiempos reales, inicios, fines), más variables: <strong>Lote</strong>, <strong>Tipo de masa</strong>, <strong>Hielo</strong>, <strong>TM/TA/H</strong>, <strong>Personal</strong> y <strong>Observaciones</strong>.</p>
                             <ol class="list-decimal ml-5 space-y-1">
                                 <li>Completa <strong>Fecha</strong>, <strong>TA</strong>, <strong>H</strong> y <strong>N° Personal</strong>.</li>
                                 <li>En cada amasadora define <strong>Tipo de masa</strong>, marca <strong>Hielo</strong> si aplica y al finalizar registra <strong>Temp. de masa</strong> y <strong>Observaciones</strong>.</li>
                                 <li>Ejecuta los procesos en orden (Iniciar / Detener). Sólo puede estar activo uno por máquina; iniciar otro detiene el previo.</li>
                                 <li>Se guardan inicio, fin y duración. El <strong>Total máquina</strong> va desde el inicio del primer proceso al fin del tercero. <strong>TM1 / TM2</strong> son los huecos entre procesos.</li>
                                 <li>Pulsa <strong>Guardar resultados</strong> al terminar los 3 procesos de la máquina. Repite para otras.</li>
-                                <li>Pasa a la pestaña <strong>Resultados</strong> para ver, filtrar y revisar los conjuntos. Usa filtros para acotar.</li>
+                                <li>Pasa a la pestaña <strong>Resultados</strong> para ver, filtrar y revisar. Desde <strong>Base de datos</strong> puedes: <em>Refrescar</em>, <em>Ver JSON</em> (abre un modal con Copiar), <em>Borrar</em> y ver <em>Detalles</em> por amasadora (TM1/TM2/Total real/Total procesos/Obs y tiempos por proceso).</li>
+                                <li>En <strong>Resultados → Locales</strong> puedes enviar una tarjeta con <em>Enviar a BD</em> o toda la fecha con <em>Enviar todo a la BD</em>. Evitamos clics múltiples para no duplicar.</li>
+                                <li>En <strong>Tablas</strong> elige la <em>Fuente</em>: <strong>Locales</strong> o <strong>Base de datos</strong> (con filtro por <em>Fecha</em>). Las tablas y gráficas se adaptan al origen.</li>
                                 <li><strong>Borrar todo</strong> elimina definitivamente todos los registros guardados.</li>
                                 <li><strong>Exportar PDF</strong>: reporte visual de la vista de resultados (sin botones).</li>
                                 <li><strong>Exportar CSV</strong>: filas compactadas (una por proceso) con factores diarios y de máquina sólo en la primera fila de cada máquina. Incluye TM1, TM2, TM.Total y Total(s).</li>
@@ -152,7 +154,7 @@
                                 <li><span class="font-medium">Control de consistencia y calidad (4, 5 y 6)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Temp. masa por tipo.</li>
                                 <li><span class="font-medium">Validar hipótesis de proceso (8)</span>: Relación temperatura de masa vs tiempo total (scatter + regresión).</li>
                             </ul>
-                            <p class="text-xs text-stone-500">Los números refieren al orden aproximado dentro de la pestaña Tablas y Gráficas.</p>
+                            <p class="text-xs text-stone-500">Tip: Usa BD como fuente para analizar históricos y evita perder datos al cambiar de dispositivo.</p>
                         </div>
                     </details>
                 </div>
@@ -1026,6 +1028,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                                 const h = (m.humedad!=null && m.humedad!=='')? `${m.humedad}%`:'--';
                                 const per = m.personal||'';
                                 const hielo = m.hielo||'';
+                            const pFmt = (p)=> p? `${String(p.minutos||0).padStart(2,'0')}:${String(p.segundos||0).padStart(2,'0')}` : '--:--';
                                 const tm1 = (m.tm1Seg!=null)? `${m.tm1Seg}s` : '--';
                                 const tm2 = (m.tm2Seg!=null)? `${m.tm2Seg}s` : '--';
                                 const tReal = (m.totalRealSeg!=null)? `${m.totalRealSeg}s` : '--';
@@ -1039,14 +1042,15 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                                 const ini = (x)=> x? new Date(x).toLocaleTimeString() : '--:--:--';
                                 const fin = (x)=> x? new Date(x).toLocaleTimeString() : '--:--:--';
                                 return `
-                                <div class="text-[12px] text-stone-700">
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-semibold">${am}:</span>
-                                        <span>Lote ${lote} · Tipo ${tipo} · TM ${tm} · TA ${ta} · H ${h} · Pers ${per} · Hielo ${hielo}</span>
+                                                <div class="text-[13px] text-stone-800">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="font-semibold text-[14px]">${am}:</span>
+                                                        <span><span class="font-semibold">Lote</span> ${lote} · <span class="font-semibold">Tipo</span> ${tipo} · <span class="font-semibold">TM</span> ${tm} · <span class="font-semibold">TA</span> ${ta} · <span class="font-semibold">H</span> ${h} · <span class="font-semibold">Pers</span> ${per} · <span class="font-semibold">Hielo</span> ${hielo}</span>
+                                                        <span class="text-stone-500">· <span class="font-semibold">Esponja</span> ${pFmt(m.proceso1)} · <span class="font-semibold">Masa</span> ${pFmt(m.proceso2)} · <span class="font-semibold">Mantequilla</span> ${pFmt(m.proceso3)}</span>
                                         <button class="bd-toggle-ama text-blue-700 hover:underline" data-id="${id}" data-ama-index="${i}">Detalles</button>
                                     </div>
-                                    <div id="bd-ama-det-${id}-${i}" class="hidden mt-1 ml-4 p-2 rounded bg-stone-50 border border-stone-200">
-                                        <div class="text-[12px]"><span class="font-semibold">TM1:</span> ${tm1} · <span class="font-semibold">TM2:</span> ${tm2} · <span class="font-semibold">Total real:</span> ${tReal} · <span class="font-semibold">Total procesos:</span> ${tProc}</div>
+                                                    <div id="bd-ama-det-${id}-${i}" class="hidden mt-1 ml-4 p-2 rounded bg-stone-50 border border-stone-200">
+                                                        <div class="text-[13px]"><span class="font-semibold">TM1:</span> ${tm1} · <span class="font-semibold">TM2:</span> ${tm2} · <span class="font-semibold">Total real:</span> ${tReal} · <span class="font-semibold">Total procesos:</span> ${tProc}</div>
                                         ${obs? `<div class="mt-1"><span class="font-semibold">Obs:</span> ${obs}</div>`:''}
                                         <div class="mt-1">
                                             <div><span class="font-semibold">Esponja:</span> ${procLine(m.proceso1)} · <span class="font-semibold">Ini:</span> ${ini(m.proceso1?.startTime)} · <span class="font-semibold">Fin:</span> ${fin(m.proceso1?.endTime)}</div>
@@ -1537,8 +1541,31 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                         return String(f) === String(fechaFiltro);
                     });
                 }
-                datos = (arrFiltrado||[]).map(it=>({ fecha: it.data?.fecha || it.fecha, maquinas: Array.isArray(it.data?.amasadoras)? it.data.amasadoras : [] }));
-                if(statusEl) statusEl.textContent = fechaFiltro ? `Usando ${datos.length} registros de la BD (filtrados por ${fechaFiltro}, total ${total}).` : `Usando ${total} registros de la BD.`;
+                // Normalizar cada amasadora: si viene como 'procesos'[] mapear a proceso1..3
+                function normalizeMaq(m){
+                    if(!m) return m;
+                    const n = { ...m };
+                    if(Array.isArray(m.procesos) && (!m.proceso1 || !m.proceso2 || !m.proceso3)){
+                        const p1 = m.procesos.find(p=> String(p.id)==='1');
+                        const p2 = m.procesos.find(p=> String(p.id)==='2');
+                        const p3 = m.procesos.find(p=> String(p.id)==='3');
+                        const mk = (p)=> p? ({
+                            minutos: parseInt(p.minutos)||0,
+                            segundos: parseInt(p.segundos)||0,
+                            startTime: p.startTime||null,
+                            endTime: p.endTime||null
+                        }): undefined;
+                        if(p1) n.proceso1 = mk(p1);
+                        if(p2) n.proceso2 = mk(p2);
+                        if(p3) n.proceso3 = mk(p3);
+                    }
+                    return n;
+                }
+                datos = (arrFiltrado||[]).map(it=>({
+                    fecha: it.data?.fecha || it.fecha,
+                    maquinas: Array.isArray(it.data?.amasadoras)? it.data.amasadoras.map(normalizeMaq) : []
+                }));
+                if(statusEl) statusEl.textContent = fechaFiltro ? `Fuente: BD · ${datos.length} registros (filtrados por ${fechaFiltro}). Total disponibles: ${total}.` : `Fuente: BD · ${total} registros.`;
             }catch(e){
                 const msg = 'Error cargando BD: ' + (e.message||e);
                 if(statusEl) statusEl.textContent = msg;
