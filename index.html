@@ -911,6 +911,24 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                 tempAmbiente: maq.tempAmbiente||reg.maquinas?.[0]?.tempAmbiente||'',
                 humedad: maq.humedad||reg.maquinas?.[0]?.humedad||'',
                 personal: reg.maquinas?.[0]?.personal||'',
+                // Resumen/agrupados a nivel de registro (un solo equipo en este caso)
+                resumenDia: (function(){
+                    const tMasa = parseFloat(maq.tempMasa);
+                    const tipo = (maq.tipoMasa||maq.tipoPan||'').trim();
+                    const hielo = (maq.hielo||'').trim();
+                    return {
+                        fecha: reg.fecha,
+                        cantidadAmasadoras: 1,
+                        tm1SegDia: tm1Seg||0,
+                        tm2SegDia: tm2Seg||0,
+                        muertosSegDia: muertosSeg,
+                        totalRealSegDia: totalRealSeg||0,
+                        totalProcesosSegDia: sumProcesosSeg,
+                        promedioTempMasaDia: Number.isFinite(tMasa) ? tMasa : null,
+                        tiposMasaConteo: tipo ? { [tipo]: 1 } : {},
+                        hieloConteo: hielo ? { [hielo]: 1 } : {}
+                    };
+                })(),
                 amasadoras: [{
                     id: maq.id||numeroAmasadora||'',
                     nombre: nombreMaq,
@@ -1866,6 +1884,11 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const registrosFecha = todos.filter(r=>r.fecha===fecha);
         if(!registrosFecha.length) return null;
         const amasadoras=[];
+        // Acumuladores para resumen del día
+        let cantidadAmasadoras = 0;
+        let tm1SegDia = 0, tm2SegDia = 0, muertosSegDia = 0, totalRealSegDia = 0, totalProcesosSegDia = 0;
+        let sumTempMasa = 0, countTempMasa = 0;
+        const tiposMasaConteo = {}; const hieloConteo = {};
         registrosFecha.forEach(r=> (r.maquinas||[]).forEach(m=>{
             const procesos=[];
             for(let i=1;i<=3;i++){
@@ -1882,6 +1905,17 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             const totalRealSeg = (p1?.startTime && p3?.endTime) ? Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)) : null;
             const nombreMaq = m.nombre||m.id||'';
             const numeroAmasadora = (nombreMaq.match(/\d+/)?.[0]) || '';
+            // Acumular para resumen de día
+            cantidadAmasadoras += 1;
+            if (tm1Seg!=null) tm1SegDia += tm1Seg;
+            if (tm2Seg!=null) tm2SegDia += tm2Seg;
+            muertosSegDia += muertosSeg;
+            if (totalRealSeg!=null) totalRealSegDia += totalRealSeg;
+            totalProcesosSegDia += sumProcesosSeg;
+            const tMasa = parseFloat(m.tempMasa);
+            if (Number.isFinite(tMasa)) { sumTempMasa += tMasa; countTempMasa += 1; }
+            const tipo = (m.tipoMasa||m.tipoPan||'').trim(); if(tipo){ tiposMasaConteo[tipo] = (tiposMasaConteo[tipo]||0)+1; }
+            const hielo = (m.hielo||'').trim(); if(hielo){ hieloConteo[hielo] = (hieloConteo[hielo]||0)+1; }
             amasadoras.push({
                 id: m.id||numeroAmasadora||'',
                 nombre: nombreMaq,
@@ -1908,6 +1942,18 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             tempAmbiente: ref.tempAmbiente||'',
             humedad: ref.humedad||'',
             personal: ref.personal||'',
+            resumenDia: {
+                fecha,
+                cantidadAmasadoras,
+                tm1SegDia,
+                tm2SegDia,
+                muertosSegDia,
+                totalRealSegDia,
+                totalProcesosSegDia,
+                promedioTempMasaDia: countTempMasa ? (sumTempMasa / countTempMasa) : null,
+                tiposMasaConteo,
+                hieloConteo
+            },
             amasadoras
         };
     }
