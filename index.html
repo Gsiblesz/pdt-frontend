@@ -1579,10 +1579,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
     // ================= BACKEND SYNC / API DINÁMICA =================
     function getDefaultApiBase(){
         try{
-            // Usar puerto 3000 en local, igual que el backend
-            if(location.hostname==='localhost' || location.hostname==='127.0.0.1') return 'http://localhost:3000';
-            // Producción: asumir mismo origen
-            return location.origin.replace(/\/$/,'');
+            // Siempre usar la URL pública del backend
+            return 'https://pdt-backend-1.onrender.com';
         }catch(_){ return ''; }
     }
     function resolveApiBase(){
