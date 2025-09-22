@@ -1016,18 +1016,46 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             const rdTxt = rd ? `Resumen: Am ${rd.cantidadAmasadoras ?? ''} · TM1 ${rd.tm1SegDia ?? ''}s · TM2 ${rd.tm2SegDia ?? ''}s · Muertos ${rd.muertosSegDia ?? ''}s · Total real ${rd.totalRealSegDia ?? ''}s` : '';
             const div = document.createElement('div');
             div.className = 'border border-stone-200 rounded-lg p-3 mb-2 bg-white flex flex-wrap justify-between items-center gap-2';
-            // Mostrar variables clave por cada amasadora (compacto)
-            const amasHtml = (amas||[]).map((m,i)=>{
-                const am = (m.nombre||m.id||'').toString().replace(/Amasadora\s*/i,'Am ');
-                const tipo = (m.tipoMasa||m.tipoPan||'')||'--';
-                const lote = m.lote||'--';
-                const tm = (m.tempMasa!=null && m.tempMasa!=='')? `${m.tempMasa}°C`:'--';
-                const ta = (m.tempAmbiente!=null && m.tempAmbiente!=='')? `${m.tempAmbiente}°C`:'--';
-                const h = (m.humedad!=null && m.humedad!=='')? `${m.humedad}%`:'--';
-                const per = m.personal||'';
-                const hielo = m.hielo||'';
-                return `<div class="text-[12px] text-stone-700"><span class="font-semibold">${am}:</span> Lote ${lote} · Tipo ${tipo} · TM ${tm} · TA ${ta} · H ${h} · Pers ${per} · Hielo ${hielo}</div>`;
-            }).join('');
+                        // Mostrar variables clave por cada amasadora y un bloque de detalles con toggle
+                        const amasHtml = (amas||[]).map((m,i)=>{
+                                const am = (m.nombre||m.id||'').toString().replace(/Amasadora\s*/i,'Am ');
+                                const tipo = (m.tipoMasa||m.tipoPan||'')||'--';
+                                const lote = m.lote||'--';
+                                const tm = (m.tempMasa!=null && m.tempMasa!=='')? `${m.tempMasa}°C`:'--';
+                                const ta = (m.tempAmbiente!=null && m.tempAmbiente!=='')? `${m.tempAmbiente}°C`:'--';
+                                const h = (m.humedad!=null && m.humedad!=='')? `${m.humedad}%`:'--';
+                                const per = m.personal||'';
+                                const hielo = m.hielo||'';
+                                const tm1 = (m.tm1Seg!=null)? `${m.tm1Seg}s` : '--';
+                                const tm2 = (m.tm2Seg!=null)? `${m.tm2Seg}s` : '--';
+                                const tReal = (m.totalRealSeg!=null)? `${m.totalRealSeg}s` : '--';
+                                const tProc = (m.totalProcesosSeg!=null)? `${m.totalProcesosSeg}s` : '--';
+                                const obs = (m.observaciones||'').trim();
+                                const procLine = (p)=>{
+                                        if(!p) return '--:--';
+                                        const t = (parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0);
+                                        return `${String(p.minutos||0).padStart(2,'0')}:${String(p.segundos||0).padStart(2,'0')} (${t}s)`;
+                                };
+                                const ini = (x)=> x? new Date(x).toLocaleTimeString() : '--:--:--';
+                                const fin = (x)=> x? new Date(x).toLocaleTimeString() : '--:--:--';
+                                return `
+                                <div class="text-[12px] text-stone-700">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold">${am}:</span>
+                                        <span>Lote ${lote} · Tipo ${tipo} · TM ${tm} · TA ${ta} · H ${h} · Pers ${per} · Hielo ${hielo}</span>
+                                        <button class="bd-toggle-ama text-blue-700 hover:underline" data-id="${id}" data-ama-index="${i}">Detalles</button>
+                                    </div>
+                                    <div id="bd-ama-det-${id}-${i}" class="hidden mt-1 ml-4 p-2 rounded bg-stone-50 border border-stone-200">
+                                        <div class="text-[12px]"><span class="font-semibold">TM1:</span> ${tm1} · <span class="font-semibold">TM2:</span> ${tm2} · <span class="font-semibold">Total real:</span> ${tReal} · <span class="font-semibold">Total procesos:</span> ${tProc}</div>
+                                        ${obs? `<div class="mt-1"><span class="font-semibold">Obs:</span> ${obs}</div>`:''}
+                                        <div class="mt-1">
+                                            <div><span class="font-semibold">Esponja:</span> ${procLine(m.proceso1)} · <span class="font-semibold">Ini:</span> ${ini(m.proceso1?.startTime)} · <span class="font-semibold">Fin:</span> ${fin(m.proceso1?.endTime)}</div>
+                                            <div><span class="font-semibold">Masa:</span> ${procLine(m.proceso2)} · <span class="font-semibold">Ini:</span> ${ini(m.proceso2?.startTime)} · <span class="font-semibold">Fin:</span> ${fin(m.proceso2?.endTime)}</div>
+                                            <div><span class="font-semibold">Mantequilla:</span> ${procLine(m.proceso3)} · <span class="font-semibold">Ini:</span> ${ini(m.proceso3?.startTime)} · <span class="font-semibold">Fin:</span> ${fin(m.proceso3?.endTime)}</div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        }).join('');
             div.innerHTML = `
                 <div class="text-sm max-w-[72ch]">
                     <div><span class="font-semibold">ID:</span> ${id}</div>
@@ -1070,6 +1098,14 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
             }
+            return;
+        }
+        const toggleBtn = e.target.closest('.bd-toggle-ama');
+        if(toggleBtn){
+            const id = toggleBtn.getAttribute('data-id');
+            const idx = toggleBtn.getAttribute('data-ama-index');
+            const det = document.getElementById(`bd-ama-det-${id}-${idx}`);
+            if(det){ det.classList.toggle('hidden'); }
             return;
         }
         const btn = e.target.closest('.bd-delete');
