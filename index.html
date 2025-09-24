@@ -644,14 +644,17 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         machine.processes.forEach(process => {
             const timerId = `m${machine.id}-p${process.id}`;
             // Si está corriendo, tomar su startTime actual y tiempo transcurrido; si no, usar el completado
-            const running = timers[timerId] && timers[timerId].running;
             let tiempo = 0, startTime = null, endTime = null;
-            if (running) {
-                startTime = timers[timerId].startTime || null;
-                if (startTime) tiempo = Math.floor((Date.now() - startTime) / 1000);
+            const tRun = timers[timerId];
+            if (tRun && tRun.startTime) {
+                startTime = tRun.startTime;
+                tiempo = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
+                endTime = null; // aún en curso
             } else {
                 const comp = completedProcessTimes[timerId] || { time: 0, startTime: null, endTime: null };
-                tiempo = comp.time || 0; startTime = comp.startTime || null; endTime = comp.endTime || null;
+                tiempo = comp.time || 0;
+                startTime = comp.startTime || null;
+                endTime = comp.endTime || null;
             }
             const minutos = Math.floor((tiempo||0) / 60);
             const segundos = (tiempo||0) % 60;
