@@ -1034,74 +1034,93 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             }
             return m;
         }
+        // Aplanar: una tarjeta por amasadora
         items.forEach(it=>{
             const fecha = it.data?.fecha || it.fecha || '';
-            const amas = (it.data?.amasadoras || []).map(normalizeMaq);
-            const count = Array.isArray(amas) ? amas.length : 0;
             const id = it.id;
             const creado = it.createdAt ? new Date(it.createdAt).toLocaleString() : '';
-            const rd = it.data?.resumenDia;
-            const rdTxt = rd ? `Resumen: Am ${rd.cantidadAmasadoras ?? ''} · TM1 ${rd.tm1SegDia ?? ''}s · TM2 ${rd.tm2SegDia ?? ''}s · Muertos ${rd.muertosSegDia ?? ''}s · Total real ${rd.totalRealSegDia ?? ''}s` : '';
-            const div = document.createElement('div');
-            div.className = 'border border-stone-200 rounded-lg p-3 mb-2 bg-white flex flex-wrap justify-between items-center gap-2';
-                        // Mostrar variables clave por cada amasadora y un bloque de detalles con toggle
-                        const amasHtml = (amas||[]).map((m,i)=>{
-                                const amNumRaw = m.numeroAmasadora || ((m.nombre||m.id||'').match(/\d+/)?.[0]);
-                                const am = 'Am ' + ((amNumRaw && ['1','2','3'].includes(String(amNumRaw))) ? String(amNumRaw) : '?');
-                                const tipo = (m.tipoMasa||m.tipoPan||'')||'--';
-                                const lote = m.lote||'--';
-                                const tm = (m.tempMasa!=null && m.tempMasa!=='')? `${m.tempMasa}°C`:'--';
-                                const ta = (m.tempAmbiente!=null && m.tempAmbiente!=='')? `${m.tempAmbiente}°C`:'--';
-                                const h = (m.humedad!=null && m.humedad!=='')? `${m.humedad}%`:'--';
-                                const per = m.personal||'';
-                                const hielo = m.hielo||'';
-                            const pFmt = (p)=> p? `${String(p.minutos||0).padStart(2,'0')}:${String(p.segundos||0).padStart(2,'0')}` : '--:--';
-                                const tm1 = (m.tm1Seg!=null)? `${formatTime(m.tm1Seg)}` : '--:--:--';
-                                const tm2 = (m.tm2Seg!=null)? `${formatTime(m.tm2Seg)}` : '--:--:--';
-                                const tReal = (m.totalRealSeg!=null)? `${formatTime(m.totalRealSeg)}` : '--:--:--';
-                                const tProc = (m.totalProcesosSeg!=null)? `${formatTime(m.totalProcesosSeg)}` : '--:--:--';
-                                const obs = (m.observaciones||'').trim();
-                                const procLine = (p)=>{
-                                        if(!p) return '--:--';
-                                        const t = (parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0);
-                                        return `${String(p.minutos||0).padStart(2,'0')}:${String(p.segundos||0).padStart(2,'0')} (${t}s)`;
-                                };
-                                const ini = (x)=> x? new Date(x).toLocaleTimeString() : '--:--:--';
-                                const fin = (x)=> x? new Date(x).toLocaleTimeString() : '--:--:--';
-                                return `
-                                                <div class="text-[13px] text-stone-800">
-                                                    <div class="flex flex-wrap items-center gap-2">
-                                                        <span class="font-semibold text-[14px]">${am}:</span>
-                                                        <span><span class="font-semibold">Lote</span> ${lote} · <span class="font-semibold">Tipo</span> ${tipo} · <span class="font-semibold">TM</span> ${tm} · <span class="font-semibold">TA</span> ${ta} · <span class="font-semibold">H</span> ${h} · <span class="font-semibold">Pers</span> ${per} · <span class="font-semibold">Hielo</span> ${hielo}</span>
-                                                        <span class="text-stone-500">· <span class="font-semibold">Esponja</span> ${pFmt(m.proceso1)} · <span class="font-semibold">Masa</span> ${pFmt(m.proceso2)} · <span class="font-semibold">Mantequilla</span> ${pFmt(m.proceso3)}</span>
-                                        <button class="bd-toggle-ama text-blue-700 hover:underline" data-id="${id}" data-ama-index="${i}">Detalles</button>
-                                    </div>
-                                                    <div id="bd-ama-det-${id}-${i}" class="hidden mt-1 ml-4 p-2 rounded bg-stone-50 border border-stone-200">
-                                                        <div class="text-[13px]"><span class="font-semibold">TM1:</span> ${tm1} · <span class="font-semibold">TM2:</span> ${tm2} · <span class="font-semibold">Total real:</span> ${tReal} · <span class="font-semibold">Total procesos:</span> ${tProc}</div>
-                                        ${obs? `<div class="mt-1"><span class="font-semibold">Obs:</span> ${obs}</div>`:''}
-                                        <div class="mt-1">
-                                            <div><span class="font-semibold">Esponja:</span> ${procLine(m.proceso1)} · <span class="font-semibold">Ini:</span> ${ini(m.proceso1?.startTime)} · <span class="font-semibold">Fin:</span> ${fin(m.proceso1?.endTime)}</div>
-                                            <div><span class="font-semibold">Masa:</span> ${procLine(m.proceso2)} · <span class="font-semibold">Ini:</span> ${ini(m.proceso2?.startTime)} · <span class="font-semibold">Fin:</span> ${fin(m.proceso2?.endTime)}</div>
-                                            <div><span class="font-semibold">Mantequilla:</span> ${procLine(m.proceso3)} · <span class="font-semibold">Ini:</span> ${ini(m.proceso3?.startTime)} · <span class="font-semibold">Fin:</span> ${fin(m.proceso3?.endTime)}</div>
-                                        </div>
-                                    </div>
-                                </div>`;
-                        }).join('');
-            div.innerHTML = `
-                <div class="text-sm max-w-[72ch]">
-                    <div><span class="font-semibold">ID:</span> ${id}</div>
-                    <div><span class="font-semibold">Fecha:</span> ${fecha}</div>
-                    <div><span class="font-semibold">Amasadoras:</span> ${count}</div>
-                    <div class="text-stone-500">Creado: ${creado}</div>
-                    ${rd ? `<div class="text-[11px] text-stone-700 mt-1">${rdTxt}</div>` : ''}
-                    ${amasHtml? `<div class="mt-1 space-y-0.5">${amasHtml}</div>`:''}
-                </div>
-                <div class="flex gap-2">
-                    <button class="bd-view-json bg-stone-600 text-white px-3 py-1 rounded text-sm" data-id="${id}">Ver JSON</button>
-                    <button class="bd-delete bg-red-600 text-white px-3 py-1 rounded text-sm" data-id="${id}">Borrar</button>
-                </div>
-            `;
-            cont.appendChild(div);
+            const amas = (it.data?.amasadoras || []).map(normalizeMaq);
+            (amas||[]).forEach((m,i)=>{
+                const amNumRaw = m.numeroAmasadora || ((m.nombre||m.id||'').match(/\d+/)?.[0]);
+                const amNum = (amNumRaw && ['1','2','3'].includes(String(amNumRaw))) ? String(amNumRaw) : '?';
+                const nombreAma = 'Amasadora ' + amNum;
+                const tipo = (m.tipoMasa||m.tipoPan||'')||'--';
+                const lote = m.lote||'--';
+                const hielo = m.hielo||'--';
+                const tm = (m.tempMasa!=null && m.tempMasa!=='')? `${m.tempMasa}`:'--';
+                const ta = (m.tempAmbiente!=null && m.tempAmbiente!=='')? `${m.tempAmbiente}`:'--';
+                const h = (m.humedad!=null && m.humedad!=='')? `${m.humedad}`:'--';
+                const per = m.personal||'';
+                // Derivados si faltan
+                const p1 = m.proceso1||{}; const p2 = m.proceso2||{}; const p3 = m.proceso3||{};
+                const tm1Seg = (m.tm1Seg!=null)? m.tm1Seg : ((p1?.endTime && p2?.startTime)? Math.max(0, Math.floor((p2.startTime - p1.endTime)/1000)) : null);
+                const tm2Seg = (m.tm2Seg!=null)? m.tm2Seg : ((p2?.endTime && p3?.startTime)? Math.max(0, Math.floor((p3.startTime - p2.endTime)/1000)) : null);
+                const muertosSeg = (tm1Seg||0) + (tm2Seg||0);
+                const totalRealSeg = (m.totalRealSeg!=null)? m.totalRealSeg : ((p1?.startTime && p3?.endTime)? Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)) : null);
+                // Helpers
+                const pFmt = (p)=> p? `${String(p.minutos||0).padStart(2,'0')}:${String(p.segundos||0).padStart(2,'0')}` : '--:--';
+                const ini = (x)=> x? new Date(x).toLocaleTimeString() : '--:--:--';
+                const fin = (x)=> x? new Date(x).toLocaleTimeString() : '--:--:--';
+                const advertencia = (totalRealSeg!=null && totalRealSeg>2700) ? `<span title="Supera 45 minutos" class="ml-2 text-red-600 text-2xl align-middle">&#9888;</span>` : '';
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl shadow-lg p-6 border border-stone-200 mb-6';
+                card.innerHTML = `
+                    <div class="mb-4 flex flex-wrap gap-6 justify-between items-center">
+                        <span class="text-stone-800 font-bold text-xl">Fecha: <span class="font-mono text-lg">${fecha}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">Lote: <span class="font-mono text-lg">${lote}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">Tipo de masa: <span class="font-mono text-lg">${tipo}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">Amasadora: <span class="font-mono text-lg">${amNum}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">Hielo: <span class="font-mono text-lg">${hielo}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">H: <span class="font-mono text-lg">${h}%</span></span>
+                        <span class="text-stone-800 font-bold text-xl">TM: <span class="font-mono text-lg">${tm}C</span></span>
+                        <span class="text-stone-800 font-bold text-xl">TA: <span class="font-mono text-lg">${ta}C</span></span>
+                        ${per? `<span class="text-stone-800 font-bold text-xl">N° Personal: <span class="font-mono text-lg">${per}</span></span>`:''}
+                        <span class="text-stone-800 font-bold text-xl">T. Muerto 1: <span class="font-mono text-lg">${tm1Seg!=null? formatTime(tm1Seg):'--:--:--'}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">T. Muerto 2: <span class="font-mono text-lg">${tm2Seg!=null? formatTime(tm2Seg):'--:--:--'}</span></span>
+                        <span class="text-stone-800 font-bold text-xl">T. Muertos Total: <span class="font-mono text-lg">${formatTime(muertosSeg)}</span></span>
+                    </div>
+                    <div class="mb-4 divide-y divide-stone-200">
+                        <div class='flex flex-col py-3'>
+                            <div class='flex justify-between items-center mb-1'>
+                                <span class='font-bold text-lg text-stone-700'>Esponja:</span>
+                                <span class='font-mono text-lg text-stone-900'>${pFmt(p1)}</span>
+                            </div>
+                            <div class='flex justify-between text-sm text-stone-500 mb-0.5'><span>Inicio:</span> <span>${ini(p1.startTime)}</span></div>
+                            <div class='flex justify-between text-sm text-stone-500'><span>Fin:</span> <span>${fin(p1.endTime)}</span></div>
+                        </div>
+                        <div class='flex flex-col py-3'>
+                            <div class='flex justify-between items-center mb-1'>
+                                <span class='font-bold text-lg text-stone-700'>Masa:</span>
+                                <span class='font-mono text-lg text-stone-900'>${pFmt(p2)}</span>
+                            </div>
+                            <div class='flex justify-between text-sm text-stone-500 mb-0.5'><span>Inicio:</span> <span>${ini(p2.startTime)}</span></div>
+                            <div class='flex justify-between text-sm text-stone-500'><span>Fin:</span> <span>${fin(p2.endTime)}</span></div>
+                        </div>
+                        <div class='flex flex-col py-3'>
+                            <div class='flex justify-between items-center mb-1'>
+                                <span class='font-bold text-lg text-stone-700'>Mantequilla:</span>
+                                <span class='font-mono text-lg text-stone-900'>${pFmt(p3)}</span>
+                            </div>
+                            <div class='flex justify-between text-sm text-stone-500 mb-0.5'><span>Inicio:</span> <span>${ini(p3.startTime)}</span></div>
+                            <div class='flex justify-between text-sm text-stone-500'><span>Fin:</span> <span>${fin(p3.endTime)}</span></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <span class="block text-base font-semibold text-stone-800">Obs:</span>
+                        <div class="bg-stone-100 rounded p-2 min-h-[2rem]">${m.observaciones ? m.observaciones : '<span class=\"text-stone-400\">(Sin observaciones)</span>'}</div>
+                    </div>
+                    <div class="mt-2 font-extrabold text-2xl text-blue-700 text-right">Total: ${totalRealSeg!=null? formatTime(totalRealSeg):'--:--:--'} ${advertencia}</div>
+                    <div class="mt-6 flex flex-wrap gap-2 justify-end text-xs text-stone-500">
+                        <span>Registro ID: ${id}</span>
+                        <span>Creado: ${creado}</span>
+                    </div>
+                    <div class="mt-3 flex flex-wrap gap-3 justify-center">
+                        <button class="bd-view-json-ama bg-stone-600 text-white px-3 py-1 rounded text-sm" data-id="${id}" data-ama-index="${i}">Ver JSON (amasadora)</button>
+                        <button class="bd-delete bg-red-600 text-white px-3 py-1 rounded text-sm" data-id="${id}" title="Borra todo el registro (todas las amasadoras)">Borrar registro</button>
+                    </div>
+                `;
+                cont.appendChild(card);
+            });
         });
     }
     document.getElementById('bd-refresh')?.addEventListener('click', loadBDView);
@@ -1118,32 +1137,28 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         }catch(e){ status.textContent='Error al borrar: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
     });
     document.getElementById('bd-lista')?.addEventListener('click', async function(e){
-        const viewBtn = e.target.closest('.bd-view-json');
-        if(viewBtn){
-            const id = viewBtn.getAttribute('data-id');
+        // Ver JSON de la amasadora individual
+        const viewAmaBtn = e.target.closest('.bd-view-json-ama');
+        if(viewAmaBtn){
+            const id = viewAmaBtn.getAttribute('data-id');
+            const idx = parseInt(viewAmaBtn.getAttribute('data-ama-index'));
             const rec = (BD_CACHE||[]).find(x=> String(x.id)===String(id));
+            const ama = rec?.data?.amasadoras?.[idx];
             const modal = document.getElementById('json-modal');
             const pre = document.getElementById('json-modal-content');
             if(modal && pre){
-                pre.textContent = JSON.stringify(rec?.data ?? rec ?? {}, null, 2);
+                const payload = ama ? { registroId: rec.id, fecha: rec.data?.fecha||rec.fecha||'', ...ama } : (rec?.data ?? rec ?? {});
+                pre.textContent = JSON.stringify(payload, null, 2);
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
             }
-            return;
-        }
-        const toggleBtn = e.target.closest('.bd-toggle-ama');
-        if(toggleBtn){
-            const id = toggleBtn.getAttribute('data-id');
-            const idx = toggleBtn.getAttribute('data-ama-index');
-            const det = document.getElementById(`bd-ama-det-${id}-${idx}`);
-            if(det){ det.classList.toggle('hidden'); }
             return;
         }
         const btn = e.target.closest('.bd-delete');
         if(!btn) return;
         const id = btn.getAttribute('data-id');
         if(!id) return;
-        if(!confirm('¿Borrar registro '+id+'?')) return;
+        if(!confirm('¿Borrar registro '+id+'? (Se eliminarán todas las amasadoras de ese registro)')) return;
         const base=resolveApiBase();
         const url = base + '/registros/'+id;
         const status = document.getElementById('sync-status');
