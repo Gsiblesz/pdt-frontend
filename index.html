@@ -643,11 +643,18 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const procesos = {};
         machine.processes.forEach(process => {
             const timerId = `m${machine.id}-p${process.id}`;
-            const tiempo = completedProcessTimes[timerId]?.time || 0;
-            const minutos = Math.floor(tiempo / 60);
-            const segundos = tiempo % 60;
-            const startTime = completedProcessTimes[timerId]?.startTime || null;
-            const endTime = completedProcessTimes[timerId]?.endTime || null;
+            // Si está corriendo, tomar su startTime actual y tiempo transcurrido; si no, usar el completado
+            const running = timers[timerId] && timers[timerId].running;
+            let tiempo = 0, startTime = null, endTime = null;
+            if (running) {
+                startTime = timers[timerId].startTime || null;
+                if (startTime) tiempo = Math.floor((Date.now() - startTime) / 1000);
+            } else {
+                const comp = completedProcessTimes[timerId] || { time: 0, startTime: null, endTime: null };
+                tiempo = comp.time || 0; startTime = comp.startTime || null; endTime = comp.endTime || null;
+            }
+            const minutos = Math.floor((tiempo||0) / 60);
+            const segundos = (tiempo||0) % 60;
             procesos[`proceso${process.id}`] = { minutos, segundos, startTime, endTime };
         });
     const tipoMasa = document.getElementById(`tipoMasa-${machine.id}`)?.value || '';
@@ -909,7 +916,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             const url = base + '/registros';
             const r = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
-            status.textContent = '¡Enviado a BD correctamente!'; status.className='text-xs text-green-600 text-center';
+            const n = payload.amasadoras?.length || 0;
+            status.textContent = `¡Enviado a BD correctamente! (${n} amasadora${n===1?'':'s'})`; status.className='text-xs text-green-600 text-center';
         }catch(e){ status.textContent = 'Error enviando: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
         finally{ _sendingAllInFlight = false; }
     });
@@ -1015,9 +1023,17 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         if(!cont) return;
         if(!Array.isArray(items) || !items.length){ cont.innerHTML = '<div class="text-stone-500 text-center">No hay registros en la BD.</div>'; return; }
         cont.innerHTML = '';
+        // Helper: normaliza procesos[] a proceso1..3 si faltan
+        function normalizeMaq(m){
+            if(m && !m.proceso1 && Array.isArray(m.procesos)){
+                const map = {}; m.procesos.forEach(p=>{ if(p && p.id!=null){ map['proceso'+p.id] = { minutos: p.minutos||0, segundos: p.segundos||0, startTime: p.startTime||null, endTime: p.endTime||null }; } });
+                return { ...m, ...map };
+            }
+            return m;
+        }
         items.forEach(it=>{
             const fecha = it.data?.fecha || it.fecha || '';
-            const amas = it.data?.amasadoras || [];
+            const amas = (it.data?.amasadoras || []).map(normalizeMaq);
             const count = Array.isArray(amas) ? amas.length : 0;
             const id = it.id;
             const creado = it.createdAt ? new Date(it.createdAt).toLocaleString() : '';
@@ -1037,10 +1053,10 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                                 const per = m.personal||'';
                                 const hielo = m.hielo||'';
                             const pFmt = (p)=> p? `${String(p.minutos||0).padStart(2,'0')}:${String(p.segundos||0).padStart(2,'0')}` : '--:--';
-                                const tm1 = (m.tm1Seg!=null)? `${m.tm1Seg}s` : '--';
-                                const tm2 = (m.tm2Seg!=null)? `${m.tm2Seg}s` : '--';
-                                const tReal = (m.totalRealSeg!=null)? `${m.totalRealSeg}s` : '--';
-                                const tProc = (m.totalProcesosSeg!=null)? `${m.totalProcesosSeg}s` : '--';
+                                const tm1 = (m.tm1Seg!=null)? `${formatTime(m.tm1Seg)}` : '--:--:--';
+                                const tm2 = (m.tm2Seg!=null)? `${formatTime(m.tm2Seg)}` : '--:--:--';
+                                const tReal = (m.totalRealSeg!=null)? `${formatTime(m.totalRealSeg)}` : '--:--:--';
+                                const tProc = (m.totalProcesosSeg!=null)? `${formatTime(m.totalProcesosSeg)}` : '--:--:--';
                                 const obs = (m.observaciones||'').trim();
                                 const procLine = (p)=>{
                                         if(!p) return '--:--';
