@@ -2727,6 +2727,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${fecha}__${(maq?.nombre||maq?.id||'').trim()}__${tipo}__${p1Start}`;
     }
     // ========= Seguridad simple: clave local =========
+    const DEFAULT_PASS = 'pasantias';
     async function sha256Hex(str){
         const enc = new TextEncoder(); const data = enc.encode(str);
         const hash = await crypto.subtle.digest('SHA-256', data);
@@ -2783,6 +2784,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const setupShown = !document.getElementById('auth-setup-fields')?.classList.contains('hidden');
             showAuthOverlay(!setupShown);
         });
+        // Si no existe hash configurado, establecer el hash de la clave por defecto sin desbloquear
+        if(!localStorage.getItem('APP_PASS_HASH')){
+            try{ sha256Hex(DEFAULT_PASS).then(h=> localStorage.setItem('APP_PASS_HASH', h)); }catch(_){ }
+        }
         // Cancel estricto: si está bloqueado, no permite cerrar el overlay
         document.getElementById('auth-cancel')?.addEventListener('click', ()=>{
             if(isLocked()){
@@ -2819,8 +2824,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }catch(e){ msgEl.textContent=e.message||String(e); msgEl.classList.add('text-red-600'); }
         });
-        // primer uso: si no hay hash definido, pedir configuración
-        if(!localStorage.getItem('APP_PASS_HASH')){ showAuthOverlay(true); }
+        // primer uso: si no hay hash (se establecerá el por defecto), pedir inicio de sesión (no configuración)
+        if(!localStorage.getItem('APP_PASS_HASH')){ showAuthOverlay(false); }
     }
     function guardRoute(){
         const hasPass = !!localStorage.getItem('APP_PASS_HASH');
