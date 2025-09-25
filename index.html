@@ -323,17 +323,13 @@
                 </div>
                 <!-- Subvista: Base de datos remota -->
                 <div id="bd-wrapper" class="hidden">
-                    <div class="flex flex-wrap gap-2 justify-center items-center mb-2">
-                        <button id="bd-refresh" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700">Refrescar</button>
-                        <button id="bd-delete-all" class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-red-700" title="Borrar todos los registros en la BD (si la API lo permite)">Borrar todo BD</button>
-                        <details>
-                            <summary class="cursor-pointer text-stone-600 text-sm">Más opciones</summary>
-                            <div class="mt-2 flex gap-2 items-center">
-                                <input id="api-url-override" placeholder="API override" class="border rounded px-2 py-1 text-sm w-52" title="URL manual de la API (vaciar para volver por defecto)" />
-                                <button id="btn-guardar-api" class="bg-stone-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-stone-700">Guardar API</button>
-                            </div>
-                        </details>
-                    </div>
+        <div class="flex flex-wrap gap-2 justify-center items-center mb-2">
+            <input id="bd-filtro-fecha" type="date" class="border rounded px-3 py-1" placeholder="Filtrar por fecha" />
+            <input id="bd-filtro-tipo" type="text" class="border rounded px-3 py-1" placeholder="Filtrar por tipo de masa" />
+            <input id="bd-filtro-maquina" type="text" class="border rounded px-3 py-1" placeholder="Filtrar por amasadora" />
+            <button id="bd-refresh" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700">Refrescar</button>
+            <button id="bd-delete-all" class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-red-700" title="Borrar todos los registros en la BD (si la API lo permite)">Borrar todo BD</button>
+        </div>
                     <div id="sync-status" class="text-xs text-stone-600 mt-1 text-center"></div>
                     <div id="bd-lista" class="max-w-4xl mx-auto mt-3"></div>
                 </div>
@@ -1156,13 +1152,40 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!r.ok) throw new Error('HTTP '+r.status);
             const arr = await r.json();
             BD_CACHE = Array.isArray(arr) ? arr : [];
-            renderBDList(BD_CACHE);
+            renderBDList();
             status.textContent = `Cargados ${arr.length} registros de la BD.`; status.className='text-xs text-green-600 text-center';
         }catch(e){ cont.innerHTML = '<div class="text-red-600 text-center">Error cargando BD: '+(e.message||e)+'</div>'; status.textContent=''; }
     }
-    function renderBDList(items){
+    function getBDFiltered(){
+        const fFecha = document.getElementById('bd-filtro-fecha')?.value || '';
+        const fTipo = (document.getElementById('bd-filtro-tipo')?.value || '').toLowerCase();
+        const fMaq = (document.getElementById('bd-filtro-maquina')?.value || '').toLowerCase();
+        if(!Array.isArray(BD_CACHE) || !BD_CACHE.length) return [];
+        // Filtrado: fecha en el registro; tipo/amasadora en cada máquina
+        const out = [];
+        BD_CACHE.forEach(rec=>{
+            const fecha = rec.data?.fecha || rec.fecha || '';
+            if(fFecha && fecha !== fFecha) return;
+            const amas = Array.isArray(rec.data?.amasadoras) ? rec.data.amasadoras : [];
+            const amasFiltradas = amas.filter(m=>{
+                const tipo = (m.tipoMasa || m.tipoPan || '').toLowerCase();
+                const nombre = (m.nombre || m.id || '').toLowerCase();
+                const amNum = (m.numeroAmasadora || (String(m.nombre||m.id||'').match(/\d+/)?.[0]||'')).toString();
+                const maqStr = (nombre + ' ' + amNum).toLowerCase();
+                if(fTipo && !tipo.includes(fTipo)) return false;
+                if(fMaq && !maqStr.includes(fMaq)) return false;
+                return true;
+            });
+            if(amasFiltradas.length){
+                out.push({ ...rec, data: { ...(rec.data||{}), amasadoras: amasFiltradas } });
+            }
+        });
+        return out;
+    }
+    function renderBDList(){
         const cont = document.getElementById('bd-lista');
         if(!cont) return;
+        const items = getBDFiltered();
         if(!Array.isArray(items) || !items.length){ cont.innerHTML = '<div class="text-stone-500 text-center">No hay registros en la BD.</div>'; return; }
         cont.innerHTML = '';
         // Helper: normaliza procesos[] a proceso1..3 si faltan
@@ -1264,6 +1287,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     document.getElementById('bd-refresh')?.addEventListener('click', loadBDView);
+    // Refiltrar al escribir
+    ['bd-filtro-fecha','bd-filtro-tipo','bd-filtro-maquina'].forEach(id=>{
+        document.getElementById(id)?.addEventListener('input', ()=> renderBDList());
+    });
     document.getElementById('bd-delete-all')?.addEventListener('click', async function(){
         if(!confirm('¿Seguro que deseas borrar TODOS los registros en la BD?')) return;
         const base=resolveApiBase();
@@ -2625,25 +2652,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 // iniciar oculto siempre
                 const d=h.nextElementSibling; if(d && d.classList.contains('chart-desc')) d.style.display='none';
             });
-		// Inyección de controles BD si aún no existen
-		if(!document.getElementById('sync-status')){
-			const filtros = document.querySelector('#view-resultados .flex.flex-wrap.gap-4');
-			if(filtros){
-				const extra = document.createElement('div');
-				extra.className='flex flex-wrap gap-2 items-center';
-				extra.innerHTML = `
-					<div class="flex flex-wrap gap-2 items-center">
+        // Inyección de controles BD si aún no existen (sin override de API)
+        if(!document.getElementById('sync-status')){
+            const filtros = document.querySelector('#view-resultados .flex.flex-wrap.gap-4');
+            if(filtros){
+                const extra = document.createElement('div');
+                extra.className='flex flex-wrap gap-2 items-center';
+                extra.innerHTML = `
+                    <div class="flex flex-wrap gap-2 items-center">
                         <button id="btn-sync-bd" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700">Ver resultados previos</button>
                         <button id="btn-pasar-fecha-bd" class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-amber-700" title="Guardar todos los registros de la fecha seleccionada en la base de datos">Guardar resultados en la BD</button>
-						<input id="api-url-override" placeholder="API override" class="border rounded px-2 py-1 text-sm w-40" title="URL manual de la API (vaciar para volver por defecto)" />
-						<button id="btn-guardar-api" class="bg-stone-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-stone-700">Guardar API</button>
-					</div>
-					<div id="sync-status" class="text-xs text-stone-600 mt-1 w-full"></div>
-				`;
-				filtros.parentNode.insertBefore(extra, filtros.nextSibling);
-			}
-		}
-		initApiLogic();
+                    </div>
+                    <div id="sync-status" class="text-xs text-stone-600 mt-1 w-full"></div>
+                `;
+                filtros.parentNode.insertBefore(extra, filtros.nextSibling);
+            }
+        }
+        initApiLogic();
     });
 
     // ================= BACKEND SYNC / API DINÁMICA =================
@@ -2758,7 +2783,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const setupShown = !document.getElementById('auth-setup-fields')?.classList.contains('hidden');
             showAuthOverlay(!setupShown);
         });
-        document.getElementById('auth-cancel')?.addEventListener('click', ()=>{ if(isLocked()) { /* stay */ } hideAuthOverlay(); });
+        // Cancel estricto: si está bloqueado, no permite cerrar el overlay
+        document.getElementById('auth-cancel')?.addEventListener('click', ()=>{
+            if(isLocked()){
+                // Mantener overlay visible y dar feedback sutil
+                const msg = document.getElementById('auth-msg');
+                if(msg){ msg.textContent = 'App bloqueada: ingresa la clave o restablécela.'; msg.className='mt-3 text-sm text-red-600'; }
+                return;
+            }
+            hideAuthOverlay();
+        });
         document.getElementById('auth-submit')?.addEventListener('click', async ()=>{
             const setupShown = !document.getElementById('auth-setup-fields')?.classList.contains('hidden');
             const msgEl = document.getElementById('auth-msg'); msgEl.textContent=''; msgEl.className='mt-3 text-sm';
@@ -2955,13 +2989,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }catch(e){ setStatus('Error enviando: '+(e.message||e),'err'); mostrarToast('Error enviando: '+(e.message||e),'error'); }
     }
     function initApiLogic(){
-        const inp = document.getElementById('api-url-override');
-        if(inp){ inp.value = localStorage.getItem('API_URL_OVERRIDE')||''; }
-        document.getElementById('btn-guardar-api')?.addEventListener('click',()=>{
-            const v = (inp?.value||'').trim();
-            if(v){ localStorage.setItem('API_URL_OVERRIDE', v); setStatus('Override API guardado. '+v,'ok'); }
-            else { localStorage.removeItem('API_URL_OVERRIDE'); setStatus('Override eliminado, usando por defecto.','info'); }
-        });
         document.getElementById('btn-sync-bd')?.addEventListener('click', syncDesdeBD);
         const btnPasarFecha = document.getElementById('btn-pasar-fecha-bd');
         if(btnPasarFecha){
