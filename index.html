@@ -2778,7 +2778,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function isRemembered(){ return localStorage.getItem('APP_REMEMBER')==='1'; }
     function markRemembered(on){ if(on) localStorage.setItem('APP_REMEMBER','1'); else localStorage.removeItem('APP_REMEMBER'); }
-    function isUnlocked(){ return sessionStorage.getItem('APP_UNLOCKED')==='1' || isRemembered(); }
+    function isUnlocked(){ return !isLocked() && (sessionStorage.getItem('APP_UNLOCKED')==='1' || isRemembered()); }
     function updateAjustesVisibility(){
         const card = document.getElementById('ajustes-card');
         if(!card) return;
