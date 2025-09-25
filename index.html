@@ -80,8 +80,11 @@
                 </ul>
             </div>
             <div class="bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
-                <h2 class="text-2xl font-extrabold text-stone-900 mb-3">Ajustes</h2>
-                <div class="space-y-4 text-base">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-2xl font-extrabold text-stone-900">Ajustes</h2>
+                    <button id="toggle-ajustes" class="text-sm text-stone-600 underline">Mostrar ajustes</button>
+                </div>
+                <div id="ajustes-content" class="space-y-4 text-base hidden">
                     <div>
                         <label class="block font-semibold text-stone-700">URL de la API</label>
                         <input id="settings-api-url" class="w-full border rounded px-3 py-2 text-base" placeholder="https://tu-backend" />
@@ -358,6 +361,24 @@ window.html2canvas || document.write('<script src="https://cdn.jsdelivr.net/npm/
 window.jspdf || document.write('<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"><\/script>');
 // CDN Chart.js
 window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"><\/script>');
+// Ocultar/mostrar tarjeta de Ajustes (persistente)
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('toggle-ajustes');
+    const ajustesContent = document.getElementById('ajustes-content');
+    if (!toggleBtn || !ajustesContent) return;
+    // Leer preferencia
+    const saved = localStorage.getItem('ajustesVisible');
+    let visible = saved === '1';
+    if (saved === null) visible = false; // por defecto oculto
+    ajustesContent.classList.toggle('hidden', !visible);
+    toggleBtn.textContent = visible ? 'Ocultar ajustes' : 'Mostrar ajustes';
+    toggleBtn.addEventListener('click', () => {
+        visible = !visible;
+        ajustesContent.classList.toggle('hidden', !visible);
+        toggleBtn.textContent = visible ? 'Ocultar ajustes' : 'Mostrar ajustes';
+        localStorage.setItem('ajustesVisible', visible ? '1' : '0');
+    });
+});
 // ======================= GLOBAL VARIABLES AND DATA =======================
     // Datos de amasadoras
     const machineData = [
