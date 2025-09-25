@@ -139,7 +139,7 @@
                         <div class="mt-3 space-y-3 text-sm leading-relaxed text-stone-700">
                             <p><span class="font-semibold">¿Qué es un conjunto?</span> Es un registro de una <strong>fecha</strong> con una o varias <strong>amasadoras</strong> y sus 3 procesos: <strong>Esponja</strong>, <strong>Masa</strong> y <strong>Mantequilla</strong> (tiempos reales, inicios, fines), más variables: <strong>Lote</strong>, <strong>Tipo de masa</strong>, <strong>Hielo</strong>, <strong>TM/TA/H</strong>, <strong>Personal</strong> y <strong>Observaciones</strong>.</p>
                             <ol class="list-decimal ml-5 space-y-1">
-                                <li>Completa <strong>Fecha</strong>, <strong>TA</strong>, <strong>H</strong> y <strong>N° Personal</strong>.</li>
+                                <li>Completa <strong>Fecha</strong>, <strong>TA</strong>, <strong>H</strong> y <strong>Personal (mín–máx)</strong>.</li>
                                 <li>En cada amasadora define <strong>Tipo de masa</strong>, marca <strong>Hielo</strong> si aplica y al finalizar registra <strong>Temp. de masa</strong> y <strong>Observaciones</strong>.</li>
                                 <li>Ejecuta los procesos en orden (Iniciar / Detener). Sólo puede estar activo uno por máquina; iniciar otro detiene el previo.</li>
                                 <li>Se guardan inicio, fin y duración. El <strong>Total máquina</strong> va desde el inicio del primer proceso al fin del tercero. <strong>TM1 / TM2</strong> son los huecos entre procesos.</li>
@@ -165,7 +165,7 @@
                         </div>
                     </details>
                 </div>
-            <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+            <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
                 <div>
                     <label for="fecha" class="block mb-1 text-sm font-semibold text-stone-700">Fecha</label>
                     <input type="date" id="fecha" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
@@ -179,8 +179,12 @@
                     <input type="number" id="h" step="0.1" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="H" />
                 </div>
                 <div>
-                    <label for="personal-general" class="block mb-1 text-sm font-semibold text-stone-700">N° Personal</label>
-                    <input type="number" min="0" id="personal-general" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Cantidad" />
+                    <label for="personal-min" class="block mb-1 text-sm font-semibold text-stone-700">Personal (mín)</label>
+                    <input type="number" min="0" id="personal-min" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Mínimo" />
+                </div>
+                <div>
+                    <label for="personal-max" class="block mb-1 text-sm font-semibold text-stone-700">Personal (máx)</label>
+                    <input type="number" min="0" id="personal-max" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Máximo" />
                 </div>
             </div>
             <main id="machine-cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-7 mb-10"></main>
@@ -671,7 +675,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         if (document.getElementById(`hielo-si-${machine.id}`).checked) hielo = 'Si';
         else if (document.getElementById(`hielo-no-${machine.id}`).checked) hielo = 'No';
         // Obtener número de personal
-        const personal = document.getElementById('personal-general')?.value || '';
+    const personalMin = document.getElementById('personal-min')?.value || '';
+    const personalMax = document.getElementById('personal-max')?.value || '';
         // Obtener observaciones
         const observaciones = document.getElementById(`obs-${machine.id}`).value || '';
         // Obtener variables nuevas
@@ -686,7 +691,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             lote,
             tipoMasa: tipoMasaFinal,
             hielo,
-            personal,
+            personalMin,
+            personalMax,
             tempAmbiente,
             humedad,
             tempMasa,
@@ -736,10 +742,12 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         resultados.forEach((res, idx) => {
             const fecha = res.fecha || '--';
             if (filtroFecha && fecha !== filtroFecha) return;
-            // Mostrar N° Personal general si existe
-            let personalGeneral = '';
-            if (res.maquinas && res.maquinas.length > 0 && 'personal' in res.maquinas[0]) {
-                personalGeneral = res.maquinas[0].personal || '';
+            // Mostrar rango de Personal general si existe (mín–máx)
+            let personalGeneralMin = '';
+            let personalGeneralMax = '';
+            if (res.maquinas && res.maquinas.length > 0) {
+                personalGeneralMin = res.maquinas[0].personalMin || '';
+                personalGeneralMax = res.maquinas[0].personalMax || '';
             }
             const maquinas = res.maquinas || [];
             maquinas.forEach((maq, maqIdx) => {
@@ -822,7 +830,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                         <span class="text-stone-800 font-bold text-xl">T. Muerto 1: <span class="font-mono text-lg">${formatTime(tiempoMuerto1)}</span></span>
                         <span class="text-stone-800 font-bold text-xl">T. Muerto 2: <span class="font-mono text-lg">${formatTime(tiempoMuerto2)}</span></span>
                         <span class="text-stone-800 font-bold text-xl">T. Muertos Total: <span class="font-mono text-lg">${formatTime(totalMuertos)}</span></span>
-                        ${maqIdx === 0 && personalGeneral ? `<span class='text-stone-800 font-bold text-xl'>N° Personal: <span class='font-mono text-lg'>${personalGeneral}</span></span>` : ''}
+                        ${maqIdx === 0 && (personalGeneralMin || personalGeneralMax) ? `<span class='text-stone-800 font-bold text-xl'>Personal: <span class='font-mono text-lg'>${personalGeneralMin||'?'}–${personalGeneralMax||'?'}</span></span>` : ''}
                     </div>
                     <div class="mb-4 divide-y divide-stone-200">
                         ${procesosHtml}
@@ -902,6 +910,11 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         function showBD(){ bdW?.classList.remove('hidden'); localW?.classList.add('hidden'); subBD?.classList.add('tab-btn-active'); subLocal?.classList.remove('tab-btn-active'); loadBDView(); }
         subLocal?.addEventListener('click', showLocal);
         subBD?.addEventListener('click', showBD);
+        // Si no hay resultados locales en ningún dispositivo (o almacenamiento vacío), mostrar BD por defecto
+        try{
+            const res = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+            if(!res || !Array.isArray(res) || res.length===0){ showBD(); }
+        }catch(_){ showBD(); }
     })();
 
     // Enviar todo a la BD (local)
@@ -957,7 +970,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                 fecha: reg.fecha,
                 tempAmbiente: maq.tempAmbiente||reg.maquinas?.[0]?.tempAmbiente||'',
                 humedad: maq.humedad||reg.maquinas?.[0]?.humedad||'',
-                personal: reg.maquinas?.[0]?.personal||'',
+                personalMin: reg.maquinas?.[0]?.personalMin||'',
+                personalMax: reg.maquinas?.[0]?.personalMax||'',
                 // Resumen/agrupados a nivel de registro (un solo equipo en este caso)
                 resumenDia: (function(){
                     const tMasa = parseFloat(maq.tempMasa);
@@ -986,7 +1000,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                     tempMasa: maq.tempMasa||'',
                     observaciones: maq.observaciones||'',
                     // factores por máquina (también en raíz, pero se duplican aquí para auditoría por máquina)
-                    personal: maq.personal||reg.maquinas?.[0]?.personal||'',
+                    personalMin: maq.personalMin||reg.maquinas?.[0]?.personalMin||'',
+                    personalMax: maq.personalMax||reg.maquinas?.[0]?.personalMax||'',
                     tempAmbiente: maq.tempAmbiente||reg.maquinas?.[0]?.tempAmbiente||'',
                     humedad: maq.humedad||reg.maquinas?.[0]?.humedad||'',
                     // métricas derivadas
@@ -1050,7 +1065,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                 const tm = (m.tempMasa!=null && m.tempMasa!=='')? `${m.tempMasa}`:'--';
                 const ta = (m.tempAmbiente!=null && m.tempAmbiente!=='')? `${m.tempAmbiente}`:'--';
                 const h = (m.humedad!=null && m.humedad!=='')? `${m.humedad}`:'--';
-                const per = m.personal||'';
+                const perMin = m.personalMin||'';
+                const perMax = m.personalMax||'';
                 // Derivados si faltan
                 const p1 = m.proceso1||{}; const p2 = m.proceso2||{}; const p3 = m.proceso3||{};
                 const tm1Seg = (m.tm1Seg!=null)? m.tm1Seg : ((p1?.endTime && p2?.startTime)? Math.max(0, Math.floor((p2.startTime - p1.endTime)/1000)) : null);
@@ -1074,7 +1090,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                         <span class="text-stone-800 font-bold text-xl">H: <span class="font-mono text-lg">${h}%</span></span>
                         <span class="text-stone-800 font-bold text-xl">TM: <span class="font-mono text-lg">${tm}C</span></span>
                         <span class="text-stone-800 font-bold text-xl">TA: <span class="font-mono text-lg">${ta}C</span></span>
-                        ${per? `<span class="text-stone-800 font-bold text-xl">N° Personal: <span class="font-mono text-lg">${per}</span></span>`:''}
+                        ${(perMin||perMax)? `<span class="text-stone-800 font-bold text-xl">Personal: <span class="font-mono text-lg">${perMin||'?'}–${perMax||'?'}</span></span>`:''}
                         <span class="text-stone-800 font-bold text-xl">T. Muerto 1: <span class="font-mono text-lg">${tm1Seg!=null? formatTime(tm1Seg):'--:--:--'}</span></span>
                         <span class="text-stone-800 font-bold text-xl">T. Muerto 2: <span class="font-mono text-lg">${tm2Seg!=null? formatTime(tm2Seg):'--:--:--'}</span></span>
                         <span class="text-stone-800 font-bold text-xl">T. Muertos Total: <span class="font-mono text-lg">${formatTime(muertosSeg)}</span></span>
@@ -1275,7 +1291,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                         'TA': firstRow ? limpiarTexto(maq.tempAmbiente||'') : '',
                         'H': firstRow ? limpiarTexto(maq.humedad||'') : '',
                         'TM': firstRow ? limpiarTexto(maq.tempMasa||'') : '',
-                        Personal: firstRow ? limpiarTexto(maq.personal||'') : '',
+                        PersonalMin: firstRow ? limpiarTexto(maq.personalMin||'') : '',
+                        PersonalMax: firstRow ? limpiarTexto(maq.personalMax||'') : '',
                         Proceso: ['Esponja','Masa','Mantequilla'][i-1],
                         Minutos: proc.minutos||0,
                         Segundos: proc.segundos||0,
@@ -2302,7 +2319,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                 tempMasa: m.tempMasa||'',
                 observaciones: m.observaciones||'',
                 // factores por máquina (duplicados aquí para conservar contexto por equipo)
-                personal: m.personal||r.maquinas?.[0]?.personal||'',
+                personalMin: m.personalMin||r.maquinas?.[0]?.personalMin||'',
+                personalMax: m.personalMax||r.maquinas?.[0]?.personalMax||'',
                 tempAmbiente: m.tempAmbiente||r.tempAmbiente||'',
                 humedad: m.humedad||r.humedad||'',
                 // métricas derivadas
@@ -2311,13 +2329,14 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             });
         }));
         if(!amasadoras.length) return null;
-        // Tomar factores generales de la primera máquina
-        const ref = registrosFecha[0].maquinas[0];
+    // Tomar factores generales de la primera máquina
+    const ref = registrosFecha[0].maquinas[0];
         return {
             fecha,
             tempAmbiente: ref.tempAmbiente||'',
             humedad: ref.humedad||'',
-            personal: ref.personal||'',
+            personalMin: ref.personalMin||'',
+            personalMax: ref.personalMax||'',
             resumenDia: {
                 fecha,
                 cantidadAmasadoras,
