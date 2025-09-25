@@ -1,4 +1,4 @@
-# Calculadora de Procesos de Panadería — Guía rápida
+# Calculadora de Producción de Pan — Guía rápida
 
 Esta guía resume cómo usar la app (frontend), cómo enviar resultados a la base de datos, y cómo resolver los problemas más comunes.
 

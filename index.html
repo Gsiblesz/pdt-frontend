@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Procesos de Panadería</title>
+    <title>Calculadora de Producción de Pan</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,6 +14,8 @@
       .tab-btn { padding:0.5rem 1rem; font-size:.875rem; font-weight:600; border-radius:.75rem; border:1px solid #d6d3d1; background:#fff; color:#57534e; transition:all .18s; }
       .tab-btn:hover { background:#f5f5f4; color:#111827; }
       .tab-btn-active { background:#2563eb; color:#fff; border-color:#2563eb; box-shadow:0 1px 2px rgba(0,0,0,.08); }
+            /* Main tabs larger without affecting sub-tabs */
+            .tab-btn.main-tab { padding:0.625rem 1.25rem; font-size:1rem; border-radius:1rem; }
       .metric-badge { display:inline-block; padding:2px 6px; border-radius:6px; font-size:.625rem; font-weight:600; background:#e7e5e4; color:#44403c; }
       .metric-badge.warn { background:#fee2e2; color:#dc2626; }
     .chart-desc { display:none; font-size:.75rem; line-height:1.1rem; color:#475569; font-style:italic; margin-top:-6px; margin-bottom:10px; padding-left:.75rem; border-left:3px solid #2563eb20; }
@@ -22,12 +24,96 @@
     </style>
 </head>
 <body class="bg-stone-50 text-stone-800 min-h-screen">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <div class="hidden">
-        <button id="main-amasadoras" class="px-4 py-2 rounded-l-lg bg-blue-600 text-white font-bold focus:outline-none">Amasadoras</button>
+    <!-- Auth overlay (clave de acceso) -->
+    <div id="auth-overlay" class="fixed inset-0 bg-white/95 backdrop-blur-sm z-[10000] hidden">
+        <div class="w-full h-full flex items-center justify-center p-4">
+            <div class="bg-white border border-stone-300 rounded-2xl shadow-xl p-6 w-full max-w-md">
+                <h2 id="auth-title" class="text-2xl font-extrabold text-stone-900 mb-1">Clave de acceso</h2>
+                <p id="auth-sub" class="text-sm text-stone-600 mb-4">Ingresa la clave para usar la app.</p>
+                <div id="auth-setup-fields" class="hidden">
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Nueva clave</label>
+                    <input id="auth-new-pass" type="password" class="w-full border rounded px-3 py-2 mb-3" placeholder="••••••" />
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Confirmar clave</label>
+                    <input id="auth-new-pass2" type="password" class="w-full border rounded px-3 py-2" placeholder="••••••" />
+                    <p class="text-xs text-stone-500 mt-2">Se guardará de forma local (hash) en este navegador.</p>
+                </div>
+                <div id="auth-login-fields">
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Clave</label>
+                    <input id="auth-pass" type="password" class="w-full border rounded px-3 py-2" placeholder="••••••" />
+                    <label class="inline-flex items-center gap-2 text-sm text-stone-700 mt-3">
+                        <input id="auth-recordar" type="checkbox" class="border rounded" /> Recordar en este navegador
+                    </label>
+                </div>
+                <div class="mt-5 flex flex-wrap gap-2 justify-end">
+                    <button id="auth-cambiar-modo" class="text-sm text-stone-600 underline">Configurar/Restablecer clave</button>
+                    <div class="flex-1"></div>
+                    <button id="auth-cancel" class="px-3 py-2 text-sm rounded border border-stone-300">Cancelar</button>
+                    <button id="auth-submit" class="px-4 py-2 text-sm rounded bg-blue-600 text-white font-semibold">Continuar</button>
+                </div>
+                <div id="auth-msg" class="mt-3 text-sm"></div>
+            </div>
+        </div>
     </div>
-    <!-- Section views -->
-    <div id="section-amasadoras">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Main app tabs: Menu | Amasadoras | Fermentadora | Hornos -->
+    <div class="flex flex-wrap justify-center gap-4 mb-8">
+        <button id="tab-main-menu" class="tab-btn main-tab tab-btn-active">Menú</button>
+        <button id="tab-main-amasadoras" class="tab-btn main-tab">Amasadoras</button>
+        <button id="tab-main-fermentadora" class="tab-btn main-tab">Fermentadora</button>
+        <button id="tab-main-hornos" class="tab-btn main-tab">Hornos</button>
+    </div>
+    <!-- Menú view (about + ajustes) -->
+    <div id="view-main-menu" class="block">
+        <div class="mb-10 text-center max-w-4xl mx-auto">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-3 text-stone-900 tracking-tight">Curvas de control para producción de pan</h1>
+            <p class="text-stone-700 text-lg leading-relaxed">Aplicación para medir y analizar la producción de pan en el área de Producción de la empresa <strong>Pan de Tata</strong>, creada como parte de un proyecto de <strong>pasantías</strong>.</p>
+            <p class="text-stone-700 text-lg mt-3">Desarrollada por <strong>Gerardo Siblesz</strong>, estudiante de <strong>Ingeniería en Producción y Mecánica</strong> de la <strong>Universidad Metropolitana</strong>.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <div class="bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
+                <h2 class="text-2xl font-extrabold text-stone-900 mb-3">Cómo funciona</h2>
+                <ul class="list-disc ml-6 text-base text-stone-700 space-y-1.5">
+                    <li>Registra variables generales y tiempos por máquina.</li>
+                    <li>Guarda resultados locales y envíalos a la Base de Datos.</li>
+                    <li>Consulta desde cualquier dispositivo usando la misma API y clave.</li>
+                    <li>Explora Resultados y Tablas para análisis y exporta en CSV/PDF.</li>
+                </ul>
+            </div>
+            <div class="bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
+                <h2 class="text-2xl font-extrabold text-stone-900 mb-3">Ajustes</h2>
+                <div class="space-y-4 text-base">
+                    <div>
+                        <label class="block font-semibold text-stone-700">URL de la API</label>
+                        <input id="settings-api-url" class="w-full border rounded px-3 py-2 text-base" placeholder="https://tu-backend" />
+                        <button id="settings-save-api" class="mt-2 bg-stone-700 text-white px-4 py-2 rounded">Guardar URL</button>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-stone-700">Clave de API</label>
+                        <input id="settings-api-key" type="password" class="w-full border rounded px-3 py-2 text-base" placeholder="••••••" />
+                        <label class="inline-flex items-center gap-2 mt-2"><input id="settings-remember-key" type="checkbox" class="scale-110" /> Recordar en este dispositivo</label>
+                        <button id="settings-save-key" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded">Guardar clave</button>
+                        <div id="settings-key-status" class="mt-2 text-sm text-stone-600"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fermentadora (placeholder) - sección de nivel superior -->
+    <div id="section-fermentadora" class="hidden">
+        <div class="bg-white border border-stone-200 rounded-xl p-8 shadow-sm text-center text-stone-600 max-w-3xl mx-auto">
+            Próximamente: módulo de Fermentadora.
+        </div>
+    </div>
+
+    <!-- Hornos (placeholder) - sección de nivel superior -->
+    <div id="section-hornos" class="hidden">
+        <div class="bg-white border border-stone-200 rounded-xl p-8 shadow-sm text-center text-stone-600 max-w-3xl mx-auto">
+            Próximamente: módulo de Hornos.
+        </div>
+    </div>
+    <!-- Amasadoras section (existing app) -->
+    <div id="section-amasadoras" class="hidden">
         <div class="flex flex-wrap justify-center gap-3 mb-6">
             <button id="tab-medicion" class="tab-btn tab-btn-active">Medición</button>
             <button id="tab-resultados" class="tab-btn">Resultados</button>
@@ -52,6 +138,8 @@
                         <input id="tablas-bd-lote" placeholder="Lote" class="border rounded px-2 py-1 text-sm w-28" />
                         <input id="tablas-bd-tipo" placeholder="Tipo de masa" class="border rounded px-2 py-1 text-sm w-36" />
                         <button id="tablas-bd-clear" class="text-sm text-stone-600 hover:text-stone-900 underline">Quitar filtros</button>
+                    </div>
+                    <div id="tablas-export-controls" class="flex flex-wrap items-center gap-2">
                         <span class="mx-2 text-stone-300">|</span>
                         <button id="tablas-export-pdf" class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-blue-700">Exportar (PDF)</button>
                         <button id="tablas-export-csv" class="bg-emerald-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-emerald-700">Exportar (CSV)</button>
@@ -63,12 +151,14 @@
                     <summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg">Mapeo de gráficas y propósito analítico</summary>
                     <div class="mt-3 text-sm space-y-3 text-stone-700">
                         <ul class="list-disc ml-5 space-y-1">
-                            <li><span class="font-medium">Benchmark entre recetas (1 y 6)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo de masa.</li>
-                            <li><span class="font-medium">Detecta dónde optimizar (2, 3 y 7)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
-                            <li><span class="font-medium">Control de consistencia y calidad (4, 5 y 6)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Temp. masa por tipo.</li>
-                            <li><span class="font-medium">Validar hipótesis de proceso (8)</span>: Relación temperatura de masa vs tiempo total (scatter + regresión).</li>
+                            <li><span class="font-medium">Punto de partida (1)</span>: Resumen de tiempos.</li>
+                            <li><span class="font-medium">Benchmark entre recetas (2 y 5)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo.</li>
+                            <li><span class="font-medium">Detecta dónde optimizar (3, 4 y 9)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
+                            <li><span class="font-medium">Control de consistencia (5, 6 y 8)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Distribución por tipo (boxplot).</li>
+                            <li><span class="font-medium">Contexto y factores (7 y 11)</span>: TA y Humedad por día, Personal por día (mín–máx).</li>
+                            <li><span class="font-medium">Hipótesis de proceso (10)</span>: Relación temperatura de masa vs tiempo total (scatter).</li>
                         </ul>
-                        <p class="text-xs text-stone-500">Los números refieren al orden visual aproximado de las secciones inferiores.</p>
+                        <p class="text-xs text-stone-500">Los números refieren al orden visual de las secciones inferiores.</p>
                     </div>
                 </details>
             </div>
@@ -108,6 +198,11 @@
                     <div id="tabla-temp-cruzada" class="overflow-x-auto text-sm"></div>
                 </section>
                 <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">TA y Humedad por día <span class="info-hint text-blue-600 cursor-help align-middle" title="Promedio diario de temperatura ambiente y humedad.">ℹ️</span></h3>
+                    <p class="chart-desc">Para cada fecha, se resume la Temperatura Ambiente (TA) y la Humedad (H) promedio basadas en las máquinas registradas ese día.</p>
+                    <div id="tabla-ta-h-dia" class="overflow-x-auto text-sm mb-4"></div>
+                </section>
+                <section>
                     <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Distribución tiempos por tipo de masa (Boxplot) <span class="info-hint text-blue-600 cursor-help align-middle" title="Variabilidad por receta.">ℹ️</span></h3>
                     <p class="chart-desc">Mide estabilidad operativa: IQR reducido indica proceso controlado; valores altos sugieren inconsistencia.</p>
                     <canvas id="chart-boxplot-tipo" height="140"></canvas>
@@ -122,10 +217,15 @@
                     <p class="chart-desc">Evalúa si la temperatura final se asocia a mayor o menor duración (r cercano a 0 indica poca relación).</p>
                     <canvas id="chart-scatter-temp-tiempo" height="160"></canvas>
                 </section>
-            </div>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Personal por día (mín–máx) <span class="info-hint text-blue-600 cursor-help align-middle" title="Resumen diario de dotación (límite inferior y superior).">ℹ️</span></h3>
+                    <p class="chart-desc">Para cada fecha se muestra el mínimo y máximo de personal (agregado por día), su midpoint y el rango. Debajo se compara visualmente por día.</p>
+                    <div id="tabla-personal-dia" class="overflow-x-auto text-sm mb-4"></div>
+                    <canvas id="chart-personal-dia" height="140"></canvas>
+                </section>
             </div>
         </div>
-        <div id="view-medicion" class="block">
+        <div id="view-medicion" class="hidden">
                 <div class="mb-8">
                     <h1 class="text-3xl font-extrabold text-stone-900 tracking-tight mb-2">Cálculo de Amasadoras</h1>
                     <p class="text-stone-600 text-sm md:text-base">Cómo operar el programa: registra primero las variables generales (fecha, TA, H, personal). Luego en cada tarjeta de amasadora define el tipo de masa y controla los tres procesos secuencialmente. Guarda cada máquina al terminar para formar un conjunto que luego podrás analizar y exportar.</p>
@@ -156,10 +256,12 @@
                             <div class="pt-3 border-t border-stone-200"></div>
                             <h4 class="font-semibold text-stone-800">Mapeo de gráficas y propósito analítico</h4>
                             <ul class="list-disc ml-5 space-y-1">
-                                <li><span class="font-medium">Benchmark entre recetas (1 y 6)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo de masa.</li>
-                                <li><span class="font-medium">Detecta dónde optimizar (2, 3 y 7)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
-                                <li><span class="font-medium">Control de consistencia y calidad (4, 5 y 6)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Temp. masa por tipo.</li>
-                                <li><span class="font-medium">Validar hipótesis de proceso (8)</span>: Relación temperatura de masa vs tiempo total (scatter + regresión).</li>
+                                <li><span class="font-medium">Punto de partida (1)</span>: Resumen de tiempos.</li>
+                                <li><span class="font-medium">Benchmark entre recetas (2 y 5)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo.</li>
+                                <li><span class="font-medium">Detecta dónde optimizar (3, 4 y 9)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
+                                <li><span class="font-medium">Control de consistencia (5, 6 y 8)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Distribución por tipo (boxplot).</li>
+                                <li><span class="font-medium">Contexto y factores (7 y 11)</span>: TA y Humedad por día, Personal por día (mín–máx).</li>
+                                <li><span class="font-medium">Hipótesis de proceso (10)</span>: Relación temperatura de masa vs tiempo total (scatter).</li>
                             </ul>
                             <p class="text-xs text-stone-500">Tip: Usa BD como fuente para analizar históricos y evita perder datos al cambiar de dispositivo.</p>
                         </div>
@@ -186,52 +288,53 @@
                     <label for="personal-max" class="block mb-1 text-sm font-semibold text-stone-700">Personal (máx)</label>
                     <input type="number" min="0" id="personal-max" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Máximo" />
                 </div>
+                
             </div>
             <main id="machine-cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-7 mb-10"></main>
             <div id="msg-guardar" class="mt-2 text-center text-sm"></div>
         </div>
-    <!-- Vista de resultados (única) -->
-    <div id="view-resultados" class="hidden">
-            <div class="mb-4 flex flex-wrap gap-3 justify-end">
-                <button id="btn-export-resultados-pdf" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition-colors">Exportar Resultados (PDF)</button>
-                <button id="btn-export-resultados-csv" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-emerald-700 transition-colors">Exportar Resultados (CSV)</button>
-            </div>
-            <!-- Subpestañas: Locales | Base de datos -->
-            <div class="flex justify-center gap-2 mb-4">
-                <button id="subtab-local" class="tab-btn tab-btn-active">Locales</button>
-                <button id="subtab-bd" class="tab-btn">Base de datos</button>
-            </div>
-            <!-- Subvista: Resultados locales -->
-            <div id="resultados-local-wrapper">
-                <!-- Filtros para resultados locales -->
-                <div class="flex flex-wrap gap-4 justify-center mb-3">
-                    <input id="filtro-fecha" type="date" class="border rounded px-3 py-1" placeholder="Filtrar por fecha" />
-                    <input id="filtro-tipo" type="text" class="border rounded px-3 py-1" placeholder="Filtrar por tipo de masa" />
-                    <input id="filtro-maquina" type="text" class="border rounded px-3 py-1" placeholder="Filtrar por amasadora" />
-                    <button id="btn-enviar-todo-bd" class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-amber-700" title="Enviar todos los resultados locales a la BD">Enviar todo a la BD</button>
-                    <button id="btn-clear-resultados" class="bg-red-500 text-white px-3 py-1 rounded">Borrar todo</button>
+        <!-- Vista de resultados (única) -->
+        <div id="view-resultados" class="hidden">
+                <div class="mb-4 flex flex-wrap gap-3 justify-end">
+                    <button id="btn-export-resultados-pdf" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition-colors">Exportar Resultados de Amasadoras (PDF)</button>
+                    <button id="btn-export-resultados-csv" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-emerald-700 transition-colors">Exportar Resultados de Amasadoras (CSV)</button>
                 </div>
-                <div id="local-bd-status" class="text-xs text-stone-600 mt-1 text-center"></div>
-                <div id="promedios" class="text-sm text-stone-600 text-center mb-4"></div>
-                <div id="resultados-lista"></div>
-            </div>
-            <!-- Subvista: Base de datos remota -->
-            <div id="bd-wrapper" class="hidden">
-                <div class="flex flex-wrap gap-2 justify-center items-center mb-2">
-                    <button id="bd-refresh" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700">Refrescar</button>
-                    <button id="bd-delete-all" class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-red-700" title="Borrar todos los registros en la BD (si la API lo permite)">Borrar todo BD</button>
-                    <details>
-                        <summary class="cursor-pointer text-stone-600 text-sm">Más opciones</summary>
-                        <div class="mt-2 flex gap-2 items-center">
-                            <input id="api-url-override" placeholder="API override" class="border rounded px-2 py-1 text-sm w-52" title="URL manual de la API (vaciar para volver por defecto)" />
-                            <button id="btn-guardar-api" class="bg-stone-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-stone-700">Guardar API</button>
-                        </div>
-                    </details>
+                <!-- Subpestañas: Locales | Base de datos -->
+                <div class="flex justify-center gap-2 mb-4">
+                    <button id="subtab-local" class="tab-btn tab-btn-active">Locales</button>
+                    <button id="subtab-bd" class="tab-btn">Base de datos</button>
                 </div>
-                <div id="sync-status" class="text-xs text-stone-600 mt-1 text-center"></div>
-                <div id="bd-lista" class="max-w-4xl mx-auto mt-3"></div>
+                <!-- Subvista: Resultados locales -->
+                <div id="resultados-local-wrapper">
+                    <!-- Filtros para resultados locales -->
+                    <div class="flex flex-wrap gap-4 justify-center mb-3">
+                        <input id="filtro-fecha" type="date" class="border rounded px-3 py-1" placeholder="Filtrar por fecha" />
+                        <input id="filtro-tipo" type="text" class="border rounded px-3 py-1" placeholder="Filtrar por tipo de masa" />
+                        <input id="filtro-maquina" type="text" class="border rounded px-3 py-1" placeholder="Filtrar por amasadora" />
+                        <button id="btn-enviar-todo-bd" class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-amber-700" title="Enviar todos los resultados locales a la BD">Enviar todo a la BD</button>
+                        <button id="btn-clear-resultados" class="bg-red-500 text-white px-3 py-1 rounded">Borrar todo</button>
+                    </div>
+                    <div id="local-bd-status" class="text-xs text-stone-600 mt-1 text-center"></div>
+                    <div id="promedios" class="text-sm text-stone-600 text-center mb-4"></div>
+                    <div id="resultados-lista"></div>
+                </div>
+                <!-- Subvista: Base de datos remota -->
+                <div id="bd-wrapper" class="hidden">
+                    <div class="flex flex-wrap gap-2 justify-center items-center mb-2">
+                        <button id="bd-refresh" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700">Refrescar</button>
+                        <button id="bd-delete-all" class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-red-700" title="Borrar todos los registros en la BD (si la API lo permite)">Borrar todo BD</button>
+                        <details>
+                            <summary class="cursor-pointer text-stone-600 text-sm">Más opciones</summary>
+                            <div class="mt-2 flex gap-2 items-center">
+                                <input id="api-url-override" placeholder="API override" class="border rounded px-2 py-1 text-sm w-52" title="URL manual de la API (vaciar para volver por defecto)" />
+                                <button id="btn-guardar-api" class="bg-stone-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-stone-700">Guardar API</button>
+                            </div>
+                        </details>
+                    </div>
+                    <div id="sync-status" class="text-xs text-stone-600 mt-1 text-center"></div>
+                    <div id="bd-lista" class="max-w-4xl mx-auto mt-3"></div>
+                </div>
             </div>
-        </div>
         </div>
     </div>
 </body>
@@ -930,7 +1033,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             if(!payload){ status.textContent = 'No hay datos locales para esa fecha.'; status.className='text-xs text-stone-600 text-center'; return; }
             const base=resolveApiBase();
             const url = base + '/registros';
-            const r = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             const n = payload.amasadoras?.length || 0;
             status.textContent = `¡Enviado a BD correctamente! (${n} amasadora${n===1?'':'s'})`; status.className='text-xs text-green-600 text-center';
@@ -1011,7 +1114,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             };
             const base=resolveApiBase();
             const url = base + '/registros';
-            const r = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             status.textContent = '¡Tarjeta enviada a BD correctamente!'; status.className='text-xs text-green-600 text-center';
         }catch(err){ status.textContent = 'Error enviando tarjeta: '+(err.message||err); status.className='text-xs text-red-600 text-center'; }
@@ -1028,7 +1131,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         if(!cont) return;
         cont.innerHTML = '<div class="text-stone-500 text-center">Cargando...</div>';
         try{
-            const r = await fetch(url);
+            const r = await fetch(url, { headers: apiHeaders(false) });
             if(!r.ok) throw new Error('HTTP '+r.status);
             const arr = await r.json();
             BD_CACHE = Array.isArray(arr) ? arr : [];
@@ -1146,7 +1249,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const url = base + '/registros';
         const status = document.getElementById('sync-status');
         try{
-            const r = await fetch(url,{ method:'DELETE' });
+            const r = await fetch(url,{ method:'DELETE', headers: apiHeaders(false) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             status.textContent = 'Registros eliminados.'; status.className='text-xs text-green-600 text-center';
             loadBDView();
@@ -1179,7 +1282,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const url = base + '/registros/'+id;
         const status = document.getElementById('sync-status');
         try{
-            const r = await fetch(url,{ method:'DELETE' });
+            const r = await fetch(url,{ method:'DELETE', headers: apiHeaders(false) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             status.textContent = 'Registro eliminado.'; status.className='text-xs text-green-600 text-center';
             loadBDView();
@@ -1199,6 +1302,10 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
     // Cambio de fuente de datos en Tablas
     document.getElementById('tablas-source')?.addEventListener('change', function(){
         localStorage.setItem('TABLAS_SOURCE', this.value);
+        const btnPdf=document.getElementById('tablas-export-pdf');
+        const btnCsv=document.getElementById('tablas-export-csv');
+        if(btnPdf) btnPdf.textContent = `Exportar (${this.value==='bd'?'BD':'Locales'}) PDF`;
+        if(btnCsv) btnCsv.textContent = `Exportar (${this.value==='bd'?'BD':'Locales'}) CSV`;
         buildTablasVista();
     });
     // Filtros BD para Tablas
@@ -1523,23 +1630,133 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             legacy.forEach(r=> (r.maquinas||[]).forEach(m=>{ if(!m.tipoMasa && m.tipoPan){ m.tipoMasa = m.tipoPan; mod=true; } }));
             if(mod) localStorage.setItem('resultadosMezclado', JSON.stringify(legacy));
         } catch(_){}
-        const viewMedicion = document.getElementById('view-medicion');
+    const viewMain = document.getElementById('view-main-menu');
+    const viewMedicion = document.getElementById('view-medicion');
         const viewResultados = document.getElementById('view-resultados');
         const viewTablas = document.getElementById('view-tablas');
+    const sectionAmas = document.getElementById('section-amasadoras');
+    const sectionFerm = document.getElementById('section-fermentadora');
+    const sectionHornos = document.getElementById('section-hornos');
+    const tabMainMenu = document.getElementById('tab-main-menu');
+    const tabMainAmas = document.getElementById('tab-main-amasadoras');
+    const tabMainFerm = document.getElementById('tab-main-fermentadora');
+    const tabMainHornos = document.getElementById('tab-main-hornos');
         const tabMedicion = document.getElementById('tab-medicion');
         const tabResultados = document.getElementById('tab-resultados');
         const tabTablas = document.getElementById('tab-tablas');
 
         // Estado inicial
-        if (viewMedicion && viewResultados && viewTablas) {
-            viewMedicion.classList.remove('hidden');
-            viewResultados.classList.add('hidden');
-            viewTablas.classList.add('hidden');
+        // Initial: show Menu and ensure sub-vistas de Amasadoras no se "cuelen"
+        if (viewMain) viewMain.classList.remove('hidden');
+        if (sectionAmas) sectionAmas.classList.add('hidden');
+        // Asegurar todo oculto por defecto fuera de Amasadoras
+        viewMedicion?.classList.add('hidden');
+        viewResultados?.classList.add('hidden');
+        viewTablas?.classList.add('hidden');
+        sectionFerm?.classList.add('hidden');
+        sectionHornos?.classList.add('hidden');
+
+        function hideAmasadorasSubviews(){
+            viewMedicion?.classList.add('hidden');
+            viewResultados?.classList.add('hidden');
+            viewTablas?.classList.add('hidden');
+            tabMedicion?.classList.remove('tab-btn-active');
+            tabResultados?.classList.remove('tab-btn-active');
+            tabTablas?.classList.remove('tab-btn-active');
         }
+
+        function showMedicionDefault(){
+            // Mostrar Medición como subpestaña por defecto
+            viewMedicion?.classList.remove('hidden');
+            viewResultados?.classList.add('hidden');
+            viewTablas?.classList.add('hidden');
+            tabMedicion?.classList.add('tab-btn-active');
+            tabResultados?.classList.remove('tab-btn-active');
+            tabTablas?.classList.remove('tab-btn-active');
+        }
+
+        function activateMainTab(which){
+            // Reset classes
+            [tabMainMenu, tabMainAmas, tabMainFerm, tabMainHornos].forEach(b=> b?.classList.remove('tab-btn-active'));
+            // Hide all main sections by default
+            viewMain?.classList.add('hidden');
+            sectionAmas?.classList.add('hidden');
+            // Siempre ocultar sub-vistas de Amasadoras cuando cambiamos de módulo
+            hideAmasadorasSubviews();
+            // Ocultar placeholders
+            sectionFerm?.classList.add('hidden');
+            sectionHornos?.classList.add('hidden');
+
+            if(which==='menu'){
+                tabMainMenu?.classList.add('tab-btn-active');
+                viewMain?.classList.remove('hidden');
+                return;
+            }
+            if(which==='amas'){
+                tabMainAmas?.classList.add('tab-btn-active');
+                sectionAmas?.classList.remove('hidden');
+                showMedicionDefault();
+                return;
+            }
+            if(which==='ferm'){
+                tabMainFerm?.classList.add('tab-btn-active');
+                // Mostrar sólo la sección de Fermentadora (top-level)
+                sectionFerm?.classList.remove('hidden');
+                return;
+            }
+            if(which==='horn'){
+                tabMainHornos?.classList.add('tab-btn-active');
+                // Mostrar sólo la sección de Hornos (top-level)
+                sectionHornos?.classList.remove('hidden');
+                return;
+            }
+        }
+        tabMainMenu?.addEventListener('click', ()=> activateMainTab('menu'));
+        tabMainAmas?.addEventListener('click', ()=> activateMainTab('amas'));
+        tabMainFerm?.addEventListener('click', ()=> activateMainTab('ferm'));
+        tabMainHornos?.addEventListener('click', ()=> activateMainTab('horn'));
+        // Force start on Menu to avoid Amasadoras content appearing under Menu
+        activateMainTab('menu');
+
+        // Settings bindings
+        const settingsApiUrl = document.getElementById('settings-api-url');
+        const settingsSaveApi = document.getElementById('settings-save-api');
+        const settingsApiKey = document.getElementById('settings-api-key');
+        const settingsRememberKey = document.getElementById('settings-remember-key');
+        const settingsSaveKey = document.getElementById('settings-save-key');
+        if(settingsApiUrl){ settingsApiUrl.value = localStorage.getItem('API_URL_OVERRIDE')||''; }
+        settingsSaveApi?.addEventListener('click', ()=>{
+            const v = (settingsApiUrl?.value||'').trim();
+            if(v){ localStorage.setItem('API_URL_OVERRIDE', v); mostrarToast('URL API guardada'); }
+            else { localStorage.removeItem('API_URL_OVERRIDE'); mostrarToast('URL API borrada'); }
+        });
+        settingsSaveKey?.addEventListener('click', async ()=>{
+            const k = settingsApiKey?.value||'';
+            const remember = !!settingsRememberKey?.checked;
+            const statusEl = document.getElementById('settings-key-status');
+            if(statusEl) statusEl.textContent = '';
+            if(k){ sessionStorage.setItem('API_KEY', k); if(remember) localStorage.setItem('API_KEY_PERSIST', k); else localStorage.removeItem('API_KEY_PERSIST'); mostrarToast('Clave API guardada'); }
+            else { sessionStorage.removeItem('API_KEY'); localStorage.removeItem('API_KEY_PERSIST'); mostrarToast('Clave API borrada'); }
+
+            // Verificar clave: intentamos un GET /registros (protegido). Mostramos estado.
+            try{
+                const base = resolveApiBase();
+                const r = await fetch(base + '/registros?limit=1', { headers: apiHeaders(false) });
+                if(r.ok){
+                    if(statusEl){ statusEl.textContent = 'Clave verificada ✅'; statusEl.className = 'mt-2 text-sm text-emerald-700'; }
+                } else {
+                    const msg = r.status===401||r.status===403? 'Clave inválida ❌' : ('Error: HTTP '+r.status);
+                    if(statusEl){ statusEl.textContent = msg; statusEl.className = 'mt-2 text-sm text-red-600'; }
+                }
+            }catch(e){
+                if(statusEl){ statusEl.textContent = 'Error de red al verificar clave'; statusEl.className = 'mt-2 text-sm text-red-600'; }
+            }
+        });
         if (typeof createMachineCards === 'function') createMachineCards();
 
         // Listeners de pestañas seguros
         if (tabMedicion) tabMedicion.addEventListener('click', () => {
+            sectionAmas?.classList.remove('hidden');
             if (!viewMedicion) return;
             viewMedicion.classList.remove('hidden');
             viewResultados.classList.add('hidden');
@@ -1547,24 +1764,29 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             tabMedicion.classList.add('tab-btn-active');
             tabResultados.classList.remove('tab-btn-active');
             tabTablas.classList.remove('tab-btn-active');
+            try{ document.getElementById('section-amasadoras')?.scrollIntoView({behavior:'smooth', block:'start'});}catch(_){ }
             if (typeof createMachineCards === 'function') createMachineCards();
         });
         if (tabResultados) tabResultados.addEventListener('click', () => {
+            sectionAmas?.classList.remove('hidden');
             viewMedicion?.classList.add('hidden');
             viewResultados?.classList.remove('hidden');
             viewTablas?.classList.add('hidden');
             tabResultados.classList.add('tab-btn-active');
             tabMedicion?.classList.remove('tab-btn-active');
             tabTablas?.classList.remove('tab-btn-active');
+            try{ document.getElementById('view-resultados')?.scrollIntoView({behavior:'smooth', block:'start'});}catch(_){ }
             if (typeof cargarResultados === 'function') cargarResultados();
         });
         if (tabTablas) tabTablas.addEventListener('click', () => {
+            sectionAmas?.classList.remove('hidden');
             viewMedicion?.classList.add('hidden');
             viewResultados?.classList.add('hidden');
             viewTablas?.classList.remove('hidden');
             tabTablas.classList.add('tab-btn-active');
             tabMedicion?.classList.remove('tab-btn-active');
             tabResultados?.classList.remove('tab-btn-active');
+            try{ document.getElementById('view-tablas')?.scrollIntoView({behavior:'smooth', block:'start'});}catch(_){ }
             if (typeof buildTablasVista === 'function') buildTablasVista();
         });
     });
@@ -1595,6 +1817,11 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         }
         localStorage.setItem('TABLAS_SOURCE', fuente);
     if(bdCtrls){ bdCtrls.classList.toggle('hidden', fuente !== 'bd'); }
+    // Ajustar etiquetas de export segun fuente
+    const btnPdf=document.getElementById('tablas-export-pdf');
+    const btnCsv=document.getElementById('tablas-export-csv');
+    if(btnPdf) btnPdf.textContent = `Exportar (${fuente==='bd'?'BD':'Locales'}) PDF`;
+    if(btnCsv) btnCsv.textContent = `Exportar (${fuente==='bd'?'BD':'Locales'}) CSV`;
     // Leer filtros persistidos
     let fDesde = localStorage.getItem('TABLAS_BD_DESDE')||'';
     let fHasta = localStorage.getItem('TABLAS_BD_HASTA')||'';
@@ -1608,18 +1835,24 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         if(statusEl) statusEl.textContent = '';
         if(fuente === 'local'){
             try { datos = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]') || []; } catch(_) { datos = []; }
+            if(statusEl) statusEl.textContent = `Fuente: Locales · ${datos.length} registros.`;
         } else {
             const base = resolveApiBase();
             if(statusEl) statusEl.textContent = 'Cargando datos de la BD...';
             try{
-                const r = await fetch(base + '/registros');
+                // Prefer server-side filters when available: desde/hasta
+                let q = [];
+                if(fDesde) q.push('desde='+encodeURIComponent(fDesde));
+                if(fHasta) q.push('hasta='+encodeURIComponent(fHasta));
+                const url = base + '/registros' + (q.length? ('?'+q.join('&')) : '');
+                const r = await fetch(url, { headers: apiHeaders(false) });
                 if(!r.ok) throw new Error('HTTP '+r.status);
                 const arr = await r.json();
                 const total = Array.isArray(arr)? arr.length: 0;
                 let arrFiltrado = Array.isArray(arr)? arr: [];
-                // Filtros en cliente hasta tener filtros en API
-                if(fDesde){ arrFiltrado = arrFiltrado.filter(it=> (it.data?.fecha||it.fecha||'') >= fDesde); }
-                if(fHasta){ arrFiltrado = arrFiltrado.filter(it=> (it.data?.fecha||it.fecha||'') <= fHasta); }
+                    // Mantener filtros extra en cliente (lote/tipo) y como respaldo si API no filtra fecha
+                    if(fDesde){ arrFiltrado = arrFiltrado.filter(it=> (it.data?.fecha||it.fecha||'') >= fDesde); }
+                    if(fHasta){ arrFiltrado = arrFiltrado.filter(it=> (it.data?.fecha||it.fecha||'') <= fHasta); }
                 if(fLote){ arrFiltrado = arrFiltrado.filter(it=> (it.data?.amasadoras||[]).some(m=> (m.lote||'').toString().includes(fLote))); }
                 if(fTipo){ const fx=fTipo.toLowerCase(); arrFiltrado = arrFiltrado.filter(it=> (it.data?.amasadoras||[]).some(m=> ((m.tipoMasa||m.tipoPan||'').toLowerCase().includes(fx)))); }
                 // Normalizar cada amasadora: si viene como 'procesos'[] mapear a proceso1..3
@@ -1651,13 +1884,13 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             }catch(e){
                 const msg = 'Error cargando BD: ' + (e.message||e);
                 if(statusEl) statusEl.textContent = msg;
-                ['tabla-resumen','tabla-pan','tabla-amasadora','tabla-proceso','tabla-temp','tabla-temp-cruzada'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML='<div class="text-red-600">'+msg+'</div>';});
+                ['tabla-resumen','tabla-pan','tabla-amasadora','tabla-proceso','tabla-temp','tabla-temp-cruzada','tabla-personal-dia','tabla-ta-h-dia'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML='<div class="text-red-600">'+msg+'</div>';});
                 return;
             }
         }
         _TABLAS_DATA_LAST = datos;
         if(!datos.length){
-            ['tabla-resumen','tabla-pan','tabla-amasadora','tabla-proceso','tabla-temp','tabla-temp-cruzada'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML='<div class="text-stone-500">Sin datos</div>';});
+            ['tabla-resumen','tabla-pan','tabla-amasadora','tabla-proceso','tabla-temp','tabla-temp-cruzada','tabla-personal-dia','tabla-ta-h-dia'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML='<div class="text-stone-500">Sin datos</div>';});
             return;
         }
         // Estructuras
@@ -1736,6 +1969,113 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             return c;
         });
         const cruzEl=document.getElementById('tabla-temp-cruzada'); if(cruzEl) cruzEl.innerHTML= tableFromRows(cruzHeaders, cruzRows);
+
+        // Personal por día (mín–máx) agregado por fecha (una fila por día) + gráfico
+        (function(){
+            const cont = document.getElementById('tabla-personal-dia');
+            if(!cont) return;
+            const headers = ['Fecha','N máquinas','Personal mín','Personal máx','Midpoint','Rango'];
+            const perDay = {}; // fecha -> {n, mins:[], maxs:[]}
+            datos.forEach(reg=>{
+                const fecha = reg.fecha || '';
+                if(!fecha) return;
+                const bucket = perDay[fecha] = perDay[fecha] || { n:0, mins:[], maxs:[] };
+                bucket.n += (reg.maquinas||[]).length;
+                (reg.maquinas||[]).forEach(m=>{
+                    const vmin = parseInt(m.personalMin); if(!isNaN(vmin)) bucket.mins.push(vmin);
+                    const vmax = parseInt(m.personalMax); if(!isNaN(vmax)) bucket.maxs.push(vmax);
+                });
+                // fallback con primera máquina si no hubo datos válidos
+                if(bucket.mins.length===0 && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMin); if(!isNaN(v)) bucket.mins.push(v); }
+                if(bucket.maxs.length===0 && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMax); if(!isNaN(v)) bucket.maxs.push(v); }
+            });
+            const rows = Object.keys(perDay).map(fecha=>{
+                const b = perDay[fecha];
+                if(!(b.mins.length||b.maxs.length)) return null;
+                const min = b.mins.length? Math.min(...b.mins): '';
+                const max = b.maxs.length? Math.max(...b.maxs): '';
+                const midpoint = (typeof min==='number' && typeof max==='number')? Math.round((min+max)/2) : '';
+                const rango = (typeof min==='number' && typeof max==='number')? (max-min) : '';
+                return [fecha, b.n, min, max, midpoint, rango];
+            }).filter(Boolean).sort((a,b)=> String(a[0]||'').localeCompare(String(b[0]||'')));
+            cont.innerHTML = tableFromRows(headers, rows);
+            // Gráfico de barras apiladas: OffsetMin (transparente) + Rango (max-min); midpoint como línea
+            const el = document.getElementById('chart-personal-dia'); if(!el) return;
+            const labels = rows.map(r=>r[0]);
+            const dataMin = rows.map(r=> r[2] ?? 0);
+            const dataMax = rows.map(r=> r[3] ?? 0);
+            const dataMid = rows.map(r=> r[4] ?? 0);
+            const dataRango = rows.map((r,i)=> (dataMax[i] - dataMin[i]));
+            if(labels.length){
+                const chart = mkChart(el,'bar',{
+                    labels,
+                    datasets:[
+                        {label:'OffsetMin', data:dataMin, backgroundColor:'rgba(0,0,0,0)', stack:'pd', borderWidth:0},
+                        {label:'Rango (min→max)', data:dataRango, backgroundColor:'#60a5fa', stack:'pd'}
+                    ]
+                },{
+                    responsive:true,
+                    plugins:{
+                        legend:{position:'bottom', labels:{ filter:(item)=> item.text !== 'OffsetMin' }},
+                        tooltip:{
+                            callbacks:{
+                                label:(ctx)=>{
+                                    if(ctx.dataset.label!=='Rango (min→max)') return null;
+                                    const s = ctx.chart.$personalStats?.[ctx.dataIndex];
+                                    if(!s) return null;
+                                    return [
+                                        'Min: '+s.min,
+                                        'Midpoint: '+s.mid,
+                                        'Max: '+s.max
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales:{y:{beginAtZero:true}}
+                });
+                // Guardar stats para tooltip y dibujar midpoint
+                chart.$personalStats = labels.map((_,i)=>({min:dataMin[i], mid:dataMid[i], max:dataMax[i]}));
+                setTimeout(()=>{
+                    const ctx = chart.ctx; const yScale = chart.scales.y; const xScale = chart.scales.x;
+                    ctx.save(); ctx.fillStyle = '#dc2626';
+                    dataMid.forEach((m,i)=>{
+                        const x = xScale.getPixelForValue(i);
+                        const y = yScale.getPixelForValue(m);
+                        ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI*2); ctx.fill();
+                    });
+                    ctx.restore();
+                }, 60);
+            }
+        })();
+
+        // TA/H por día (promedios por fecha)
+        (function(){
+            const cont = document.getElementById('tabla-ta-h-dia'); if(!cont) return;
+            const headers=['Fecha','N máquinas','TA prom','H prom'];
+            const acc={}; // fecha -> {n, ta:[], h:[]}
+            datos.forEach(reg=>{
+                const fecha = reg.fecha || '';
+                if(!fecha) return;
+                const b = acc[fecha] = acc[fecha] || { n:0, ta:[], h:[] };
+                const maquinas = reg.maquinas||[]; b.n += maquinas.length;
+                maquinas.forEach(m=>{
+                    const ta = parseFloat(m.tempAmbiente); if(Number.isFinite(ta)) b.ta.push(ta);
+                    const h  = parseFloat(m.humedad); if(Number.isFinite(h)) b.h.push(h);
+                });
+                // fallback: tomar valores de la primera máquina si listas vacías
+                if(b.ta.length===0 && maquinas[0]){ const v=parseFloat(maquinas[0].tempAmbiente); if(Number.isFinite(v)) b.ta.push(v); }
+                if(b.h.length===0 &&  maquinas[0]){ const v=parseFloat(maquinas[0].humedad); if(Number.isFinite(v)) b.h.push(v); }
+            });
+            const rows = Object.keys(acc).map(fecha=>{
+                const b=acc[fecha];
+                if(!(b.ta.length||b.h.length)) return null;
+                const taProm = b.ta.length? (b.ta.reduce((x,y)=>x+y,0)/b.ta.length).toFixed(1): '';
+                const hProm  = b.h.length?  (b.h.reduce((x,y)=>x+y,0)/b.h.length).toFixed(1): '';
+                return [fecha, b.n, taProm, hProm];
+            }).filter(Boolean).sort((a,b)=> String(a[0]).localeCompare(String(b[0])));
+            cont.innerHTML = tableFromRows(headers, rows);
+        })();
 
         // Charts
         function mkChart(ctx,type,data,options){ const c=new Chart(ctx,{type,data,options}); chartsCache.push(c); return c; }
@@ -1933,18 +2273,72 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
     function exportTablasCSV(){
         const datos = getTablasData();
         if(!datos || !datos.length){ alert('No hay datos para exportar.'); return; }
-        const { resumenRows, panRows, amaRows, procRows, tempRows, cruzHeaders, cruzRows } = computeTablasStatsFromData(datos);
+    const { resumenRows, panRows, amaRows, procRows, tempRows, cruzHeaders, cruzRows } = computeTablasStatsFromData(datos);
         const rows=[];
         rows.push(['Resumen de tiempos (s)']); rows.push(['Métrica','Valor']); resumenRows.forEach(r=> rows.push(r)); rows.push([]);
         rows.push(['Promedios por tipo de masa']); rows.push(['Tipo masa','N','Prom (s)','Desv (s)','%Desv']); panRows.forEach(r=> rows.push(r)); rows.push([]);
         rows.push(['Promedios por amasadora']); rows.push(['Amasadora','N','Prom (s)','Desv (s)','%Desv']); amaRows.forEach(r=> rows.push(r)); rows.push([]);
         rows.push(['Promedios por proceso']); rows.push(['Proceso','N','Prom (s)','Desv (s)','%Desv']); procRows.forEach(r=> rows.push(r)); rows.push([]);
         rows.push(['Temperatura por tipo de masa']); rows.push(['Tipo masa','N','Prom (°C)','Desv (°C)','%Desv']); tempRows.forEach(r=> rows.push(r)); rows.push([]);
-        rows.push(['Temp. masa (Amasadora vs Tipo de masa)']); rows.push(cruzHeaders); cruzRows.forEach(r=> rows.push(r));
+        rows.push(['Temp. masa (Amasadora vs Tipo de masa)']); rows.push(cruzHeaders); cruzRows.forEach(r=> rows.push(r)); rows.push([]);
+        // Personal por día (mín–máx)
+        rows.push(['Personal por día (mín–máx)']); rows.push(['Fecha','N máquinas','Personal mín','Personal máx','Midpoint','Rango']);
+        (function(){
+            const perDay = {};
+            datos.forEach(reg=>{
+                const fecha = reg.fecha || '';
+                if(!fecha) return;
+                const bucket = perDay[fecha] = perDay[fecha] || { n:0, mins:[], maxs:[] };
+                bucket.n += (reg.maquinas||[]).length;
+                (reg.maquinas||[]).forEach(m=>{
+                    const vmin = parseInt(m.personalMin); if(!isNaN(vmin)) bucket.mins.push(vmin);
+                    const vmax = parseInt(m.personalMax); if(!isNaN(vmax)) bucket.maxs.push(vmax);
+                });
+                if(bucket.mins.length===0 && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMin); if(!isNaN(v)) bucket.mins.push(v); }
+                if(bucket.maxs.length===0 && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMax); if(!isNaN(v)) bucket.maxs.push(v); }
+            });
+            Object.keys(perDay).sort().forEach(fecha=>{
+                const b=perDay[fecha];
+                if(!(b.mins.length||b.maxs.length)) return;
+                const min = b.mins.length? Math.min(...b.mins): '';
+                const max = b.maxs.length? Math.max(...b.maxs): '';
+                const midpoint = (typeof min==='number' && typeof max==='number')? Math.round((min + max)/2) : '';
+                const rango = (typeof min==='number' && typeof max==='number')? (max - min) : '';
+                rows.push([fecha, b.n, min, max, midpoint, rango]);
+            });
+        })();
+        // TA/H por día
+        rows.push([]);
+        rows.push(['TA y Humedad por día']);
+        rows.push(['Fecha','N máquinas','TA prom','H prom']);
+        (function(){
+            const acc={};
+            const datos = getTablasData();
+            (datos||[]).forEach(reg=>{
+                const fecha = reg.fecha || '';
+                if(!fecha) return;
+                const b = acc[fecha] = acc[fecha] || { n:0, ta:[], h:[] };
+                const maquinas = reg.maquinas||[]; b.n += maquinas.length;
+                maquinas.forEach(m=>{
+                    const ta = parseFloat(m.tempAmbiente); if(Number.isFinite(ta)) b.ta.push(ta);
+                    const h = parseFloat(m.humedad); if(Number.isFinite(h)) b.h.push(h);
+                });
+                if(b.ta.length===0 && maquinas[0]){ const v=parseFloat(maquinas[0].tempAmbiente); if(Number.isFinite(v)) b.ta.push(v); }
+                if(b.h.length===0 && maquinas[0]){ const v=parseFloat(maquinas[0].humedad); if(Number.isFinite(v)) b.h.push(v); }
+            });
+            Object.keys(acc).sort().forEach(fecha=>{
+                const b=acc[fecha];
+                if(!(b.ta.length||b.h.length)) return;
+                const taProm = b.ta.length? (b.ta.reduce((x,y)=>x+y,0)/b.ta.length).toFixed(1): '';
+                const hProm = b.h.length? (b.h.reduce((x,y)=>x+y,0)/b.h.length).toFixed(1): '';
+                rows.push([fecha, b.n, taProm, hProm]);
+            });
+        })();
         // CSV manual
         const csv = rows.map(r=> r.map(v=> '"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
         const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='tablas_bd.csv'; a.click(); URL.revokeObjectURL(a.href);
+        const fuente = (document.getElementById('tablas-source')?.value)||localStorage.getItem('TABLAS_SOURCE')||'local';
+        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download= fuente==='bd' ? 'tablas_bd.csv' : 'tablas_local.csv'; a.click(); URL.revokeObjectURL(a.href);
     }
 
     async function exportTablasPDF(){
@@ -1980,7 +2374,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                     offsetY += pagePixelH; page++;
                 }
             }
-            pdf.save('tablas_bd.pdf');
+            const fuente = (document.getElementById('tablas-source')?.value)||localStorage.getItem('TABLAS_SOURCE')||'local';
+            pdf.save(fuente==='bd' ? 'tablas_bd.pdf' : 'tablas_local.pdf');
         }catch(e){ alert('Error exportando PDF: '+(e.message||e)); }
     }
 
@@ -1988,10 +2383,38 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
     document.getElementById('tablas-export-pdf')?.addEventListener('click', exportTablasPDF);
 
     // ================= EXPORT SOLO RESULTADOS =================
+    function getResultadosSource(){
+        const bdW = document.getElementById('bd-wrapper');
+        const isBD = bdW && !bdW.classList.contains('hidden');
+        return isBD ? 'bd' : 'local';
+    }
+    function normalizeMaqForExport(m){
+        if(m && !m.proceso1 && Array.isArray(m.procesos)){
+            const map = {};
+            m.procesos.forEach(p=>{ if(p && p.id!=null){ map['proceso'+p.id] = { minutos: p.minutos||0, segundos: p.segundos||0, startTime: p.startTime||null, endTime: p.endTime||null }; } });
+            return { ...m, ...map };
+        }
+        return m;
+    }
+    function mapBDToResultados(arr){
+        return (arr||[]).map(it=>({
+            fecha: it?.data?.fecha || it?.fecha || '',
+            maquinas: (it?.data?.amasadoras||[]).map(normalizeMaqForExport)
+        }));
+    }
     async function exportResultadosTabPDF(){
         const { jsPDF } = window.jspdf || {};
         if(!jsPDF){ alert('jsPDF no cargó'); return; }
-        const resultados = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+        const source = getResultadosSource();
+        let resultados = [];
+        if(source==='bd'){
+            // Usar caché BD si está disponible; de lo contrario, traerlo
+            let data = Array.isArray(window.BD_CACHE)? window.BD_CACHE : [];
+            if(!data || !data.length){ try{ data = await fetchRegistrosBD(); }catch(_){} }
+            resultados = mapBDToResultados(data);
+        }else{
+            resultados = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+        }
         if(!resultados.length){ alert('No hay resultados'); return; }
         const pdf = new jsPDF('p','pt','a4');
         const marginX=32, marginY=40; const pageW=pdf.internal.pageSize.getWidth(); const pageH=pdf.internal.pageSize.getHeight();
@@ -2009,9 +2432,10 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         header();
         // Construir filas normalizadas como en CSV
     const diasN=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
-        // Encabezados
-    const cols=['Fecha','Lote','Dia','TA','H','Pers','Am','Tipo','Hi','TM','Pr','Min','Seg','Ini','Fin','T1','T2','TMT','Tot(s)','Obs'];
-        const colWidths=[55,40,40,25,25,30,40,55,35,40,36,24,24,40,40,28,28,36,42,90];
+        // Encabezados (incluye Pers(rango) y Pers(mid))
+    const cols=['Fecha','Lote','Dia','TA','H','Pers(rango)','Pers(mid)','Am','Tipo','Hi','TM','Pr','Min','Seg','Ini','Fin','T1','T2','TMT','Tot(s)','Obs'];
+        // Nota: estos anchos pueden exceder el ancho de la página, manteniendo el estilo existente
+        const colWidths=[55,40,40,25,25,40,28,40,55,35,40,36,24,24,40,40,28,28,36,42,90];
         function drawHeaderRow(){
             pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(20);
             let x=marginX; const h=14; pdf.setDrawColor(200); pdf.setLineWidth(0.25);
@@ -2024,8 +2448,17 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         resultados.forEach(reg=>{
             const fecha=reg.fecha||''; let dia='';
             if(fecha && fecha.length===10){ const [Y,M,D]=fecha.split('-').map(Number); dia=diasN[new Date(Y,M-1,D).getDay()]||''; }
-            let dailyTA='', dailyH='', dailyPers='';
-            if(reg.maquinas && reg.maquinas.length){ const m0=reg.maquinas[0]; dailyTA=m0.tempAmbiente||''; dailyH=m0.humedad||''; dailyPers=m0.personal||''; }
+            let dailyTA='', dailyH='';
+            if(reg.maquinas && reg.maquinas.length){ const m0=reg.maquinas[0]; dailyTA=m0.tempAmbiente||''; dailyH=m0.humedad||''; }
+            // Agregar personas por día (rango y midpoint)
+            let pmins=[], pmaxs=[];
+            (reg.maquinas||[]).forEach(m=>{ const vmin=parseInt(m.personalMin); if(!isNaN(vmin)) pmins.push(vmin); const vmax=parseInt(m.personalMax); if(!isNaN(vmax)) pmaxs.push(vmax); });
+            if(!pmins.length && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMin); if(!isNaN(v)) pmins.push(v); }
+            if(!pmaxs.length && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMax); if(!isNaN(v)) pmaxs.push(v); }
+            const dailyPersMin = pmins.length? Math.min(...pmins): '';
+            const dailyPersMax = pmaxs.length? Math.max(...pmaxs): '';
+            const dailyPersMid = (typeof dailyPersMin==='number' && typeof dailyPersMax==='number')? Math.round((dailyPersMin+dailyPersMax)/2): '';
+            const dailyPersRange = (typeof dailyPersMin==='number' && typeof dailyPersMax==='number')? `${dailyPersMin}-${dailyPersMax}`: '';
             (reg.maquinas||[]).forEach(maq=>{
                 let tm1='', tm2='';
                 if(maq.proceso1 && maq.proceso2 && maq.proceso1.endTime && maq.proceso2.startTime){ tm1=Math.max(0,Math.floor((maq.proceso2.startTime-maq.proceso1.endTime)/1000)); }
@@ -2040,7 +2473,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                         i===1? (prevFecha===fecha?'':dia):'',
                         i===1? (prevFecha===fecha?'':dailyTA):'',
                         i===1? (prevFecha===fecha?'':dailyH):'',
-                        i===1? (prevFecha===fecha?'':dailyPers):'',
+                        i===1? (prevFecha===fecha?'':dailyPersRange):'',
+                        i===1? (prevFecha===fecha?'':dailyPersMid):'',
                         i===1? ( (maq.numeroAmasadora||((maq.nombre||maq.id||'').match(/\d+/)?.[0])||'?') ):'',
                         i===1? (maq.tipoMasa||maq.tipoPan||''):'',
                         i===1? (maq.hielo||''):'',
@@ -2066,18 +2500,26 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         });
         footer();
         const stamp=new Date().toISOString().replace(/[:T]/g,'-').split('.')[0];
-        pdf.save('resultados_tabla_'+stamp+'.pdf');
+        pdf.save(`resultados_${source}_tabla_${stamp}.pdf`);
     }
-    // CSV ordenado y compactando factores solo una vez
-    function exportResultadosTabCSV(){
-        let resultados = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+    // CSV ordenado y compactando factores solo una vez (Locales o BD según subpestaña)
+    async function exportResultadosTabCSV(){
+        const source = getResultadosSource();
+        let resultados = [];
+        if(source==='bd'){
+            let data = Array.isArray(window.BD_CACHE)? window.BD_CACHE : [];
+            if(!data || !data.length){ try{ data = await fetchRegistrosBD(); }catch(_){} }
+            resultados = mapBDToResultados(data);
+        }else{
+            resultados = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+        }
         if(!resultados.length){ alert('No hay resultados'); return; }
         // Ordenar por fecha
         resultados.sort((a,b)=> (a.fecha||'').localeCompare(b.fecha||''));
         const rows=[];
         // Encabezados principales
         const headers=[
-            'Fecha','Lote','Dia','TA','H','Pers',
+            'Fecha','Lote','Dia','TA','H','Pers(rango)','Pers(mid)',
             'Am','Tipo','Hi','TM',
             'Pr','Min','Seg','Ini','Fin','T1','T2','TMT','Tot(s)','Obs'
         ];
@@ -2088,15 +2530,25 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             const fecha=reg.fecha||'';
             let dia='';
             if(fecha && fecha.length===10){ const [y,m,d]=fecha.split('-').map(Number); dia=diasN[new Date(y,m-1,d).getDay()]||''; }
-            // Factores diarios (TA,H,Personal) tomar de primera máquina si existe
-            let dailyTA=''; let dailyH=''; let dailyPers='';
-            if(reg.maquinas && reg.maquinas.length){ const m0=reg.maquinas[0]; dailyTA=m0.tempAmbiente||''; dailyH=m0.humedad||''; dailyPers=m0.personal||''; }
+            // Factores diarios (TA,H) y Personas (rango y midpoint)
+            let dailyTA=''; let dailyH='';
+            if(reg.maquinas && reg.maquinas.length){ const m0=reg.maquinas[0]; dailyTA=m0.tempAmbiente||''; dailyH=m0.humedad||''; }
+            // Personal por día (rango y midpoint) agregado en este registro
+            let pmins=[], pmaxs=[];
+            (reg.maquinas||[]).forEach(m=>{ const vmin=parseInt(m.personalMin); if(!isNaN(vmin)) pmins.push(vmin); const vmax=parseInt(m.personalMax); if(!isNaN(vmax)) pmaxs.push(vmax); });
+            if(!pmins.length && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMin); if(!isNaN(v)) pmins.push(v); }
+            if(!pmaxs.length && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMax); if(!isNaN(v)) pmaxs.push(v); }
+            const dailyPersMin = pmins.length? Math.min(...pmins): '';
+            const dailyPersMax = pmaxs.length? Math.max(...pmaxs): '';
+            const dailyPersMid = (typeof dailyPersMin==='number' && typeof dailyPersMax==='number')? Math.round((dailyPersMin+dailyPersMax)/2): '';
+            const dailyPersRange = (typeof dailyPersMin==='number' && typeof dailyPersMax==='number')? `${dailyPersMin}-${dailyPersMax}`: '';
             (reg.maquinas||[]).forEach(maq=>{
                 const baseFecha = (fechaPrev===fecha)? '' : fecha; // solo primera vez del día
                 const baseDia = (baseFecha? dia : '');
                 const baseTA = (baseFecha? dailyTA : '');
                 const baseH = (baseFecha? dailyH : '');
-                const basePers = (baseFecha? dailyPers : '');
+                const basePersRange = (baseFecha? dailyPersRange : '');
+                const basePersMid = (baseFecha? dailyPersMid : '');
                 fechaPrev=fecha; // marcar
                 // Calcular tiempos muertos máquina
                 let tm1='', tm2='';
@@ -2115,7 +2567,8 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
                         i===1? baseDia:'',
                         i===1? baseTA:'',
                         i===1? baseH:'',
-                        i===1? basePers:'',
+                        i===1? basePersRange:'',
+                        i===1? basePersMid:'',
                         i===1? ( (maq.numeroAmasadora||((maq.nombre||maq.id||'').match(/\d+/)?.[0])||'?') ):'',
                         i===1? (maq.tipoMasa||maq.tipoPan||''):'',
                         i===1? (maq.hielo||''):'',
@@ -2133,9 +2586,11 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         }).join(',')).join('\r\n');
         const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
         const stamp = new Date().toISOString().replace(/[:T]/g,'-').split('.')[0];
-        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='resultados_ordenado_'+stamp+'.csv'; a.click(); URL.revokeObjectURL(a.href);
+        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`resultados_${source}_ordenado_${stamp}.csv`; a.click(); URL.revokeObjectURL(a.href);
     }
     document.addEventListener('DOMContentLoaded', ()=>{
+        initAuthUI();
+        guardRoute();
         document.getElementById('btn-export-resultados-pdf')?.addEventListener('click', exportResultadosTabPDF);
         document.getElementById('btn-export-resultados-csv')?.addEventListener('click', exportResultadosTabCSV);
             // Toggle descripciones de gráficas
@@ -2181,6 +2636,17 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const override = localStorage.getItem('API_URL_OVERRIDE');
         return (override && override.trim()) || getDefaultApiBase();
     }
+    // API auth helpers: read key from session/local and build headers
+    function getApiKey(){
+        return sessionStorage.getItem('API_KEY') || localStorage.getItem('API_KEY_PERSIST') || '';
+    }
+    function apiHeaders(withJson){
+        const h = {};
+        if(withJson) h['Content-Type'] = 'application/json';
+        const k = getApiKey();
+        if(k) h['x-api-key'] = k;
+        return h;
+    }
     function setStatus(msg,type='info'){
         const el=document.getElementById('sync-status');
         if(el){ el.textContent = msg; el.className = 'text-xs mt-1 '+(type==='err'?'text-red-600': type==='ok'?'text-green-600':'text-stone-600'); }
@@ -2213,6 +2679,102 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
         const p1Start = maq?.proceso1?.startTime || ''; // puede ser null
         const tipo = (maq?.tipoMasa||maq?.tipoPan||'').trim().toLowerCase();
         return `${fecha}__${(maq?.nombre||maq?.id||'').trim()}__${tipo}__${p1Start}`;
+    }
+    // ========= Seguridad simple: clave local =========
+    async function sha256Hex(str){
+        const enc = new TextEncoder(); const data = enc.encode(str);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        const bytes = Array.from(new Uint8Array(hash));
+        return bytes.map(b=> b.toString(16).padStart(2,'0')).join('');
+    }
+    function showAuthOverlay(setup=false){
+        const ov = document.getElementById('auth-overlay'); if(!ov) return;
+        const setupFields = document.getElementById('auth-setup-fields');
+        const loginFields = document.getElementById('auth-login-fields');
+        const title = document.getElementById('auth-title');
+        const sub = document.getElementById('auth-sub');
+        const btnMode = document.getElementById('auth-cambiar-modo');
+        if(setup){
+            setupFields.classList.remove('hidden');
+            loginFields.classList.add('hidden');
+            title.textContent='Configurar clave';
+            sub.textContent='Define una clave de acceso para este navegador.';
+            btnMode.textContent='Usar clave existente';
+        }else{
+            setupFields.classList.add('hidden');
+            loginFields.classList.remove('hidden');
+            title.textContent='Clave de acceso';
+            sub.textContent='Ingresa la clave para usar la app.';
+            btnMode.textContent='Configurar/Restablecer clave';
+        }
+        ov.classList.remove('hidden');
+    }
+    function hideAuthOverlay(){ const ov=document.getElementById('auth-overlay'); if(ov) ov.classList.add('hidden'); }
+    function isLocked(){ return localStorage.getItem('APP_LOCKED')==='1'; }
+    function lockApp(){ localStorage.setItem('APP_LOCKED','1'); sessionStorage.removeItem('APP_UNLOCKED'); sessionStorage.removeItem('API_KEY'); showAuthOverlay(false); }
+    async function tryLogin(pass){
+        const saved = localStorage.getItem('APP_PASS_HASH');
+        if(!saved) return false;
+        const h = await sha256Hex(pass);
+        return h===saved;
+    }
+    async function setNewPass(pass){
+        const h = await sha256Hex(pass);
+        localStorage.setItem('APP_PASS_HASH', h);
+        localStorage.removeItem('APP_LOCKED');
+        sessionStorage.setItem('APP_UNLOCKED','1');
+        // Use the plain pass as API key for backend requests
+        sessionStorage.setItem('API_KEY', pass);
+    }
+    function isRemembered(){ return localStorage.getItem('APP_REMEMBER')==='1'; }
+    function markRemembered(on){ if(on) localStorage.setItem('APP_REMEMBER','1'); else localStorage.removeItem('APP_REMEMBER'); }
+
+    function initAuthUI(){
+        const btnLock = document.getElementById('btn-lock-app');
+        btnLock?.addEventListener('click', ()=> lockApp());
+        const ov = document.getElementById('auth-overlay'); if(!ov) return;
+        document.getElementById('auth-cambiar-modo')?.addEventListener('click', ()=>{
+            const setupShown = !document.getElementById('auth-setup-fields')?.classList.contains('hidden');
+            showAuthOverlay(!setupShown);
+        });
+        document.getElementById('auth-cancel')?.addEventListener('click', ()=>{ if(isLocked()) { /* stay */ } hideAuthOverlay(); });
+        document.getElementById('auth-submit')?.addEventListener('click', async ()=>{
+            const setupShown = !document.getElementById('auth-setup-fields')?.classList.contains('hidden');
+            const msgEl = document.getElementById('auth-msg'); msgEl.textContent=''; msgEl.className='mt-3 text-sm';
+            try{
+                if(setupShown){
+                    const p1 = document.getElementById('auth-new-pass').value.trim();
+                    const p2 = document.getElementById('auth-new-pass2').value.trim();
+                    if(p1.length<4) throw new Error('Usa al menos 4 caracteres.');
+                    if(p1!==p2) throw new Error('Las claves no coinciden.');
+                    await setNewPass(p1);
+                    msgEl.textContent='Clave establecida.'; msgEl.classList.add('text-green-600');
+                    hideAuthOverlay();
+                }else{
+                    const pass = document.getElementById('auth-pass').value;
+                    const ok = await tryLogin(pass);
+                    if(!ok) throw new Error('Clave incorrecta.');
+                    sessionStorage.setItem('APP_UNLOCKED','1');
+                    const remember = document.getElementById('auth-recordar').checked; markRemembered(remember);
+                    if(remember) localStorage.removeItem('APP_LOCKED');
+                    // Store API key in session; persist if remember is enabled
+                    sessionStorage.setItem('API_KEY', pass);
+                    if(remember) localStorage.setItem('API_KEY_PERSIST', pass); else localStorage.removeItem('API_KEY_PERSIST');
+                    hideAuthOverlay();
+                }
+            }catch(e){ msgEl.textContent=e.message||String(e); msgEl.classList.add('text-red-600'); }
+        });
+        // primer uso: si no hay hash definido, pedir configuración
+        if(!localStorage.getItem('APP_PASS_HASH')){ showAuthOverlay(true); }
+    }
+    function guardRoute(){
+        const hasPass = !!localStorage.getItem('APP_PASS_HASH');
+        const unlockedSession = sessionStorage.getItem('APP_UNLOCKED')==='1';
+        const remembered = isRemembered();
+        if(!hasPass){ return; } // sin clave, no bloquear
+        if(isLocked()) { showAuthOverlay(false); return; }
+        if(remembered){ hideAuthOverlay(); return; }
+        if(!unlockedSession){ showAuthOverlay(false); }
     }
     function mergeLocalRemote(localRegs, remoteRegs){
         const sigSet = new Set();
@@ -2251,7 +2813,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
     const base = resolveApiBase();
     // Siempre usar /registros directo, sin /api
     const url = base + '/registros';
-    const r = await fetch(url);
+    const r = await fetch(url, { headers: apiHeaders(false) });
         if(!r.ok) throw new Error('Error HTTP '+r.status);
         return await r.json();
     }
@@ -2365,7 +2927,7 @@ window.Chart || document.write('<script src="https://cdn.jsdelivr.net/npm/chart.
             const base=resolveApiBase();
             // Siempre usar /registros directo, sin /api
             const url = base + '/registros';
-            const r = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             setStatus('¡Resultados guardados exitosamente en la base de datos!', 'ok');
             mostrarToast('¡Resultados guardados exitosamente en la base de datos!', 'success');
