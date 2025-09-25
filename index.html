@@ -79,7 +79,7 @@
                     <li>Explora Resultados y Tablas para análisis y exporta en CSV/PDF.</li>
                 </ul>
             </div>
-            <div class="bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
+            <div id="ajustes-card" class="bg-white border border-stone-200 rounded-xl p-6 shadow-sm hidden">
                 <div class="flex items-center justify-between mb-3">
                     <h2 class="text-2xl font-extrabold text-stone-900">Ajustes</h2>
                     <button id="toggle-ajustes" class="text-sm text-stone-600 underline">Mostrar ajustes</button>
@@ -2639,6 +2639,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('DOMContentLoaded', ()=>{
         initAuthUI();
         guardRoute();
+        // Actualizar visibilidad de Ajustes según estado de sesión
+        try{ updateAjustesVisibility(); }catch(_){ }
         document.getElementById('btn-export-resultados-pdf')?.addEventListener('click', exportResultadosTabPDF);
         document.getElementById('btn-export-resultados-csv')?.addEventListener('click', exportResultadosTabCSV);
             // Toggle descripciones de gráficas
@@ -2758,7 +2760,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function hideAuthOverlay(){ const ov=document.getElementById('auth-overlay'); if(ov) ov.classList.add('hidden'); }
     function isLocked(){ return localStorage.getItem('APP_LOCKED')==='1'; }
-    function lockApp(){ localStorage.setItem('APP_LOCKED','1'); sessionStorage.removeItem('APP_UNLOCKED'); sessionStorage.removeItem('API_KEY'); showAuthOverlay(false); }
+    function lockApp(){ localStorage.setItem('APP_LOCKED','1'); sessionStorage.removeItem('APP_UNLOCKED'); sessionStorage.removeItem('API_KEY'); try{ updateAjustesVisibility(); }catch(_){ } showAuthOverlay(false); }
     async function tryLogin(pass){
         const saved = localStorage.getItem('APP_PASS_HASH');
         if(!saved) return false;
@@ -2772,9 +2774,16 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('APP_UNLOCKED','1');
         // Use the plain pass as API key for backend requests
         sessionStorage.setItem('API_KEY', pass);
+        try{ updateAjustesVisibility(); }catch(_){ }
     }
     function isRemembered(){ return localStorage.getItem('APP_REMEMBER')==='1'; }
     function markRemembered(on){ if(on) localStorage.setItem('APP_REMEMBER','1'); else localStorage.removeItem('APP_REMEMBER'); }
+    function isUnlocked(){ return sessionStorage.getItem('APP_UNLOCKED')==='1' || isRemembered(); }
+    function updateAjustesVisibility(){
+        const card = document.getElementById('ajustes-card');
+        if(!card) return;
+        card.classList.toggle('hidden', !isUnlocked());
+    }
 
     function initAuthUI(){
         const btnLock = document.getElementById('btn-lock-app');
@@ -2809,6 +2818,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(p1!==p2) throw new Error('Las claves no coinciden.');
                     await setNewPass(p1);
                     msgEl.textContent='Clave establecida.'; msgEl.classList.add('text-green-600');
+                    try{ updateAjustesVisibility(); }catch(_){ }
                     hideAuthOverlay();
                 }else{
                     const pass = document.getElementById('auth-pass').value;
@@ -2820,6 +2830,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Store API key in session; persist if remember is enabled
                     sessionStorage.setItem('API_KEY', pass);
                     if(remember) localStorage.setItem('API_KEY_PERSIST', pass); else localStorage.removeItem('API_KEY_PERSIST');
+                    try{ updateAjustesVisibility(); }catch(_){ }
                     hideAuthOverlay();
                 }
             }catch(e){ msgEl.textContent=e.message||String(e); msgEl.classList.add('text-red-600'); }
