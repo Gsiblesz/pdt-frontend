@@ -2212,7 +2212,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch(_) { return false; }
             }
             function fallbackBoxPlot(){
-                // Si el plugin falla, reusar método simplificado previo para no dejar vacío
                 const tipoValoresMap={};
                 datos.forEach(reg=> (reg.maquinas||[]).forEach(maq=>{
                     const tipo=maq.tipoMasa||maq.tipoPan||'Sin tipo';
@@ -2220,7 +2219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(s1&&e3){ const total=Math.max(0,Math.floor((e3-s1)/1000)); (tipoValoresMap[tipo]=tipoValoresMap[tipo]||[]).push(total);} 
                 }));
                 const labels=Object.keys(tipoValoresMap);
-                const stats=labels.map(l=>{ const a=[...tipoValoresMap[l]].sort((x,y)=>x-y); if(!a.length) return {min:0,q1:0,med:0,q3:0,max:0}; const q=p=>{const pos=(a.length-1)*p; const b=Math.floor(pos); const r=pos-b; return r? a[b]+(a[b+1]-a[b])*r : a[b];}; return {min:a[0],q1:q(0.25),med:q(0.5),q3:q(0.75),max:a[a.length-1]}; });
+                const stats=labels.map(l=>{ const a=[...tipoValoresMap[l]].sort((x,y)=>x-y); if(!a.length) return {min:0,q1:0,med:0,q3:0,max:0,n:0}; const q=p=>{const pos=(a.length-1)*p; const b=Math.floor(pos); const r=pos-b; return r? a[b]+(a[b+1]-a[b])*r : a[b];}; return {min:a[0],q1:q(0.25),med:q(0.5),q3:q(0.75),max:a[a.length-1],n:a.length}; });
                 const rango=stats.map(s=>s.max - s.min);
                 const offsetsMin=stats.map(s=>s.min);
                 const caja=stats.map(s=>s.q3 - s.q1);
@@ -2230,15 +2229,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const chart = mkChart(boxEl,'bar',{
                     labels,
                     datasets:[
-                        {label:'oMin', data:offsetsMin, backgroundColor:'rgba(0,0,0,0)', stack:'a'},
-                        {label:'Rango', data:rango, backgroundColor:'rgba(148,163,184,0.25)', stack:'a'},
-                        {label:'oQ1', data:offsetsQ1, backgroundColor:'rgba(0,0,0,0)', stack:'b'},
-                        {label:'IQR', data:caja, backgroundColor:'rgba(37,99,235,0.35)', stack:'b'}
+                        {label:'OffsetMin', data:offsetsMin, backgroundColor:'rgba(0,0,0,0)', stack:'a'},
+                        {label:'Rango', data:rango, backgroundColor:'rgba(148,163,184,0.18)', stack:'a'},
+                        {label:'OffsetQ1', data:offsetsQ1, backgroundColor:'rgba(0,0,0,0)', stack:'b'},
+                        {label:'IQR', data:caja, backgroundColor:'rgba(147,197,253,0.7)', stack:'b'}
                     ]
-                },{plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>{ if(ctx.dataset.label!=='IQR') return null; const s=stats[ctx.dataIndex]; const span=s.max-s.min||1; const pct=((s.q3-s.q1)*100/span).toFixed(1)+'%'; return ['min:'+s.min+'s','Q1:'+s.q1.toFixed(0)+'s','Med:'+s.med.toFixed(0)+'s','Q3:'+s.q3.toFixed(0)+'s','max:'+s.max+'s','IQR%:'+pct]; }}}}, scales:{y:{beginAtZero:true}}});
+                },{plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>{ if(ctx.dataset.label!=='IQR') return null; const s=stats[ctx.dataIndex]; const span=s.max-s.min||1; const pct=((s.q3-s.q1)*100/span).toFixed(1)+'%'; return ['n:'+s.n,'min:'+s.min+'s','Q1:'+s.q1.toFixed(0)+'s','Med:'+s.med.toFixed(0)+'s','Q3:'+s.q3.toFixed(0)+'s','max:'+s.max+'s','IQR%:'+pct]; }}}}, scales:{y:{beginAtZero:true}}});
                 chartsCache.push(chart);
-                // Dibujar medianas
-                setTimeout(()=>{ const ctx=boxEl.getContext('2d'); const chartFound=chartsCache.find(c=>c.canvas===boxEl); if(!chartFound) return; const yS=chartFound.scales.y; const xS=chartFound.scales.x; ctx.save(); ctx.strokeStyle='#dc2626'; ctx.lineWidth=2; medianas.forEach((m,i)=>{ const x=xS.getPixelForValue(i); const y=yS.getPixelForValue(m); ctx.beginPath(); ctx.moveTo(x-12,y); ctx.lineTo(x+12,y); ctx.stroke(); }); ctx.restore(); },60);
+                setTimeout(()=>{ const ctx=boxEl.getContext('2d'); const chartFound=chartsCache.find(c=>c.canvas===boxEl); if(!chartFound) return; const yS=chartFound.scales.y; const xS=chartFound.scales.x; ctx.save(); ctx.strokeStyle='#0f172a'; ctx.lineWidth=1.5; medianas.forEach((m,i)=>{ const x=xS.getPixelForValue(i); const yM=yS.getPixelForValue(m); const s=stats[i]; const yMin=yS.getPixelForValue(s.min); const yMax=yS.getPixelForValue(s.max); const yQ1=yS.getPixelForValue(s.q1); const yQ3=yS.getPixelForValue(s.q3); ctx.beginPath(); ctx.moveTo(x,yMin); ctx.lineTo(x,yQ1); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x,yQ3); ctx.lineTo(x,yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x-10,yMin); ctx.lineTo(x+10,yMin); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x-10,yMax); ctx.lineTo(x+10,yMax); ctx.stroke(); ctx.beginPath(); ctx.strokeStyle='#dc2626'; ctx.lineWidth=2; ctx.moveTo(x-14,yM); ctx.lineTo(x+14,yM); ctx.stroke(); ctx.strokeStyle='#0f172a'; ctx.lineWidth=1.5; ctx.font='10px "Inter", sans-serif'; ctx.fillStyle='#111827'; ctx.textAlign='center'; ctx.fillText('n='+s.n, x, yQ3-4); }); ctx.restore(); },60);
+                if(!window.__BOXPLOT_UPGRADE_WATCH__){ window.__BOXPLOT_UPGRADE_WATCH__=true; const upgradeIv=setInterval(()=>{ if(controllerDisponible()){ clearInterval(upgradeIv); renderBoxPlotTipo(); } },500); setTimeout(()=> clearInterval(upgradeIv),8000); }
             }
             if(controllerDisponible()){
                 renderBoxPlotTipo();
