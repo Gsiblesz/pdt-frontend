@@ -208,7 +208,9 @@
                 <section>
                     <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Distribución tiempos por tipo de masa (Boxplot) <span class="info-hint text-blue-600 cursor-help align-middle" title="Variabilidad por receta.">ℹ️</span></h3>
                     <p class="chart-desc">Mide estabilidad operativa: IQR reducido indica proceso controlado; valores altos sugieren inconsistencia.</p>
-                    <canvas id="chart-boxplot-tipo" height="140"></canvas>
+                    <canvas id="chart-boxplot-tipo" height="160" class="mb-2"></canvas>
+                    <div id="boxplot-explicacion" class="text-xs text-stone-600 leading-snug hidden"></div>
+                    <div id="boxplot-stats" class="overflow-x-auto text-xs mt-2"></div>
                 </section>
                 <section>
                     <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Tiempos productivos vs muertos por amasadora <span class="info-hint text-blue-600 cursor-help align-middle" title="Proporción de inactividad.">ℹ️</span></h3>
@@ -2138,125 +2140,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const tempCtx=document.getElementById('chart-temp-pan'); if(tempCtx){ mkChart(tempCtx,'bar',{labels:tempRows.map(r=>r[0]),datasets:[{label:'Temp (°C)',data:tempRows.map(r=>parseFloat(r[2])),backgroundColor:palette}]},{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}); }
 
         // ====== Nuevas gráficas analíticas ======
-        // 1. Boxplot por tipo de masa (versión mejorada usando plugin oficial box/violin)
+        // 1. Boxplot por tipo de masa (custom sin plugins externos)
         (function(){
-            const boxEl = document.getElementById('chart-boxplot-tipo'); if(!boxEl) return;
-            function renderBoxPlotTipo(){
-                const tipoValoresMap={};
-                datos.forEach(reg=> (reg.maquinas||[]).forEach(maq=>{
-                    const tipo=maq.tipoMasa||maq.tipoPan||'Sin tipo';
-                    const s1=maq.proceso1?.startTime; const e3=maq.proceso3?.endTime;
-                    if(s1 && e3){
-                        const total=Math.max(0,Math.floor((e3 - s1)/1000));
-                        (tipoValoresMap[tipo]=tipoValoresMap[tipo]||[]).push(total);
-                    }
-                }));
-                let labels=Object.keys(tipoValoresMap);
-                // Ordenar por mediana asc para lectura rápida
-                labels.sort((a,b)=>{
-                    const va=[...tipoValoresMap[a]].sort((x,y)=>x-y); const vb=[...tipoValoresMap[b]].sort((x,y)=>x-y);
-                    const ma=va.length? va[Math.floor(va.length/2)] : 0;
-                    const mb=vb.length? vb[Math.floor(vb.length/2)] : 0;
-                    return ma-mb;
-                });
-                const dataArrays = labels.map(l=> tipoValoresMap[l]);
-                // Destruir anterior si recargamos
-                const existing = chartsCache.find(c=>c.canvas===boxEl);
-                if(existing){ existing.destroy(); chartsCache.splice(chartsCache.indexOf(existing),1); }
-                const chart = new Chart(boxEl,{
-                    type:'boxplot',
-                    data:{
-                        labels,
-                        datasets:[{
-                            label:'Tiempos (s)',
-                            data:dataArrays,
-                            backgroundColor:'rgba(37,99,235,0.25)',
-                            borderColor:'#1d4ed8',
-                            outlierBackgroundColor:'#dc2626',
-                            outlierRadius:3,
-                            itemRadius:0
-                        }]
-                    },
-                    options:{
-                        responsive:true,
-                        plugins:{
-                            legend:{display:false},
-                            tooltip:{
-                                callbacks:{
-                                    label: function(ctx){
-                                        const v=ctx.raw; if(!v) return '';
-                                        // El plugin ya calcula stats: min, q1, median, q3, max
-                                        return [
-                                            'min: '+v.min+'s',
-                                            'Q1: '+v.q1+'s',
-                                            'Med: '+v.median+'s',
-                                            'Q3: '+v.q3+'s',
-                                            'max: '+v.max+'s',
-                                            'IQR: '+(v.q3 - v.q1)+'s'
-                                        ];
-                                    }
-                                }
-                            }
-                        },
-                        scales:{y:{title:{display:true,text:'Segundos'},beginAtZero:true}},
-                        animation:false
-                    }
-                });
-                chartsCache.push(chart);
-            }
-            // ---- Carga dinámica del plugin y fallback ----
-            function controllerDisponible(){
-                try {
-                    // Chart.js v4: controllers registrados
-                    return !!(Chart && (Chart.registry.getController && Chart.registry.getController('boxplot')));
-                } catch(_) { return false; }
-            }
-            function fallbackBoxPlot(){
-                const tipoValoresMap={};
-                datos.forEach(reg=> (reg.maquinas||[]).forEach(maq=>{
-                    const tipo=maq.tipoMasa||maq.tipoPan||'Sin tipo';
-                    const s1=maq.proceso1?.startTime; const e3=maq.proceso3?.endTime;
-                    if(s1&&e3){ const total=Math.max(0,Math.floor((e3-s1)/1000)); (tipoValoresMap[tipo]=tipoValoresMap[tipo]||[]).push(total);} 
-                }));
-                const labels=Object.keys(tipoValoresMap);
-                const stats=labels.map(l=>{ const a=[...tipoValoresMap[l]].sort((x,y)=>x-y); if(!a.length) return {min:0,q1:0,med:0,q3:0,max:0,n:0}; const q=p=>{const pos=(a.length-1)*p; const b=Math.floor(pos); const r=pos-b; return r? a[b]+(a[b+1]-a[b])*r : a[b];}; return {min:a[0],q1:q(0.25),med:q(0.5),q3:q(0.75),max:a[a.length-1],n:a.length}; });
-                const rango=stats.map(s=>s.max - s.min);
-                const offsetsMin=stats.map(s=>s.min);
-                const caja=stats.map(s=>s.q3 - s.q1);
-                const offsetsQ1=stats.map(s=>s.q1 - s.min);
-                const medianas=stats.map(s=>s.med);
-                const existing = chartsCache.find(c=>c.canvas===boxEl); if(existing){ existing.destroy(); chartsCache.splice(chartsCache.indexOf(existing),1); }
-                const chart = mkChart(boxEl,'bar',{
-                    labels,
-                    datasets:[
-                        {label:'OffsetMin', data:offsetsMin, backgroundColor:'rgba(0,0,0,0)', stack:'a'},
-                        {label:'Rango', data:rango, backgroundColor:'rgba(148,163,184,0.18)', stack:'a'},
-                        {label:'OffsetQ1', data:offsetsQ1, backgroundColor:'rgba(0,0,0,0)', stack:'b'},
-                        {label:'IQR', data:caja, backgroundColor:'rgba(147,197,253,0.7)', stack:'b'}
-                    ]
-                },{plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>{ if(ctx.dataset.label!=='IQR') return null; const s=stats[ctx.dataIndex]; const span=s.max-s.min||1; const pct=((s.q3-s.q1)*100/span).toFixed(1)+'%'; return ['n:'+s.n,'min:'+s.min+'s','Q1:'+s.q1.toFixed(0)+'s','Med:'+s.med.toFixed(0)+'s','Q3:'+s.q3.toFixed(0)+'s','max:'+s.max+'s','IQR%:'+pct]; }}}}, scales:{y:{beginAtZero:true}}});
-                chartsCache.push(chart);
-                setTimeout(()=>{ const ctx=boxEl.getContext('2d'); const chartFound=chartsCache.find(c=>c.canvas===boxEl); if(!chartFound) return; const yS=chartFound.scales.y; const xS=chartFound.scales.x; ctx.save(); ctx.strokeStyle='#0f172a'; ctx.lineWidth=1.5; medianas.forEach((m,i)=>{ const x=xS.getPixelForValue(i); const yM=yS.getPixelForValue(m); const s=stats[i]; const yMin=yS.getPixelForValue(s.min); const yMax=yS.getPixelForValue(s.max); const yQ1=yS.getPixelForValue(s.q1); const yQ3=yS.getPixelForValue(s.q3); ctx.beginPath(); ctx.moveTo(x,yMin); ctx.lineTo(x,yQ1); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x,yQ3); ctx.lineTo(x,yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x-10,yMin); ctx.lineTo(x+10,yMin); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x-10,yMax); ctx.lineTo(x+10,yMax); ctx.stroke(); ctx.beginPath(); ctx.strokeStyle='#dc2626'; ctx.lineWidth=2; ctx.moveTo(x-14,yM); ctx.lineTo(x+14,yM); ctx.stroke(); ctx.strokeStyle='#0f172a'; ctx.lineWidth=1.5; ctx.font='10px "Inter", sans-serif'; ctx.fillStyle='#111827'; ctx.textAlign='center'; ctx.fillText('n='+s.n, x, yQ3-4); }); ctx.restore(); },60);
-                if(!window.__BOXPLOT_UPGRADE_WATCH__){ window.__BOXPLOT_UPGRADE_WATCH__=true; const upgradeIv=setInterval(()=>{ if(controllerDisponible()){ clearInterval(upgradeIv); renderBoxPlotTipo(); } },500); setTimeout(()=> clearInterval(upgradeIv),8000); }
-            }
-            if(controllerDisponible()){
-                renderBoxPlotTipo();
-            } else {
-                if(!window.__BOXPLOT_LOADING__){
-                    window.__BOXPLOT_LOADING__=true;
-                    const s=document.createElement('script');
-                    s.src='https://cdn.jsdelivr.net/npm/chartjs-chart-box-and-violin-plot@4.3.0/build/index.umd.min.js';
-                    s.onload=()=>{ setTimeout(()=>{ if(controllerDisponible()) renderBoxPlotTipo(); else fallbackBoxPlot(); },50); };
-                    s.onerror=()=>{ fallbackBoxPlot(); };
-                    document.head.appendChild(s);
-                    // watchdog por si nunca dispara onload (red lenta)
-                    setTimeout(()=>{ if(!controllerDisponible()){ fallbackBoxPlot(); } },3000);
-                } else {
-                    const iv=setInterval(()=>{ if(controllerDisponible()){ clearInterval(iv); renderBoxPlotTipo(); } },100);
-                    // fallback si pasan 4s
-                    setTimeout(()=>{ if(!controllerDisponible()){ clearInterval(iv); fallbackBoxPlot(); } },4000);
-                }
-            }
+            const canvas=document.getElementById('chart-boxplot-tipo'); if(!canvas) return;
+            const statsDiv=document.getElementById('boxplot-stats');
+            const explicacion=document.getElementById('boxplot-explicacion');
+            const grupos={};
+            datos.forEach(r=> (r.maquinas||[]).forEach(m=>{ const tipo=m.tipoMasa||m.tipoPan||'Sin tipo'; const s1=m.proceso1?.startTime; const e3=m.proceso3?.endTime; if(s1&&e3){ const total=Math.max(0,Math.floor((e3-s1)/1000)); (grupos[tipo]=grupos[tipo]||[]).push(total);} }));
+            let stats=Object.keys(grupos).map(k=>{ const arr=[...grupos[k]].sort((a,b)=>a-b); if(!arr.length) return {tipo:k,n:0}; const q=p=>{const pos=(arr.length-1)*p; const b=Math.floor(pos); const r=pos-b; return r? arr[b]+(arr[b+1]-arr[b])*r:arr[b];}; return {tipo:k,n:arr.length,min:arr[0],q1:q(0.25),med:q(0.5),q3:q(0.75),max:arr[arr.length-1],iqr:q(0.75)-q(0.25)}; });
+            stats.sort((a,b)=> (a.med||0)-(b.med||0));
+            const labels=stats.map(s=>s.tipo);
+            if(explicacion){ explicacion.classList.remove('hidden'); explicacion.textContent='Caja = Q1–Q3; línea roja = mediana; bigotes = min y max; n = registros por tipo; IQR% = (Q3-Q1)/(max-min).'; }
+            if(statsDiv){ const headers=['Tipo','n','min','Q1','Med','Q3','max','IQR','IQR%']; const rows=stats.map(s=>{ if(!s.n) return [s.tipo,0,'-','-','-','-','-','-','-']; const span=(s.max-s.min)||1; const pct=((s.iqr)*100/span).toFixed(1)+'%'; return [s.tipo,s.n,s.min,s.q1.toFixed(0),s.med.toFixed(0),s.q3.toFixed(0),s.max,s.iqr.toFixed(0),pct]; }); statsDiv.innerHTML=tableFromRows(headers,rows); }
+            const datasetMed=stats.map((s,i)=>({x:i,y:s.med||0}));
+            const chart=new Chart(canvas,{ type:'scatter', data:{labels,datasets:[{label:'med',data:datasetMed,pointRadius:0}]}, options:{animation:false,responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:(ctx)=>{ const s=stats[ctx.dataIndex]; if(!s||!s.n) return s.tipo+': sin datos'; return `${s.tipo}  n=${s.n}  min:${s.min}s  Q1:${s.q1.toFixed(0)}s  Med:${s.med.toFixed(0)}s  Q3:${s.q3.toFixed(0)}s  max:${s.max}s  IQR:${s.iqr.toFixed(0)}s`; }}}},scales:{x:{type:'category',labels,offset:true,grid:{display:false}},y:{beginAtZero:true,title:{display:true,text:'Segundos'}}}}, plugins:[{id:'drawBoxes',afterDraw(c){ const {ctx,scales:{x,y}}=c; stats.forEach((s,i)=>{ if(!s.n) return; const center=x.getPixelForValue(i); const catWidth=Math.min(70,(x.getPixelForValue(i+1)-center)||70); const boxW=Math.max(30,Math.min(50,catWidth*0.6)); const yMin=y.getPixelForValue(s.min), yQ1=y.getPixelForValue(s.q1), yMed=y.getPixelForValue(s.med), yQ3=y.getPixelForValue(s.q3), yMax=y.getPixelForValue(s.max); ctx.save(); ctx.strokeStyle='#64748b'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(center,yMin); ctx.lineTo(center,yQ1); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center,yQ3); ctx.lineTo(center,yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center-10,yMin); ctx.lineTo(center+10,yMin); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center-10,yMax); ctx.lineTo(center+10,yMax); ctx.stroke(); ctx.fillStyle='rgba(148,163,184,0.22)'; ctx.strokeStyle='#94a3b8'; ctx.beginPath(); ctx.rect(center-boxW/2,yQ3,boxW,yQ1-yQ3); ctx.fill(); ctx.stroke(); ctx.strokeStyle='#dc2626'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(center-boxW/2,yMed); ctx.lineTo(center+boxW/2,yMed); ctx.stroke(); ctx.fillStyle='#334155'; ctx.font='10px Inter'; ctx.textAlign='center'; ctx.fillText('n='+s.n, center, yQ3-4); ctx.restore(); }); }}]});
+            chartsCache.push(chart);
         })();
 
         // 2. Stacked productivo vs muertos por amasadora
