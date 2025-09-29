@@ -2138,67 +2138,89 @@ document.addEventListener('DOMContentLoaded', () => {
         const tempCtx=document.getElementById('chart-temp-pan'); if(tempCtx){ mkChart(tempCtx,'bar',{labels:tempRows.map(r=>r[0]),datasets:[{label:'Temp (°C)',data:tempRows.map(r=>parseFloat(r[2])),backgroundColor:palette}]},{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}); }
 
         // ====== Nuevas gráficas analíticas ======
-        // 1. Boxplot por tipo de masa (implementación simplificada: muestra min, Q1, mediana, Q3, max usando barras superpuestas)
-    (function(){
+        // 1. Boxplot por tipo de masa (versión mejorada usando plugin oficial box/violin)
+        (function(){
             const boxEl = document.getElementById('chart-boxplot-tipo'); if(!boxEl) return;
-            const tipoValoresMap={};
-            datos.forEach(reg=> (reg.maquinas||[]).forEach(maq=>{
-                const tipo=maq.tipoMasa||maq.tipoPan||'Sin tipo';
-                let primerStart=maq.proceso1?.startTime; let ultimoEnd=maq.proceso3?.endTime; if(primerStart&&ultimoEnd){
-                    const total=Math.max(0,Math.floor((ultimoEnd-primerStart)/1000));
-                    (tipoValoresMap[tipo]=tipoValoresMap[tipo]||[]).push(total);
-                }
-            }));
-            const labels=Object.keys(tipoValoresMap);
-            function quantiles(arr){ if(!arr.length) return {min:0,q1:0,med:0,q3:0,max:0}; const a=[...arr].sort((x,y)=>x-y); const q=(p)=>{const pos=(a.length-1)*p; const b=Math.floor(pos); const rest=pos-b; return rest? a[b]+(a[b+1]-a[b])*rest : a[b];}; return {min:a[0],q1:q(0.25),med:q(0.5),q3:q(0.75),max:a[a.length-1]}; }
-            const stats=labels.map(l=>quantiles(tipoValoresMap[l]));
-            // Representaremos: rango (min-max) como línea (dataset1), caja (q1-q3) como barra apilada invisible + visible, mediana como línea
-            const rango=stats.map(s=>s.max - s.min);
-            const caja=stats.map(s=>s.q3 - s.q1);
-            const offsetsMin=stats.map(s=>s.min);
-            const offsetsQ1=stats.map(s=>s.q1 - s.min);
-            const medianas=stats.map(s=>s.med);
-            mkChart(boxEl,'bar',{
-                labels,
-                datasets:[
-                    {label:'OffsetMin', data:offsetsMin, backgroundColor:'rgba(0,0,0,0)', stack:'bx', borderWidth:0},
-                    {label:'Rango visible', data:rango, backgroundColor:'rgba(148,163,184,0.25)', stack:'bx'},
-                    {label:'OffsetQ1', data:offsetsQ1, backgroundColor:'rgba(0,0,0,0)', stack:'cx', borderWidth:0},
-                    {label:'Caja IQR', data:caja, backgroundColor:'rgba(37,99,235,0.35)', stack:'cx'}
-                ]
-            },{responsive:true, plugins:{legend:{display:false}, tooltip:{
-                callbacks:{
-                    label:function(ctx){
-                        if(ctx.dataset.label!=='Caja IQR') return null;
-                        const s=ctx.chart.$boxStats?.[ctx.dataIndex];
-                        if(!s) return null;
-                        const iqr = s.q3 - s.q1; const span = s.max - s.min || 1; const pct = (iqr*100/span).toFixed(1)+'%';
-                        return [
-                            'min: '+s.min+'s',
-                            'Q1: '+s.q1.toFixed(0)+'s',
-                            'Med: '+s.med.toFixed(0)+'s',
-                            'Q3: '+s.q3.toFixed(0)+'s',
-                            'max: '+s.max+'s',
-                            'IQR% rango: '+pct
-                        ];
+            function renderBoxPlotTipo(){
+                const tipoValoresMap={};
+                datos.forEach(reg=> (reg.maquinas||[]).forEach(maq=>{
+                    const tipo=maq.tipoMasa||maq.tipoPan||'Sin tipo';
+                    const s1=maq.proceso1?.startTime; const e3=maq.proceso3?.endTime;
+                    if(s1 && e3){
+                        const total=Math.max(0,Math.floor((e3 - s1)/1000));
+                        (tipoValoresMap[tipo]=tipoValoresMap[tipo]||[]).push(total);
                     }
-                }
-            }}, scales:{y:{beginAtZero:true}}, animation:false});
-            // Medianas como línea overlay
-            const ctx = boxEl.getContext('2d');
-            boxEl.addEventListener('mousemove',()=>{}); // dummy to ensure draw
-            setTimeout(()=>{ // dibujar medianas tras render
-                const chart=chartsCache.find(c=>c.canvas===boxEl);
-                if(chart) chart.$boxStats=stats;
-                if(!chart) return; const yScale=chart.scales.y; const xScale=chart.scales.x;
-                ctx.save(); ctx.strokeStyle='#dc2626'; ctx.lineWidth=2;
-                medianas.forEach((m,i)=>{
-                    const xCenter = xScale.getPixelForValue(i);
-                    const y = yScale.getPixelForValue(m);
-                    ctx.beginPath(); ctx.moveTo(xCenter-12,y); ctx.lineTo(xCenter+12,y); ctx.stroke();
+                }));
+                let labels=Object.keys(tipoValoresMap);
+                // Ordenar por mediana asc para lectura rápida
+                labels.sort((a,b)=>{
+                    const va=[...tipoValoresMap[a]].sort((x,y)=>x-y); const vb=[...tipoValoresMap[b]].sort((x,y)=>x-y);
+                    const ma=va.length? va[Math.floor(va.length/2)] : 0;
+                    const mb=vb.length? vb[Math.floor(vb.length/2)] : 0;
+                    return ma-mb;
                 });
-                ctx.restore();
-            },50);
+                const dataArrays = labels.map(l=> tipoValoresMap[l]);
+                // Destruir anterior si recargamos
+                const existing = chartsCache.find(c=>c.canvas===boxEl);
+                if(existing){ existing.destroy(); chartsCache.splice(chartsCache.indexOf(existing),1); }
+                const chart = new Chart(boxEl,{
+                    type:'boxplot',
+                    data:{
+                        labels,
+                        datasets:[{
+                            label:'Tiempos (s)',
+                            data:dataArrays,
+                            backgroundColor:'rgba(37,99,235,0.25)',
+                            borderColor:'#1d4ed8',
+                            outlierBackgroundColor:'#dc2626',
+                            outlierRadius:3,
+                            itemRadius:0
+                        }]
+                    },
+                    options:{
+                        responsive:true,
+                        plugins:{
+                            legend:{display:false},
+                            tooltip:{
+                                callbacks:{
+                                    label: function(ctx){
+                                        const v=ctx.raw; if(!v) return '';
+                                        // El plugin ya calcula stats: min, q1, median, q3, max
+                                        return [
+                                            'min: '+v.min+'s',
+                                            'Q1: '+v.q1+'s',
+                                            'Med: '+v.median+'s',
+                                            'Q3: '+v.q3+'s',
+                                            'max: '+v.max+'s',
+                                            'IQR: '+(v.q3 - v.q1)+'s'
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        scales:{y:{title:{display:true,text:'Segundos'},beginAtZero:true}},
+                        animation:false
+                    }
+                });
+                chartsCache.push(chart);
+            }
+            // Cargar plugin si hace falta
+            if(!window.Chart || !Chart.registry.plugins.get('boxplot')){
+                if(!window.__BOXPLOT_LOADING__){
+                    window.__BOXPLOT_LOADING__=true;
+                    const s=document.createElement('script');
+                    s.src='https://cdn.jsdelivr.net/npm/chartjs-chart-box-and-violin-plot@4.3.0/build/index.umd.min.js';
+                    s.onload=()=>{ renderBoxPlotTipo(); };
+                    document.head.appendChild(s);
+                }else{
+                    // retry hasta que cargue
+                    const iv=setInterval(()=>{
+                        if(Chart.registry.plugins.get('boxplot')){ clearInterval(iv); renderBoxPlotTipo(); }
+                    },100);
+                }
+            } else {
+                renderBoxPlotTipo();
+            }
         })();
 
         // 2. Stacked productivo vs muertos por amasadora
