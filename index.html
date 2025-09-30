@@ -1,10 +1,10 @@
-﻿<!-- ======================= HTML STRUCTURE ======================= -->
+<!-- ======================= HTML STRUCTURE ======================= -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Producci├│n de Pan</title>
+    <title>Calculadora de Producción de Pan</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -32,14 +32,14 @@
                 <p id="auth-sub" class="text-sm text-stone-600 mb-4">Ingresa la clave para usar la app.</p>
                 <div id="auth-setup-fields" class="hidden">
                     <label class="block text-sm font-medium text-stone-700 mb-1">Nueva clave</label>
-                    <input id="auth-new-pass" type="password" class="w-full border rounded px-3 py-2 mb-3" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó" />
+                    <input id="auth-new-pass" type="password" class="w-full border rounded px-3 py-2 mb-3" placeholder="••••••" />
                     <label class="block text-sm font-medium text-stone-700 mb-1">Confirmar clave</label>
-                    <input id="auth-new-pass2" type="password" class="w-full border rounded px-3 py-2" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó" />
-                    <p class="text-xs text-stone-500 mt-2">Se guardar├í de forma local (hash) en este navegador.</p>
+                    <input id="auth-new-pass2" type="password" class="w-full border rounded px-3 py-2" placeholder="••••••" />
+                    <p class="text-xs text-stone-500 mt-2">Se guardará de forma local (hash) en este navegador.</p>
                 </div>
                 <div id="auth-login-fields">
                     <label class="block text-sm font-medium text-stone-700 mb-1">Clave</label>
-                    <input id="auth-pass" type="password" class="w-full border rounded px-3 py-2" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó" />
+                    <input id="auth-pass" type="password" class="w-full border rounded px-3 py-2" placeholder="••••••" />
                     <label class="inline-flex items-center gap-2 text-sm text-stone-700 mt-3">
                         <input id="auth-recordar" type="checkbox" class="border rounded" /> Recordar en este navegador
                     </label>
@@ -57,26 +57,26 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- Main app tabs: Menu | Amasadoras | Fermentadora | Hornos -->
     <div class="flex flex-wrap justify-center gap-4 mb-8">
-        <button id="tab-main-menu" class="tab-btn main-tab tab-btn-active">Men├║</button>
+        <button id="tab-main-menu" class="tab-btn main-tab tab-btn-active">Menú</button>
         <button id="tab-main-amasadoras" class="tab-btn main-tab">Amasadoras</button>
         <button id="tab-main-fermentadora" class="tab-btn main-tab">Fermentadora</button>
         <button id="tab-main-hornos" class="tab-btn main-tab">Hornos</button>
     </div>
-    <!-- Men├║ view (about + ajustes) -->
+    <!-- Menú view (about + ajustes) -->
     <div id="view-main-menu" class="block">
         <div class="mb-10 text-center max-w-4xl mx-auto">
-            <h1 class="text-4xl md:text-5xl font-extrabold mb-3 text-stone-900 tracking-tight">Curvas de control para producci├│n de pan</h1>
-            <p class="text-stone-700 text-lg leading-relaxed">Aplicaci├│n para medir y analizar la producci├│n de pan en el ├írea de Producci├│n de la empresa <strong>Pan de Tata</strong>, creada como parte de un proyecto de <strong>pasant├¡as</strong>.</p>
-            <p class="text-stone-700 text-lg mt-3">Desarrollada por <strong>Gerardo Siblesz</strong>, estudiante de <strong>Ingenier├¡a en Producci├│n y Mec├ínica</strong> de la <strong>Universidad Metropolitana</strong>.</p>
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-3 text-stone-900 tracking-tight">Curvas de control para producción de pan</h1>
+            <p class="text-stone-700 text-lg leading-relaxed">Aplicación para medir y analizar la producción de pan en el área de Producción de la empresa <strong>Pan de Tata</strong>, creada como parte de un proyecto de <strong>pasantías</strong>.</p>
+            <p class="text-stone-700 text-lg mt-3">Desarrollada por <strong>Gerardo Siblesz</strong>, estudiante de <strong>Ingeniería en Producción y Mecánica</strong> de la <strong>Universidad Metropolitana</strong>.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             <div class="bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
-                <h2 class="text-2xl font-extrabold text-stone-900 mb-3">C├│mo funciona</h2>
+                <h2 class="text-2xl font-extrabold text-stone-900 mb-3">Cómo funciona</h2>
                 <ul class="list-disc ml-6 text-base text-stone-700 space-y-1.5">
-                    <li>Registra variables generales y tiempos por m├íquina.</li>
-                    <li>Guarda resultados locales y env├¡alos a la Base de Datos.</li>
+                    <li>Registra variables generales y tiempos por máquina.</li>
+                    <li>Guarda resultados locales y envíalos a la Base de Datos.</li>
                     <li>Consulta desde cualquier dispositivo usando la misma API y clave.</li>
-                    <li>Explora Resultados y Tablas para an├ílisis y exporta en CSV/PDF.</li>
+                    <li>Explora Resultados y Tablas para análisis y exporta en CSV/PDF.</li>
                 </ul>
             </div>
             <div id="ajustes-card" class="bg-white border border-stone-200 rounded-xl p-6 shadow-sm hidden">
@@ -85,16 +85,6 @@
                     <button id="toggle-ajustes" class="text-sm text-stone-600 underline">Mostrar ajustes</button>
                 </div>
                 <div id="ajustes-content" class="space-y-4 text-base hidden">
-                    <div class="p-3 rounded-lg border bg-stone-50">
-                        <h4 class="font-semibold mb-1 text-stone-700">Gesti├│n de duplicados / cach├⌐ env├¡o</h4>
-                        <p class="text-xs text-stone-600 mb-2">Estos controles permiten limpiar las firmas de env├¡os y el registro interno de m├íquinas ya enviadas. ├Üsalo s├│lo si necesitas reenviar deliberadamente datos.</p>
-                        <div class="flex flex-wrap gap-2">
-                            <button id="btn-clear-sent-cache" class="bg-stone-500 text-white px-3 py-1 rounded text-sm hover:bg-stone-600">Limpiar "ya enviadas"</button>
-                            <button id="btn-clear-signatures" class="bg-stone-500 text-white px-3 py-1 rounded text-sm hover:bg-stone-600">Limpiar firmas</button>
-                            <button id="btn-clear-todo-dedupe" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">Reset dedupe total</button>
-                        </div>
-                        <div id="dedupe-stats" class="mt-2 text-xs text-stone-500"></div>
-                    </div>
                     <div>
                         <label class="block font-semibold text-stone-700">URL de la API</label>
                         <input id="settings-api-url" class="w-full border rounded px-3 py-2 text-base" placeholder="https://tu-backend" />
@@ -102,7 +92,7 @@
                     </div>
                     <div>
                         <label class="block font-semibold text-stone-700">Clave de API</label>
-                        <input id="settings-api-key" type="password" class="w-full border rounded px-3 py-2 text-base" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó" />
+                        <input id="settings-api-key" type="password" class="w-full border rounded px-3 py-2 text-base" placeholder="••••••" />
                         <label class="inline-flex items-center gap-2 mt-2"><input id="settings-remember-key" type="checkbox" class="scale-110" /> Recordar en este dispositivo</label>
                         <button id="settings-save-key" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded">Guardar clave</button>
                         <div id="settings-key-status" class="mt-2 text-sm text-stone-600"></div>
@@ -112,30 +102,30 @@
         </div>
     </div>
 
-    <!-- Fermentadora (placeholder) - secci├│n de nivel superior -->
+    <!-- Fermentadora (placeholder) - sección de nivel superior -->
     <div id="section-fermentadora" class="hidden">
         <div class="bg-white border border-stone-200 rounded-xl p-8 shadow-sm text-center text-stone-600 max-w-3xl mx-auto">
-            Pr├│ximamente: m├│dulo de Fermentadora.
+            Próximamente: módulo de Fermentadora.
         </div>
     </div>
 
-    <!-- Hornos (placeholder) - secci├│n de nivel superior -->
+    <!-- Hornos (placeholder) - sección de nivel superior -->
     <div id="section-hornos" class="hidden">
         <div class="bg-white border border-stone-200 rounded-xl p-8 shadow-sm text-center text-stone-600 max-w-3xl mx-auto">
-            Pr├│ximamente: m├│dulo de Hornos.
+            Próximamente: módulo de Hornos.
         </div>
     </div>
     <!-- Amasadoras section (existing app) -->
     <div id="section-amasadoras" class="hidden">
         <div class="flex flex-wrap justify-center gap-3 mb-6">
-            <button id="tab-medicion" class="tab-btn tab-btn-active">Medici├│n</button>
+            <button id="tab-medicion" class="tab-btn tab-btn-active">Medición</button>
             <button id="tab-resultados" class="tab-btn">Resultados</button>
             <button id="tab-tablas" class="tab-btn">Tablas</button>
         </div>
         <div id="view-tablas" class="hidden">
             <div class="mb-6 text-center">
-                <h2 class="text-3xl font-extrabold mb-2 text-stone-900 tracking-tight">Tablas y Gr├íficas</h2>
-                <p class="text-stone-600 max-w-2xl mx-auto">Promedios, desviaciones y distribuci├│n visual por tipo de masa, amasadora y procesos.</p>
+                <h2 class="text-3xl font-extrabold mb-2 text-stone-900 tracking-tight">Tablas y Gráficas</h2>
+                <p class="text-stone-600 max-w-2xl mx-auto">Promedios, desviaciones y distribución visual por tipo de masa, amasadora y procesos.</p>
             </div>
                 <div class="mb-4 flex flex-wrap gap-3 justify-center items-center">
                     <label for="tablas-source" class="text-sm text-stone-700">Fuente:</label>
@@ -161,80 +151,80 @@
                 </div>
             <div class="mb-8 max-w-3xl mx-auto">
                 <details open class="bg-white border border-stone-300 rounded-xl p-4 shadow-sm">
-                    <summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg">Mapeo de gr├íficas y prop├│sito anal├¡tico</summary>
+                    <summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg">Mapeo de gráficas y propósito analítico</summary>
                     <div class="mt-3 text-sm space-y-3 text-stone-700">
                         <ul class="list-disc ml-5 space-y-1">
                             <li><span class="font-medium">Punto de partida (1)</span>: Resumen de tiempos.</li>
                             <li><span class="font-medium">Benchmark entre recetas (2 y 5)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo.</li>
-                            <li><span class="font-medium">Detecta d├│nde optimizar (3, 4 y 9)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
-                            <li><span class="font-medium">Control de consistencia (5, 6 y 8)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Distribuci├│n por tipo (boxplot).</li>
-                            <li><span class="font-medium">Contexto y factores (7 y 11)</span>: TA y Humedad por d├¡a, Personal por d├¡a (m├¡nΓÇôm├íx).</li>
-                            <li><span class="font-medium">Hip├│tesis de proceso (10)</span>: Relaci├│n temperatura de masa vs tiempo total (scatter).</li>
+                            <li><span class="font-medium">Detecta dónde optimizar (3, 4 y 9)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
+                            <li><span class="font-medium">Control de consistencia (5, 6 y 8)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Distribución por tipo (boxplot).</li>
+                            <li><span class="font-medium">Contexto y factores (7 y 11)</span>: TA y Humedad por día, Personal por día (mín–máx).</li>
+                            <li><span class="font-medium">Hipótesis de proceso (10)</span>: Relación temperatura de masa vs tiempo total (scatter).</li>
                         </ul>
-                        <p class="text-xs text-stone-500">Los n├║meros refieren al orden visual de las secciones inferiores.</p>
+                        <p class="text-xs text-stone-500">Los números refieren al orden visual de las secciones inferiores.</p>
                     </div>
                 </details>
             </div>
             <div id="tablas-wrapper" class="space-y-10">
                 <section>
-                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Resumen de tiempos (s) <span class="info-hint text-blue-600 cursor-help align-middle" title="Indicadores globales: registros, promedio total y variabilidad.">Γä╣∩╕Å</span></h3>
-                    <p class="chart-desc">Muestra KPIs globales: n├║mero de registros, promedio total y dispersi├│n (desviaci├│n y %). Punto de partida para ver si el proceso se estabiliza.</p>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Resumen de tiempos (s) <span class="info-hint text-blue-600 cursor-help align-middle" title="Indicadores globales: registros, promedio total y variabilidad.">ℹ️</span></h3>
+                    <p class="chart-desc">Muestra KPIs globales: número de registros, promedio total y dispersión (desviación y %). Punto de partida para ver si el proceso se estabiliza.</p>
                     <div id="tabla-resumen" class="overflow-x-auto text-sm"></div>
                 </section>
                 <section>
-                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por tipo de masa <span class="info-hint text-blue-600 cursor-help align-middle" title="Tiempo total promedio por receta.">Γä╣∩╕Å</span></h3>
-                    <p class="chart-desc">Compara recetas y ayuda a detectar cu├íles requieren m├ís tiempo total. ├Ütil para priorizar mejoras o ajustar programaci├│n.</p>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por tipo de masa <span class="info-hint text-blue-600 cursor-help align-middle" title="Tiempo total promedio por receta.">ℹ️</span></h3>
+                    <p class="chart-desc">Compara recetas y ayuda a detectar cuáles requieren más tiempo total. Útil para priorizar mejoras o ajustar programación.</p>
                     <div id="tabla-pan" class="overflow-x-auto text-sm mb-4"></div>
                     <canvas id="chart-pan" height="140"></canvas>
                 </section>
                 <section>
-                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por amasadora <span class="info-hint text-blue-600 cursor-help align-middle" title="Comparaci├│n entre equipos.">Γä╣∩╕Å</span></h3>
-                    <p class="chart-desc">Identifica m├íquinas m├ís lentas o con tiempos fuera de rango para redistribuir cargas o revisar mantenimiento.</p>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por amasadora <span class="info-hint text-blue-600 cursor-help align-middle" title="Comparación entre equipos.">ℹ️</span></h3>
+                    <p class="chart-desc">Identifica máquinas más lentas o con tiempos fuera de rango para redistribuir cargas o revisar mantenimiento.</p>
                     <div id="tabla-amasadora" class="overflow-x-auto text-sm mb-4"></div>
                     <canvas id="chart-amasadora" height="140"></canvas>
                 </section>
                 <section>
-                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por proceso <span class="info-hint text-blue-600 cursor-help align-middle" title="Duraci├│n t├¡pica de cada etapa.">Γä╣∩╕Å</span></h3>
-                    <p class="chart-desc">Revela cu├íl de las 3 etapas domina el ciclo y d├│nde un ajuste reducir├¡a m├ís el tiempo total.</p>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Promedios por proceso <span class="info-hint text-blue-600 cursor-help align-middle" title="Duración típica de cada etapa.">ℹ️</span></h3>
+                    <p class="chart-desc">Revela cuál de las 3 etapas domina el ciclo y dónde un ajuste reduciría más el tiempo total.</p>
                     <div id="tabla-proceso" class="overflow-x-auto text-sm mb-4"></div>
                     <canvas id="chart-proceso" height="140"></canvas>
                 </section>
                 <section>
-                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Temperatura de masa <span class="info-hint text-blue-600 cursor-help align-middle" title="Temperatura promedio por tipo de masa.">Γä╣∩╕Å</span></h3>
-                    <p class="chart-desc">Controla la consistencia t├⌐rmica: variaciones grandes pueden afectar fermentaci├│n o calidad final.</p>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Temperatura de masa <span class="info-hint text-blue-600 cursor-help align-middle" title="Temperatura promedio por tipo de masa.">ℹ️</span></h3>
+                    <p class="chart-desc">Controla la consistencia térmica: variaciones grandes pueden afectar fermentación o calidad final.</p>
                     <div id="tabla-temp" class="overflow-x-auto text-sm mb-4"></div>
                     <canvas id="chart-temp-pan" height="140" class="mb-8"></canvas>
                 </section>
                 <section>
-                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Temp. masa (Amasadora vs Tipo de masa) <span class="info-hint text-blue-600 cursor-help align-middle" title="Cruce equipo vs receta.">Γä╣∩╕Å</span></h3>
-                    <p class="chart-desc">Detecta si ciertas m├íquinas generan sistem├íticamente temperaturas distintas para la misma receta.</p>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Temp. masa (Amasadora vs Tipo de masa) <span class="info-hint text-blue-600 cursor-help align-middle" title="Cruce equipo vs receta.">ℹ️</span></h3>
+                    <p class="chart-desc">Detecta si ciertas máquinas generan sistemáticamente temperaturas distintas para la misma receta.</p>
                     <div id="tabla-temp-cruzada" class="overflow-x-auto text-sm"></div>
                 </section>
                 <section>
-                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">TA y Humedad por d├¡a <span class="info-hint text-blue-600 cursor-help align-middle" title="Promedio diario de temperatura ambiente y humedad.">Γä╣∩╕Å</span></h3>
-                    <p class="chart-desc">Para cada fecha, se resume la Temperatura Ambiente (TA) y la Humedad (H) promedio basadas en las m├íquinas registradas ese d├¡a.</p>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">TA y Humedad por día <span class="info-hint text-blue-600 cursor-help align-middle" title="Promedio diario de temperatura ambiente y humedad.">ℹ️</span></h3>
+                    <p class="chart-desc">Para cada fecha, se resume la Temperatura Ambiente (TA) y la Humedad (H) promedio basadas en las máquinas registradas ese día.</p>
                     <div id="tabla-ta-h-dia" class="overflow-x-auto text-sm mb-4"></div>
                 </section>
                 <section>
-                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Distribuci├│n tiempos por tipo de masa (Boxplot) <span class="info-hint text-blue-600 cursor-help align-middle" title="Variabilidad por receta.">Γä╣∩╕Å</span></h3>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Distribución tiempos por tipo de masa (Boxplot) <span class="info-hint text-blue-600 cursor-help align-middle" title="Variabilidad por receta.">ℹ️</span></h3>
                     <p class="chart-desc">Mide estabilidad operativa: IQR reducido indica proceso controlado; valores altos sugieren inconsistencia.</p>
                     <canvas id="chart-boxplot-tipo" height="220" class="mb-2"></canvas>
                     <div id="boxplot-explicacion" class="text-xs text-stone-600 leading-snug hidden"></div>
                     <div id="boxplot-stats" class="overflow-x-auto text-xs mt-2"></div>
                 </section>
                 <section>
-                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Tiempos productivos vs muertos por amasadora <span class="info-hint text-blue-600 cursor-help align-middle" title="Proporci├│n de inactividad.">Γä╣∩╕Å</span></h3>
-                    <p class="chart-desc">Cuantifica ineficiencia: mayor porcentaje de tiempo muerto = oportunidad directa de optimizaci├│n.</p>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Tiempos productivos vs muertos por amasadora <span class="info-hint text-blue-600 cursor-help align-middle" title="Proporción de inactividad.">ℹ️</span></h3>
+                    <p class="chart-desc">Cuantifica ineficiencia: mayor porcentaje de tiempo muerto = oportunidad directa de optimización.</p>
                     <canvas id="chart-stacked-muertos" height="140"></canvas>
                 </section>
                 <section>
-                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Relaci├│n temperatura de masa vs tiempo total <span class="info-hint text-blue-600 cursor-help align-middle" title="Correlaci├│n tiempo vs calor.">Γä╣∩╕Å</span></h3>
-                    <p class="chart-desc">Eval├║a si la temperatura final se asocia a mayor o menor duraci├│n (r cercano a 0 indica poca relaci├│n).</p>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Relación temperatura de masa vs tiempo total <span class="info-hint text-blue-600 cursor-help align-middle" title="Correlación tiempo vs calor.">ℹ️</span></h3>
+                    <p class="chart-desc">Evalúa si la temperatura final se asocia a mayor o menor duración (r cercano a 0 indica poca relación).</p>
                     <canvas id="chart-scatter-temp-tiempo" height="160"></canvas>
                 </section>
                 <section>
-                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Personal por d├¡a (m├¡nΓÇôm├íx) <span class="info-hint text-blue-600 cursor-help align-middle" title="Resumen diario de dotaci├│n (l├¡mite inferior y superior).">Γä╣∩╕Å</span></h3>
-                    <p class="chart-desc">Para cada fecha se muestra el m├¡nimo y m├íximo de personal (agregado por d├¡a), su midpoint y el rango. Debajo se compara visualmente por d├¡a.</p>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Personal por día (mín–máx) <span class="info-hint text-blue-600 cursor-help align-middle" title="Resumen diario de dotación (límite inferior y superior).">ℹ️</span></h3>
+                    <p class="chart-desc">Para cada fecha se muestra el mínimo y máximo de personal (agregado por día), su midpoint y el rango. Debajo se compara visualmente por día.</p>
                     <div id="tabla-personal-dia" class="overflow-x-auto text-sm mb-4"></div>
                     <canvas id="chart-personal-dia" height="140"></canvas>
                 </section>
@@ -242,8 +232,8 @@
         </div>
         <div id="view-medicion" class="hidden">
                 <div class="mb-8">
-                    <h1 class="text-3xl font-extrabold text-stone-900 tracking-tight mb-2">C├ílculo de Amasadoras</h1>
-                    <p class="text-stone-600 text-sm md:text-base">C├│mo operar el programa: registra primero las variables generales (fecha, TA, H, personal). Luego en cada tarjeta de amasadora define el tipo de masa y controla los tres procesos secuencialmente. Guarda cada m├íquina al terminar para formar un conjunto que luego podr├ís analizar y exportar.</p>
+                    <h1 class="text-3xl font-extrabold text-stone-900 tracking-tight mb-2">Cálculo de Amasadoras</h1>
+                    <p class="text-stone-600 text-sm md:text-base">Cómo operar el programa: registra primero las variables generales (fecha, TA, H, personal). Luego en cada tarjeta de amasadora define el tipo de masa y controla los tres procesos secuencialmente. Guarda cada máquina al terminar para formar un conjunto que luego podrás analizar y exportar.</p>
                 </div>
                 <!-- Instrucciones (migradas desde Resultados) -->
                 <div id="instrucciones-medicion" class="mb-8">
@@ -252,33 +242,33 @@
                             <span>Instrucciones (crear conjunto, analizar y exportar)</span>
                         </summary>
                         <div class="mt-3 space-y-3 text-sm leading-relaxed text-stone-700">
-                            <p><span class="font-semibold">┬┐Qu├⌐ es un conjunto?</span> Es un registro de una <strong>fecha</strong> con una o varias <strong>amasadoras</strong> y sus 3 procesos: <strong>Esponja</strong>, <strong>Masa</strong> y <strong>Mantequilla</strong> (tiempos reales, inicios, fines), m├ís variables: <strong>Lote</strong>, <strong>Tipo de masa</strong>, <strong>Hielo</strong>, <strong>TM/TA/H</strong>, <strong>Personal</strong> y <strong>Observaciones</strong>.</p>
+                            <p><span class="font-semibold">¿Qué es un conjunto?</span> Es un registro de una <strong>fecha</strong> con una o varias <strong>amasadoras</strong> y sus 3 procesos: <strong>Esponja</strong>, <strong>Masa</strong> y <strong>Mantequilla</strong> (tiempos reales, inicios, fines), más variables: <strong>Lote</strong>, <strong>Tipo de masa</strong>, <strong>Hielo</strong>, <strong>TM/TA/H</strong>, <strong>Personal</strong> y <strong>Observaciones</strong>.</p>
                             <ol class="list-decimal ml-5 space-y-1">
-                                <li>Completa <strong>Fecha</strong>, <strong>TA</strong>, <strong>H</strong> y <strong>Personal (m├¡nΓÇôm├íx)</strong>.</li>
+                                <li>Completa <strong>Fecha</strong>, <strong>TA</strong>, <strong>H</strong> y <strong>Personal (mín–máx)</strong>.</li>
                                 <li>En cada amasadora define <strong>Tipo de masa</strong>, marca <strong>Hielo</strong> si aplica y al finalizar registra <strong>Temp. de masa</strong> y <strong>Observaciones</strong>.</li>
-                                <li>Ejecuta los procesos en orden (Iniciar / Detener). S├│lo puede estar activo uno por m├íquina; iniciar otro detiene el previo.</li>
-                                <li>Se guardan inicio, fin y duraci├│n. El <strong>Total m├íquina</strong> va desde el inicio del primer proceso al fin del tercero. <strong>TM1 / TM2</strong> son los huecos entre procesos.</li>
-                                <li>Pulsa <strong>Guardar resultados</strong> al terminar los 3 procesos de la m├íquina. Repite para otras.</li>
-                                <li>Pasa a la pesta├▒a <strong>Resultados</strong> para ver, filtrar y revisar. Desde <strong>Base de datos</strong> puedes: <em>Refrescar</em>, <em>Ver JSON</em> (abre un modal con Copiar), <em>Borrar</em> y ver <em>Detalles</em> por amasadora (TM1/TM2/Total real/Total procesos/Obs y tiempos por proceso).</li>
-                                <li>En <strong>Resultados ΓåÆ Locales</strong> puedes enviar una tarjeta con <em>Enviar a BD</em> o toda la fecha con <em>Enviar todo a la BD</em>. Evitamos clics m├║ltiples para no duplicar.</li>
-                                <li>En <strong>Tablas</strong> elige la <em>Fuente</em>: <strong>Locales</strong> o <strong>Base de datos</strong> (con filtro por <em>Fecha</em>). Las tablas y gr├íficas se adaptan al origen.</li>
+                                <li>Ejecuta los procesos en orden (Iniciar / Detener). Sólo puede estar activo uno por máquina; iniciar otro detiene el previo.</li>
+                                <li>Se guardan inicio, fin y duración. El <strong>Total máquina</strong> va desde el inicio del primer proceso al fin del tercero. <strong>TM1 / TM2</strong> son los huecos entre procesos.</li>
+                                <li>Pulsa <strong>Guardar resultados</strong> al terminar los 3 procesos de la máquina. Repite para otras.</li>
+                                <li>Pasa a la pestaña <strong>Resultados</strong> para ver, filtrar y revisar. Desde <strong>Base de datos</strong> puedes: <em>Refrescar</em>, <em>Ver JSON</em> (abre un modal con Copiar), <em>Borrar</em> y ver <em>Detalles</em> por amasadora (TM1/TM2/Total real/Total procesos/Obs y tiempos por proceso).</li>
+                                <li>En <strong>Resultados → Locales</strong> puedes enviar una tarjeta con <em>Enviar a BD</em> o toda la fecha con <em>Enviar todo a la BD</em>. Evitamos clics múltiples para no duplicar.</li>
+                                <li>En <strong>Tablas</strong> elige la <em>Fuente</em>: <strong>Locales</strong> o <strong>Base de datos</strong> (con filtro por <em>Fecha</em>). Las tablas y gráficas se adaptan al origen.</li>
                                 <li><strong>Borrar todo</strong> elimina definitivamente todos los registros guardados.</li>
                                 <li><strong>Exportar PDF</strong>: reporte visual de la vista de resultados (sin botones).</li>
-                                <li><strong>Exportar CSV</strong>: filas compactadas (una por proceso) con factores diarios y de m├íquina s├│lo en la primera fila de cada m├íquina. Incluye TM1, TM2, TM.Total y Total(s).</li>
-                                <li>Si el total supera 45 min (>2700 s) aparece un ├¡cono de advertencia.</li>
+                                <li><strong>Exportar CSV</strong>: filas compactadas (una por proceso) con factores diarios y de máquina sólo en la primera fila de cada máquina. Incluye TM1, TM2, TM.Total y Total(s).</li>
+                                <li>Si el total supera 45 min (>2700 s) aparece un ícono de advertencia.</li>
                             </ol>
-                            <p class="text-stone-600">Consejo: Usa CSV para an├ílisis (Excel / Power BI) y PDF para difusi├│n r├ípida.</p>
+                            <p class="text-stone-600">Consejo: Usa CSV para análisis (Excel / Power BI) y PDF para difusión rápida.</p>
                             <div class="pt-3 border-t border-stone-200"></div>
-                            <h4 class="font-semibold text-stone-800">Mapeo de gr├íficas y prop├│sito anal├¡tico</h4>
+                            <h4 class="font-semibold text-stone-800">Mapeo de gráficas y propósito analítico</h4>
                             <ul class="list-disc ml-5 space-y-1">
                                 <li><span class="font-medium">Punto de partida (1)</span>: Resumen de tiempos.</li>
                                 <li><span class="font-medium">Benchmark entre recetas (2 y 5)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo.</li>
-                                <li><span class="font-medium">Detecta d├│nde optimizar (3, 4 y 9)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
-                                <li><span class="font-medium">Control de consistencia (5, 6 y 8)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Distribuci├│n por tipo (boxplot).</li>
-                                <li><span class="font-medium">Contexto y factores (7 y 11)</span>: TA y Humedad por d├¡a, Personal por d├¡a (m├¡nΓÇôm├íx).</li>
-                                <li><span class="font-medium">Hip├│tesis de proceso (10)</span>: Relaci├│n temperatura de masa vs tiempo total (scatter).</li>
+                                <li><span class="font-medium">Detecta dónde optimizar (3, 4 y 9)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
+                                <li><span class="font-medium">Control de consistencia (5, 6 y 8)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Distribución por tipo (boxplot).</li>
+                                <li><span class="font-medium">Contexto y factores (7 y 11)</span>: TA y Humedad por día, Personal por día (mín–máx).</li>
+                                <li><span class="font-medium">Hipótesis de proceso (10)</span>: Relación temperatura de masa vs tiempo total (scatter).</li>
                             </ul>
-                            <p class="text-xs text-stone-500">Tip: Usa BD como fuente para analizar hist├│ricos y evita perder datos al cambiar de dispositivo.</p>
+                            <p class="text-xs text-stone-500">Tip: Usa BD como fuente para analizar históricos y evita perder datos al cambiar de dispositivo.</p>
                         </div>
                     </details>
                 </div>
@@ -288,7 +278,7 @@
                     <input type="date" id="fecha" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
                 </div>
                 <div>
-                    <label for="ta" class="block mb-1 text-sm font-semibold text-stone-700">Temp. ambiente (┬░C)</label>
+                    <label for="ta" class="block mb-1 text-sm font-semibold text-stone-700">Temp. ambiente (°C)</label>
                     <input type="number" id="ta" step="0.1" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="TA" />
                 </div>
                 <div>
@@ -296,25 +286,25 @@
                     <input type="number" id="h" step="0.1" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="H" />
                 </div>
                 <div>
-                    <label for="personal-min" class="block mb-1 text-sm font-semibold text-stone-700">Personal (m├¡n)</label>
-                    <input type="number" min="0" id="personal-min" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="M├¡nimo" />
+                    <label for="personal-min" class="block mb-1 text-sm font-semibold text-stone-700">Personal (mín)</label>
+                    <input type="number" min="0" id="personal-min" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Mínimo" />
                 </div>
                 <div>
-                    <label for="personal-max" class="block mb-1 text-sm font-semibold text-stone-700">Personal (m├íx)</label>
-                    <input type="number" min="0" id="personal-max" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="M├íximo" />
+                    <label for="personal-max" class="block mb-1 text-sm font-semibold text-stone-700">Personal (máx)</label>
+                    <input type="number" min="0" id="personal-max" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Máximo" />
                 </div>
                 
             </div>
             <main id="machine-cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-7 mb-10"></main>
             <div id="msg-guardar" class="mt-2 text-center text-sm"></div>
         </div>
-        <!-- Vista de resultados (├║nica) -->
+        <!-- Vista de resultados (única) -->
         <div id="view-resultados" class="hidden">
                 <div class="mb-4 flex flex-wrap gap-3 justify-end">
                     <button id="btn-export-resultados-pdf" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition-colors">Exportar Resultados de Amasadoras (PDF)</button>
                     <button id="btn-export-resultados-csv" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-emerald-700 transition-colors">Exportar Resultados de Amasadoras (CSV)</button>
                 </div>
-                <!-- Subpesta├▒as: Locales | Base de datos -->
+                <!-- Subpestañas: Locales | Base de datos -->
                 <div class="flex justify-center gap-2 mb-4">
                     <button id="subtab-local" class="tab-btn tab-btn-active">Locales</button>
                     <button id="subtab-bd" class="tab-btn">Base de datos</button>
@@ -341,10 +331,6 @@
             <input id="bd-filtro-maquina" type="text" class="border rounded px-3 py-1" placeholder="Filtrar por amasadora" />
             <button id="bd-refresh" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-indigo-700">Refrescar</button>
             <button id="bd-delete-all" class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-red-700" title="Borrar todos los registros en la BD (si la API lo permite)">Borrar todo BD</button>
-            <!-- NUEVOS BOTONES selecci├│n m├║ltiple -->
-            <button id="bd-toggle-select" class="bg-stone-500 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-stone-600">Seleccionar</button>
-            <button id="bd-delete-selected" class="hidden bg-red-700 text-white px-3 py-1 rounded text-sm font-semibold hover:bg-red-800">Borrar seleccionados</button>
-            <span id="bd-selected-count" class="hidden text-xs text-stone-600"></span>
         </div>
                     <div id="sync-status" class="text-xs text-stone-600 mt-1 text-center"></div>
                     <div id="bd-lista" class="max-w-4xl mx-auto mt-3"></div>
@@ -446,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sortedMachines.sort((a, b) => ordenIds.indexOf(a.id) - ordenIds.indexOf(b.id));
         sortedMachines.forEach(machine => {
             const temp = tempData[machine.id] || {};
-            // Calcular el total restando el inicio del primer proceso y el fin del ├║ltimo proceso
+            // Calcular el total restando el inicio del primer proceso y el fin del último proceso
             let primerStart = completedProcessTimes[`m${machine.id}-p1`]?.startTime || null;
             let ultimoEnd = completedProcessTimes[`m${machine.id}-p3`]?.endTime || null;
             let totalTime = null;
@@ -491,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h3 class="text-xl font-bold mb-4 text-stone-900 tracking-tight">${machine.name}</h3>
                     <div class="mb-4 flex flex-col items-center">
                         <label for="lote-${machine.id}" class="block mb-2 text-base font-semibold text-stone-800">Lote:</label>
-                        <input type="text" id="lote-${machine.id}" class="mb-4 px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48" placeholder="Ingrese el n├║mero de lote" value="${temp.lote||''}" />
+                        <input type="text" id="lote-${machine.id}" class="mb-4 px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48" placeholder="Ingrese el número de lote" value="${temp.lote||''}" />
                         <label for="tipoMasa-${machine.id}" class="block mb-2 text-base font-semibold text-stone-800">Tipo de masa:</label>
                         <select id="tipoMasa-${machine.id}" data-machine="${machine.id}" class="px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-masa-select">
                             <option value="">-- Seleccionar --</option>
@@ -513,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </label>
                         </div>
                         <div class="flex flex-col items-center mt-2 w-48">
-                            <!-- Campo de personal eliminado, ahora est├í arriba -->
+                            <!-- Campo de personal eliminado, ahora está arriba -->
                         </div>
                     </div>
                     <div class="space-y-4 mb-4">
@@ -523,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="flex justify-between"><span class="font-semibold">T. Muerto 1</span><span id="tm1-${machine.id}" class="font-mono">${tiempoMuerto1 !== null ? formatTime(tiempoMuerto1) : '--:--:--'}</span></div>
                         <div class="flex justify-between"><span class="font-semibold">T. Muerto 2</span><span id="tm2-${machine.id}" class="font-mono">${tiempoMuerto2 !== null ? formatTime(tiempoMuerto2) : '--:--:--'}</span></div>
                         <div class="flex justify-between"><span class="font-semibold">Muertos Total</span><span id="tmT-${machine.id}" class="font-mono">${(tiempoMuerto1 !== null || tiempoMuerto2 !== null) ? formatTime(sumaMuertos) : '--:--:--'}</span></div>
-                        <div class="flex justify-between text-blue-700 font-bold"><span>Total m├íquina</span><span id="ttot-${machine.id}" class="font-mono">${totalTime !== null ? formatTime(totalTime) : '--:--:--'}</span></div>
+                        <div class="flex justify-between text-blue-700 font-bold"><span>Total máquina</span><span id="ttot-${machine.id}" class="font-mono">${totalTime !== null ? formatTime(totalTime) : '--:--:--'}</span></div>
                     </div>
                     <div class="flex flex-col gap-2 mb-4 w-48 mx-auto">
                         <label class="text-base font-semibold text-stone-800">Temperatura de la masa (C):</label>
@@ -546,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
             machineCardsContainer.innerHTML += cardHtml;
         });
     }
-    // Actualizar din├ímicamente los tiempos muertos y total al detener procesos
+    // Actualizar dinámicamente los tiempos muertos y total al detener procesos
     function updateMuertosYTotal(machineId) {
         let t1End = completedProcessTimes[`m${machineId}-p1`]?.endTime || null;
         let t2Start = completedProcessTimes[`m${machineId}-p2`]?.startTime || null;
@@ -564,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(document.getElementById(`ttot-${machineId}`)) document.getElementById(`ttot-${machineId}`).textContent = totalTime !== null ? formatTime(totalTime) : '--:--:--';
     }
 
-    // Evento para bot├│n Clear de cada amasadora
+    // Evento para botón Clear de cada amasadora
     machineCardsContainer.addEventListener('click', function(e) {
         const btn = e.target.closest('.clear-maquina');
         if (!btn) return;
@@ -633,7 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             machineTotals[machineId] = machineTotals[machineId] - prevTime + realTimeSeconds;
             completedProcessTimes[timerId] = { time: realTimeSeconds, startTime: startTime, endTime: endTime };
-            // Actualizar solo el total de la m├íquina en el DOM (solo suma los tiempos detenidos)
+            // Actualizar solo el total de la máquina en el DOM (solo suma los tiempos detenidos)
             let totalTime = 0;
             for (let i = 1; i <= 3; i++) {
                 const tId = `m${machineId}-p${i}`;
@@ -642,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     totalTime += t.time;
                 }
             }
-            // Actualizar el span del total de la m├íquina usando el id ├║nico
+            // Actualizar el span del total de la máquina usando el id único
             const totalSpan = document.getElementById(`total-m${machineId}`);
             if (totalSpan) {
                 totalSpan.textContent = formatTime(totalTime);
@@ -654,7 +640,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     totalSpan.classList.add('text-stone-800');
                 }
             }
-            // Actualizar tiempos muertos y total din├ímicamente
+            // Actualizar tiempos muertos y total dinámicamente
             updateMuertosYTotal(machineId);
         }
 
@@ -673,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const [machineId, processId] = timerId.replace('m', '').replace('p', '').split('-');
 
         if (action === 'start') {
-            // Detener y guardar cualquier proceso corriendo en la misma m├íquina
+            // Detener y guardar cualquier proceso corriendo en la misma máquina
             machineData.find(m => m.id === machineId).processes.forEach(process => {
                 const existingTimerId = `m${machineId}-p${process.id}`;
                 if (existingTimerId !== timerId && timers[existingTimerId]) {
@@ -707,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Delegaci├│n global de botones de procesos
+    // Delegación global de botones de procesos
     document.addEventListener('click', function(e){
         if (e.target.closest('button[data-action]')) {
             handleButtonClick(e);
@@ -731,9 +717,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Bloque eliminado: c├│digo hu├⌐rfano de guardado general (sustituido por guardarResultadosPorMaquina)
+    // Bloque eliminado: código huérfano de guardado general (sustituido por guardarResultadosPorMaquina)
 
-    // Guardar resultados por m├íquina
+    // Guardar resultados por máquina
     // Guardar campos temporales al cambiar cualquier input relevante
     machineCardsContainer.addEventListener('input', function(e) {
         const target = e.target;
@@ -764,7 +750,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!btn) return;
         const machineId = btn.getAttribute('data-machine-id');
         if (!machineId) return;
-        // Limpiar datos temporales de esa m├íquina
+        // Limpiar datos temporales de esa máquina
         let tempData = {};
         try { tempData = JSON.parse(localStorage.getItem('tempAmasadoras')||'{}'); } catch(_){}
         delete tempData[machineId];
@@ -783,13 +769,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const procesos = {};
         machine.processes.forEach(process => {
             const timerId = `m${machine.id}-p${process.id}`;
-            // Si est├í corriendo, tomar su startTime actual y tiempo transcurrido; si no, usar el completado
+            // Si está corriendo, tomar su startTime actual y tiempo transcurrido; si no, usar el completado
             let tiempo = 0, startTime = null, endTime = null;
             const tRun = timers[timerId];
             if (tRun && tRun.startTime) {
                 startTime = tRun.startTime;
                 tiempo = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
-                endTime = null; // a├║n en curso
+                endTime = null; // aún en curso
             } else {
                 const comp = completedProcessTimes[timerId] || { time: 0, startTime: null, endTime: null };
                 tiempo = comp.time || 0;
@@ -810,7 +796,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let hielo = '';
         if (document.getElementById(`hielo-si-${machine.id}`).checked) hielo = 'Si';
         else if (document.getElementById(`hielo-no-${machine.id}`).checked) hielo = 'No';
-        // Obtener n├║mero de personal
+        // Obtener número de personal
     const personalMin = document.getElementById('personal-min')?.value || '';
     const personalMax = document.getElementById('personal-max')?.value || '';
         // Obtener observaciones
@@ -838,7 +824,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
     resultados.push({ fecha, maquinas: [maquinaObj] });
     localStorage.setItem('resultadosMezclado', JSON.stringify(resultados));
-    mostrarMsgMaquina(machineId, '┬íResultados guardados correctamente!', true);
+    mostrarMsgMaquina(machineId, '¡Resultados guardados correctamente!', true);
     }
 
     function mostrarMsgMaquina(machineId, msg, ok) {
@@ -851,9 +837,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function cargarResultados() {
-    // Bot├│n Clear para borrar todos los resultados
+    // Botón Clear para borrar todos los resultados
     document.getElementById('btn-clear-resultados')?.addEventListener('click', function() {
-        if (confirm('┬┐Seguro que deseas borrar TODOS los resultados de mezclado?')) {
+        if (confirm('¿Seguro que deseas borrar TODOS los resultados de mezclado?')) {
             localStorage.removeItem('resultadosMezclado');
             cargarResultados();
             document.getElementById('promedios').innerHTML = '';
@@ -878,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resultados.forEach((res, idx) => {
             const fecha = res.fecha || '--';
             if (filtroFecha && fecha !== filtroFecha) return;
-            // Mostrar rango de Personal general si existe (m├¡nΓÇôm├íx)
+            // Mostrar rango de Personal general si existe (mín–máx)
             let personalGeneralMin = '';
             let personalGeneralMax = '';
             if (res.maquinas && res.maquinas.length > 0) {
@@ -907,7 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (primerStart && ultimoEnd) {
                     totalSeg = Math.max(0, Math.floor((ultimoEnd - primerStart)/1000));
                 }
-                // Sumar a promedios solo si hay total v├ílido
+                // Sumar a promedios solo si hay total válido
                 if (totalSeg !== null) {
                     sumaTotales += totalSeg;
                     cuentaTotales++;
@@ -937,10 +923,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 // Calcular total de tiempos muertos
                 let totalMuertos = tiempoMuerto1 + tiempoMuerto2;
-                // D├¡a de la semana
+                // Día de la semana
                 let diaSemana = '--';
                 if (fecha && fecha.length === 10) {
-                    const dias = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','S├íbado'];
+                    const dias = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sábado'];
                     // Ajustar para zona local y evitar desfase por UTC
                     const [anio, mes, dia] = fecha.split('-').map(Number);
                     const fechaLocal = new Date(anio, mes - 1, dia);
@@ -966,7 +952,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="text-stone-800 font-bold text-xl">T. Muerto 1: <span class="font-mono text-lg">${formatTime(tiempoMuerto1)}</span></span>
                         <span class="text-stone-800 font-bold text-xl">T. Muerto 2: <span class="font-mono text-lg">${formatTime(tiempoMuerto2)}</span></span>
                         <span class="text-stone-800 font-bold text-xl">T. Muertos Total: <span class="font-mono text-lg">${formatTime(totalMuertos)}</span></span>
-                        ${maqIdx === 0 && (personalGeneralMin || personalGeneralMax) ? `<span class='text-stone-800 font-bold text-xl'>Personal: <span class='font-mono text-lg'>${personalGeneralMin||'?'}ΓÇô${personalGeneralMax||'?'}</span></span>` : ''}
+                        ${maqIdx === 0 && (personalGeneralMin || personalGeneralMax) ? `<span class='text-stone-800 font-bold text-xl'>Personal: <span class='font-mono text-lg'>${personalGeneralMin||'?'}–${personalGeneralMax||'?'}</span></span>` : ''}
                     </div>
                     <div class="mb-4 divide-y divide-stone-200">
                         ${procesosHtml}
@@ -1000,23 +986,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const prom = Math.round(sumaTotales/cuentaTotales);
             const std = Math.round(stddev(totalesArr));
             const rel = relStddev(std, prom);
-            promediosHtml += `<span>Promedio total: <span class=\"font-mono\">${formatTime(prom)}</span> (┬▒${formatTime(std)}, ${rel})</span> &nbsp;`;
+            promediosHtml += `<span>Promedio total: <span class=\"font-mono\">${formatTime(prom)}</span> (±${formatTime(std)}, ${rel})</span> &nbsp;`;
             for (let i=0; i<3; i++) {
                 if (cuentaProc[i]) {
                     const promP = Math.round(sumaProc[i]/cuentaProc[i]);
                     const stdP = Math.round(stddev(procArr[i]));
                     const relP = relStddev(stdP, promP);
-                    promediosHtml += `<span>${['Esponja','Masa','Mantequilla'][i]}: <span class=\"font-mono\">${formatTime(promP)}</span> (┬▒${formatTime(stdP)}, ${relP})</span> &nbsp;`;
+                    promediosHtml += `<span>${['Esponja','Masa','Mantequilla'][i]}: <span class=\"font-mono\">${formatTime(promP)}</span> (±${formatTime(stdP)}, ${relP})</span> &nbsp;`;
                 }
             }
         }
-    // (Tabla de promedios por tipo de masa movida solo a gr├íficas)
+    // (Tabla de promedios por tipo de masa movida solo a gráficas)
         document.getElementById('promedios').innerHTML = promediosHtml;
     // Evento para borrar resultado
     resultadosLista.addEventListener('click', function(e) {
         const btn = e.target.closest('.borrar-resultado');
         if (!btn) return;
-        if (!confirm('┬┐Seguro que deseas borrar este resultado?')) return;
+        if (!confirm('¿Seguro que deseas borrar este resultado?')) return;
         const card = btn.closest('div.rounded-2xl');
         if (card) {
             card.classList.remove('fade-in');
@@ -1036,7 +1022,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 500);
         }
     });
-    // Subpesta├▒as Local/BD
+    // Subpestañas Local/BD
     (function(){
         const localW = document.getElementById('resultados-local-wrapper');
         const bdW = document.getElementById('bd-wrapper');
@@ -1046,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', () => {
         function showBD(){ bdW?.classList.remove('hidden'); localW?.classList.add('hidden'); subBD?.classList.add('tab-btn-active'); subLocal?.classList.remove('tab-btn-active'); loadBDView(); }
         subLocal?.addEventListener('click', showLocal);
         subBD?.addEventListener('click', showBD);
-        // Si no hay resultados locales en ning├║n dispositivo (o almacenamiento vac├¡o), mostrar BD por defecto
+        // Si no hay resultados locales en ningún dispositivo (o almacenamiento vacío), mostrar BD por defecto
         try{
             const res = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
             if(!res || !Array.isArray(res) || res.length===0){ showBD(); }
@@ -1069,7 +1055,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             const n = payload.amasadoras?.length || 0;
-            status.textContent = `┬íEnviado a BD correctamente! (${n} amasadora${n===1?'':'s'})`; status.className='text-xs text-green-600 text-center';
+            status.textContent = `¡Enviado a BD correctamente! (${n} amasadora${n===1?'':'s'})`; status.className='text-xs text-green-600 text-center';
         }catch(e){ status.textContent = 'Error enviando: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
         finally{ _sendingAllInFlight = false; }
     });
@@ -1090,9 +1076,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!reg){ throw new Error('Registro no encontrado'); }
             const maq = reg.maquinas?.[maqIdx];
             if(!maq){ throw new Error('Amasadora no encontrada'); }
-            // Construir payload solo con esa m├íquina
+            // Construir payload solo con esa máquina
             const procesos=[]; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ procesos.push({ id:i, minutos: parseInt(p.minutos)||0, segundos: parseInt(p.segundos)||0, startTime: p.startTime||null, endTime: p.endTime||null }); } }
-            // Derivados: TM1, TM2, muertos total, total real (primer inicio a ├║ltimo fin) y total procesos
+            // Derivados: TM1, TM2, muertos total, total real (primer inicio a último fin) y total procesos
             const p1 = maq.proceso1||{}; const p2 = maq.proceso2||{}; const p3 = maq.proceso3||{};
             const toSecs = (pp)=> (parseInt(pp?.minutos)||0)*60 + (parseInt(pp?.segundos)||0);
             const sumProcesosSeg = toSecs(p1)+toSecs(p2)+toSecs(p3);
@@ -1135,12 +1121,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     lote: maq.lote||'',
                     tempMasa: maq.tempMasa||'',
                     observaciones: maq.observaciones||'',
-                    // factores por m├íquina (tambi├⌐n en ra├¡z, pero se duplican aqu├¡ para auditor├¡a por m├íquina)
+                    // factores por máquina (también en raíz, pero se duplican aquí para auditoría por máquina)
                     personalMin: maq.personalMin||reg.maquinas?.[0]?.personalMin||'',
                     personalMax: maq.personalMax||reg.maquinas?.[0]?.personalMax||'',
                     tempAmbiente: maq.tempAmbiente||reg.maquinas?.[0]?.tempAmbiente||'',
                     humedad: maq.humedad||reg.maquinas?.[0]?.humedad||'',
-                    // m├⌐tricas derivadas
+                    // métricas derivadas
                     tm1Seg, tm2Seg, muertosSeg, totalRealSeg, totalProcesosSeg: sumProcesosSeg,
                     procesos
                 }]
@@ -1149,7 +1135,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = base + '/registros';
             const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
-            status.textContent = '┬íTarjeta enviada a BD correctamente!'; status.className='text-xs text-green-600 text-center';
+            status.textContent = '¡Tarjeta enviada a BD correctamente!'; status.className='text-xs text-green-600 text-center';
         }catch(err){ status.textContent = 'Error enviando tarjeta: '+(err.message||err); status.className='text-xs text-red-600 text-center'; }
         finally{ _sendingCardInFlight = false; }
     });
@@ -1177,7 +1163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fTipo = (document.getElementById('bd-filtro-tipo')?.value || '').toLowerCase();
         const fMaq = (document.getElementById('bd-filtro-maquina')?.value || '').toLowerCase();
         if(!Array.isArray(BD_CACHE) || !BD_CACHE.length) return [];
-        // Filtrado: fecha en el registro; tipo/amasadora en cada m├íquina
+        // Filtrado: fecha en el registro; tipo/amasadora en cada máquina
         const out = [];
         BD_CACHE.forEach(rec=>{
             const fecha = rec.data?.fecha || rec.fecha || '';
@@ -1253,7 +1239,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="text-stone-800 font-bold text-xl">H: <span class="font-mono text-lg">${h}%</span></span>
                         <span class="text-stone-800 font-bold text-xl">TM: <span class="font-mono text-lg">${tm}C</span></span>
                         <span class="text-stone-800 font-bold text-xl">TA: <span class="font-mono text-lg">${ta}C</span></span>
-                        ${(perMin||perMax)? `<span class="text-stone-800 font-bold text-xl">Personal: <span class="font-mono text-lg">${perMin||'?'}ΓÇô${perMax||'?'}</span></span>`:''}
+                        ${(perMin||perMax)? `<span class="text-stone-800 font-bold text-xl">Personal: <span class="font-mono text-lg">${perMin||'?'}–${perMax||'?'}</span></span>`:''}
                         <span class="text-stone-800 font-bold text-xl">T. Muerto 1: <span class="font-mono text-lg">${tm1Seg!=null? formatTime(tm1Seg):'--:--:--'}</span></span>
                         <span class="text-stone-800 font-bold text-xl">T. Muerto 2: <span class="font-mono text-lg">${tm2Seg!=null? formatTime(tm2Seg):'--:--:--'}</span></span>
                         <span class="text-stone-800 font-bold text-xl">T. Muertos Total: <span class="font-mono text-lg">${formatTime(muertosSeg)}</span></span>
@@ -1308,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById(id)?.addEventListener('input', ()=> renderBDList());
     });
     document.getElementById('bd-delete-all')?.addEventListener('click', async function(){
-        if(!confirm('┬┐Seguro que deseas borrar TODOS los registros en la BD?')) return;
+        if(!confirm('¿Seguro que deseas borrar TODOS los registros en la BD?')) return;
         const base=resolveApiBase();
         const url = base + '/registros';
         const status = document.getElementById('sync-status');
@@ -1341,7 +1327,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!btn) return;
         const id = btn.getAttribute('data-id');
         if(!id) return;
-        if(!confirm('┬┐Borrar registro '+id+'? (Se eliminar├ín todas las amasadoras de ese registro)')) return;
+        if(!confirm('¿Borrar registro '+id+'? (Se eliminarán todas las amasadoras de ese registro)')) return;
         const base=resolveApiBase();
         const url = base + '/registros/'+id;
         const status = document.getElementById('sync-status');
@@ -1410,21 +1396,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Utilidad para limpiar caracteres raros
         function limpiarTexto(txt) {
             if (!txt) return '';
-            // Eliminar caracteres no imprimibles, tildes, s├¡mbolos y todo lo no ASCII
+            // Eliminar caracteres no imprimibles, tildes, símbolos y todo lo no ASCII
             return String(txt)
                 .replace(/[\uFFFD\uFEFF\u200B\u00A0]/g, '') // invisibles
-                .replace(/[┬▒]/g, '+/-')
-                .replace(/[┬░]/g, ' deg')
-                .replace(/[├ü├Ç├é├â├ä├í├á├ó├ú├ñ]/g, 'a')
-                .replace(/[├ë├ê├è├ï├⌐├¿├¬├½]/g, 'e')
-                .replace(/[├ì├î├Ä├Å├¡├¼├«├»]/g, 'i')
-                .replace(/[├ô├Æ├ö├ò├û├│├▓├┤├╡├╢]/g, 'o')
-                .replace(/[├Ü├Ö├¢├£├║├╣├╗├╝]/g, 'u')
-                .replace(/[├æ├▒]/g, 'n')
+                .replace(/[±]/g, '+/-')
+                .replace(/[°]/g, ' deg')
+                .replace(/[ÁÀÂÃÄáàâãä]/g, 'a')
+                .replace(/[ÉÈÊËéèêë]/g, 'e')
+                .replace(/[ÍÌÎÏíìîï]/g, 'i')
+                .replace(/[ÓÒÔÕÖóòôõö]/g, 'o')
+                .replace(/[ÚÙÛÜúùûü]/g, 'u')
+                .replace(/[Ññ]/g, 'n')
                 .replace(/[^A-Za-z0-9 %.,;:_\-\(\)\[\]\{\}/\\+\/=<>\?\!\|\'\"]+/g, '') // solo ASCII seguro
                 .normalize('NFC');
         }
-        resultados.forEach((reg, idx)=>{
+        resultados.forEach(res => {
             const fecha = limpiarTexto(res.fecha || '');
             (res.maquinas||[]).forEach(maq => {
                 let totalSegundos = 0;
@@ -1436,17 +1422,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     tiempoMuerto1 = Math.max(0, Math.floor((maq.proceso2.startTime - maq.proceso1.endTime)/1000));
                 }
                 if (maq.proceso2 && maq.proceso3 && maq.proceso2.endTime && maq.proceso3.startTime) {
-                // Badge enviado (dedupe) si existe firma/registro
-                let enviadoBadge='';
-                try {
-                    const sig = (function(){ const p1=procesos[0]; const start=p1?.startTime||''; const nombre=(m.nombre||m.id||'').toString().trim().toLowerCase(); const tipo=(m.tipoMasa||m.tipoPan||'').toString().trim().toLowerCase(); return `${reg.fecha}__${nombre}__${tipo}__${start}`; })();
-                    const firmas = JSON.parse(localStorage.getItem('ENVIOS_BD_SIGS')||'[]');
-                    const sentMap = JSON.parse(localStorage.getItem('ENVIADAS_BD')||'{}');
-                    const keySent = `${reg.fecha}__${idx}__${maqIdx}`;
-                    if(firmas.includes(sig) || sentMap[keySent]){
-                        enviadoBadge = '<span class="ml-2 inline-block bg-green-600 text-white text-[10px] px-2 py-0.5 rounded-full align-middle">BD</span>';
-                    }
-                }catch(_){ }
                     tiempoMuerto2 = Math.max(0, Math.floor((maq.proceso3.startTime - maq.proceso2.endTime)/1000));
                 }
                 let totalMuertos = (tiempoMuerto1 || 0) + (tiempoMuerto2 || 0);
@@ -1455,10 +1430,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const proc = maq[`proceso${i}`] || {};
                     const t = (parseInt(proc.minutos)||0)*60 + (parseInt(proc.segundos)||0);
                     totalSegundos += t;
-                            <h4 class="font-semibold text-stone-800">${reg.fecha} ┬╖ M├íquina ${m.nombre||m.id||''} ${enviadoBadge}</h4>
+                    // Día de la semana limpio
                     let diaSemana = '';
                     if (firstRow && fecha && fecha.length===10) {
-                        const dias = ['Domingo','Lunes','Martes','Mi├⌐rcoles','Jueves','Viernes','S├íbado'];
+                        const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
                         const [anio, mes, dia] = fecha.split('-').map(Number);
                         const fechaLocal = new Date(anio, mes - 1, dia);
                         diaSemana = dias[fechaLocal.getDay()];
@@ -1544,7 +1519,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         rows.push({});
-        rows.push({TipoMasa: 'Promedios por tipo de masa (tiempo)', Minutos: 'Promedio', Segundos: '┬▒Desv', Inicio: '%Desv'});
+        rows.push({TipoMasa: 'Promedios por tipo de masa (tiempo)', Minutos: 'Promedio', Segundos: '±Desv', Inicio: '%Desv'});
     rows.push({TipoMasa: 'Promedios por tipo de masa (tiempo)', Minutos: 'Promedio (s)', Segundos: '+/-Desv (s)', Inicio: '%Desv'});
         for (const tipo in panStats) {
             const arr = panStats[tipo];
@@ -1571,7 +1546,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         rows.push({});
-        rows.push({Maquina: 'Promedios por amasadora (tiempo)', Minutos: 'Promedio', Segundos: '┬▒Desv', Inicio: '%Desv'});
+        rows.push({Maquina: 'Promedios por amasadora (tiempo)', Minutos: 'Promedio', Segundos: '±Desv', Inicio: '%Desv'});
     rows.push({Maquina: 'Promedios por amasadora (tiempo)', Minutos: 'Promedio (s)', Segundos: '+/-Desv (s)', Inicio: '%Desv'});
         for (const amasadora in amasadoraStats) {
             const arr = amasadoraStats[amasadora];
@@ -1596,7 +1571,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         rows.push({});
-        rows.push({Maquina: 'Temperatura de masa por amasadora', Minutos: 'Promedio (┬░C)', Segundos: '┬▒Desv', Inicio: '%Desv'});
+        rows.push({Maquina: 'Temperatura de masa por amasadora', Minutos: 'Promedio (°C)', Segundos: '±Desv', Inicio: '%Desv'});
     rows.push({Maquina: 'Temperatura de masa por amasadora', Minutos: 'Promedio (grados C)', Segundos: '+/-Desv (grados C)', Inicio: '%Desv'});
         for (const amasadora in tempAmasadoraStats) {
             const arr = tempAmasadoraStats[amasadora];
@@ -1620,7 +1595,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         rows.push({});
-        rows.push({TipoMasa: 'Temperatura de masa por tipo de masa', Minutos: 'Promedio (┬░C)', Segundos: '┬▒Desv', Inicio: '%Desv'});
+        rows.push({TipoMasa: 'Temperatura de masa por tipo de masa', Minutos: 'Promedio (°C)', Segundos: '±Desv', Inicio: '%Desv'});
     rows.push({TipoMasa: 'Temperatura de masa por tipo de masa', Minutos: 'Promedio (grados C)', Segundos: '+/-Desv (grados C)', Inicio: '%Desv'});
         for (const tipo in tempPanStats) {
             const arr = tempPanStats[tipo];
@@ -1696,9 +1671,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     }
 
-    // Si necesitas cargar resultados de amasadoras autom├íticamente al iniciar:
+    // Si necesitas cargar resultados de amasadoras automáticamente al iniciar:
     document.addEventListener('DOMContentLoaded', function() {
-        // Migraci├│n de datos legacy: copiar tipoPan -> tipoMasa si falta
+        // Migración de datos legacy: copiar tipoPan -> tipoMasa si falta
         try {
             let legacy = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
             let mod=false;
@@ -1741,7 +1716,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function showMedicionDefault(){
-            // Mostrar Medici├│n como subpesta├▒a por defecto
+            // Mostrar Medición como subpestaña por defecto
             viewMedicion?.classList.remove('hidden');
             viewResultados?.classList.add('hidden');
             viewTablas?.classList.add('hidden');
@@ -1756,7 +1731,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Hide all main sections by default
             viewMain?.classList.add('hidden');
             sectionAmas?.classList.add('hidden');
-            // Siempre ocultar sub-vistas de Amasadoras cuando cambiamos de m├│dulo
+            // Siempre ocultar sub-vistas de Amasadoras cuando cambiamos de módulo
             hideAmasadorasSubviews();
             // Ocultar placeholders
             sectionFerm?.classList.add('hidden');
@@ -1775,13 +1750,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if(which==='ferm'){
                 tabMainFerm?.classList.add('tab-btn-active');
-                // Mostrar s├│lo la secci├│n de Fermentadora (top-level)
+                // Mostrar sólo la sección de Fermentadora (top-level)
                 sectionFerm?.classList.remove('hidden');
                 return;
             }
             if(which==='horn'){
                 tabMainHornos?.classList.add('tab-btn-active');
-                // Mostrar s├│lo la secci├│n de Hornos (top-level)
+                // Mostrar sólo la sección de Hornos (top-level)
                 sectionHornos?.classList.remove('hidden');
                 return;
             }
@@ -1818,9 +1793,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const base = resolveApiBase();
                 const r = await fetch(base + '/registros?limit=1', { headers: apiHeaders(false) });
                 if(r.ok){
-                    if(statusEl){ statusEl.textContent = 'Clave verificada Γ£à'; statusEl.className = 'mt-2 text-sm text-emerald-700'; }
+                    if(statusEl){ statusEl.textContent = 'Clave verificada ✅'; statusEl.className = 'mt-2 text-sm text-emerald-700'; }
                 } else {
-                    const msg = r.status===401||r.status===403? 'Clave inv├ílida Γ¥î' : ('Error: HTTP '+r.status);
+                    const msg = r.status===401||r.status===403? 'Clave inválida ❌' : ('Error: HTTP '+r.status);
                     if(statusEl){ statusEl.textContent = msg; statusEl.className = 'mt-2 text-sm text-red-600'; }
                 }
             }catch(e){
@@ -1829,7 +1804,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (typeof createMachineCards === 'function') createMachineCards();
 
-        // Listeners de pesta├▒as seguros
+        // Listeners de pestañas seguros
         if (tabMedicion) tabMedicion.addEventListener('click', () => {
             sectionAmas?.classList.remove('hidden');
             if (!viewMedicion) return;
@@ -1910,7 +1885,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(statusEl) statusEl.textContent = '';
         if(fuente === 'local'){
             try { datos = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]') || []; } catch(_) { datos = []; }
-            if(statusEl) statusEl.textContent = `Fuente: Locales ┬╖ ${datos.length} registros.`;
+            if(statusEl) statusEl.textContent = `Fuente: Locales · ${datos.length} registros.`;
         } else {
             const base = resolveApiBase();
             if(statusEl) statusEl.textContent = 'Cargando datos de la BD...';
@@ -1954,8 +1929,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     fecha: it.data?.fecha || it.fecha,
                     maquinas: Array.isArray(it.data?.amasadoras)? it.data.amasadoras.map(normalizeMaq) : []
                 }));
-                const filtrosAct = [fDesde?`Desde ${fDesde}`:'', fHasta?`Hasta ${fHasta}`:'', fLote?`Lote ${fLote}`:'', fTipo?`Tipo ${fTipo}`:''].filter(Boolean).join(' ┬╖ ');
-                if(statusEl) statusEl.textContent = `Fuente: BD ┬╖ ${datos.length} registros${filtrosAct?` (filtros: ${filtrosAct})`:''}. Total disponibles: ${total}.`;
+                const filtrosAct = [fDesde?`Desde ${fDesde}`:'', fHasta?`Hasta ${fHasta}`:'', fLote?`Lote ${fLote}`:'', fTipo?`Tipo ${fTipo}`:''].filter(Boolean).join(' · ');
+                if(statusEl) statusEl.textContent = `Fuente: BD · ${datos.length} registros${filtrosAct?` (filtros: ${filtrosAct})`:''}. Total disponibles: ${total}.`;
             }catch(e){
                 const msg = 'Error cargando BD: ' + (e.message||e);
                 if(statusEl) statusEl.textContent = msg;
@@ -1974,7 +1949,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let masaStats={}, amasadoraStats={}, tempMasaStats={}, tempCrossRaw=[];
         datos.forEach(reg=>{
             (reg.maquinas||[]).forEach(maq=>{
-                // total m├íquina (primer start a ├║ltimo end)
+                // total máquina (primer start a último end)
                 const p1=maq.proceso1, p3=maq.proceso3;
                 if(p1&&p1.startTime && p3 && p3.endTime){
                     const total = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000));
@@ -1985,7 +1960,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(p){ const t=(parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0); procesoStats[i-1].push(t); }
                 }
                 const tipo=maq.tipoMasa||maq.tipoPan||'Sin tipo';
-                // Normalizar clave de amasadora: usar numeroAmasadora o d├¡gitos de nombre/id; limitar a '1','2','3' o '?' si desconocido
+                // Normalizar clave de amasadora: usar numeroAmasadora o dígitos de nombre/id; limitar a '1','2','3' o '?' si desconocido
                 const amaNumRaw = maq.numeroAmasadora || ((maq.nombre||maq.id||'').match(/\d+/)?.[0]);
                 const ama = (amaNumRaw && ['1','2','3'].includes(String(amaNumRaw))) ? String(amaNumRaw) : (amaNumRaw ? String(amaNumRaw) : '?');
                 let totalSimple = 0; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ totalSimple += (parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0);} }
@@ -1995,7 +1970,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         // Resumen tabla
-        const resumenHeaders=['M├⌐trica','Valor'];
+        const resumenHeaders=['Métrica','Valor'];
         const resumenRows=[];
         if(totalGenerales.length){
             const prom=Math.round(totalGenerales.reduce((a,b)=>a+b,0)/totalGenerales.length);
@@ -2028,7 +2003,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const procRows=procesoStats.map((a,i)=> a.length? [procesosNombres[i], a.length, Math.round(a.reduce((x,y)=>x+y,0)/a.length), Math.round(std(a)), percent(Math.round(std(a)), Math.round(a.reduce((x,y)=>x+y,0)/a.length))]: null).filter(Boolean);
         document.getElementById('tabla-proceso').innerHTML = tableFromRows(procHeaders, procRows);
     // Temp masa por tipo de masa
-    const tempHeaders=['Tipo masa','N','Prom (┬░C)','Desv (┬░C)','%Desv'];
+    const tempHeaders=['Tipo masa','N','Prom (°C)','Desv (°C)','%Desv'];
     const tempRows=Object.keys(tempMasaStats).map(k=>{const a=tempMasaStats[k]; const m=a.reduce((x,y)=>x+y,0)/a.length; const d=std(a); return [k,a.length,m.toFixed(1),d.toFixed(1),percent(d,m)];});
         document.getElementById('tabla-temp').innerHTML = tableFromRows(tempHeaders, tempRows);
     // Tabla cruzada temp masa (amasadora vs tipo de masa)
@@ -2045,11 +2020,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const cruzEl=document.getElementById('tabla-temp-cruzada'); if(cruzEl) cruzEl.innerHTML= tableFromRows(cruzHeaders, cruzRows);
 
-        // Personal por d├¡a (m├¡nΓÇôm├íx) agregado por fecha (una fila por d├¡a) + gr├ífico
+        // Personal por día (mín–máx) agregado por fecha (una fila por día) + gráfico
         (function(){
             const cont = document.getElementById('tabla-personal-dia');
             if(!cont) return;
-            const headers = ['Fecha','N m├íquinas','Personal m├¡n','Personal m├íx','Midpoint','Rango'];
+            const headers = ['Fecha','N máquinas','Personal mín','Personal máx','Midpoint','Rango'];
             const perDay = {}; // fecha -> {n, mins:[], maxs:[]}
             datos.forEach(reg=>{
                 const fecha = reg.fecha || '';
@@ -2060,7 +2035,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const vmin = parseInt(m.personalMin); if(!isNaN(vmin)) bucket.mins.push(vmin);
                     const vmax = parseInt(m.personalMax); if(!isNaN(vmax)) bucket.maxs.push(vmax);
                 });
-                // fallback con primera m├íquina si no hubo datos v├ílidos
+                // fallback con primera máquina si no hubo datos válidos
                 if(bucket.mins.length===0 && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMin); if(!isNaN(v)) bucket.mins.push(v); }
                 if(bucket.maxs.length===0 && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMax); if(!isNaN(v)) bucket.maxs.push(v); }
             });
@@ -2074,7 +2049,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return [fecha, b.n, min, max, midpoint, rango];
             }).filter(Boolean).sort((a,b)=> String(a[0]||'').localeCompare(String(b[0]||'')));
             cont.innerHTML = tableFromRows(headers, rows);
-            // Gr├ífico de barras apiladas: OffsetMin (transparente) + Rango (max-min); midpoint como l├¡nea
+            // Gráfico de barras apiladas: OffsetMin (transparente) + Rango (max-min); midpoint como línea
             const el = document.getElementById('chart-personal-dia'); if(!el) return;
             const labels = rows.map(r=>r[0]);
             const dataMin = rows.map(r=> r[2] ?? 0);
@@ -2086,7 +2061,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     labels,
                     datasets:[
                         {label:'OffsetMin', data:dataMin, backgroundColor:'rgba(0,0,0,0)', stack:'pd', borderWidth:0},
-                        {label:'Rango (minΓåÆmax)', data:dataRango, backgroundColor:'#60a5fa', stack:'pd'}
+                        {label:'Rango (min→max)', data:dataRango, backgroundColor:'#60a5fa', stack:'pd'}
                     ]
                 },{
                     responsive:true,
@@ -2095,7 +2070,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         tooltip:{
                             callbacks:{
                                 label:(ctx)=>{
-                                    if(ctx.dataset.label!=='Rango (minΓåÆmax)') return null;
+                                    if(ctx.dataset.label!=='Rango (min→max)') return null;
                                     const s = ctx.chart.$personalStats?.[ctx.dataIndex];
                                     if(!s) return null;
                                     return [
@@ -2124,10 +2099,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         })();
 
-        // TA/H por d├¡a (promedios por fecha)
+        // TA/H por día (promedios por fecha)
         (function(){
             const cont = document.getElementById('tabla-ta-h-dia'); if(!cont) return;
-            const headers=['Fecha','N m├íquinas','TA prom','H prom'];
+            const headers=['Fecha','N máquinas','TA prom','H prom'];
             const acc={}; // fecha -> {n, ta:[], h:[]}
             datos.forEach(reg=>{
                 const fecha = reg.fecha || '';
@@ -2138,7 +2113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const ta = parseFloat(m.tempAmbiente); if(Number.isFinite(ta)) b.ta.push(ta);
                     const h  = parseFloat(m.humedad); if(Number.isFinite(h)) b.h.push(h);
                 });
-                // fallback: tomar valores de la primera m├íquina si listas vac├¡as
+                // fallback: tomar valores de la primera máquina si listas vacías
                 if(b.ta.length===0 && maquinas[0]){ const v=parseFloat(maquinas[0].tempAmbiente); if(Number.isFinite(v)) b.ta.push(v); }
                 if(b.h.length===0 &&  maquinas[0]){ const v=parseFloat(maquinas[0].humedad); if(Number.isFinite(v)) b.h.push(v); }
             });
@@ -2162,9 +2137,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Proceso chart
         const procCtx=document.getElementById('chart-proceso'); if(procCtx){ mkChart(procCtx,'bar',{labels:procRows.map(r=>r[0]),datasets:[{label:'Prom (s)',data:procRows.map(r=>r[2]),backgroundColor:palette}]},{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}); }
         // Temp chart
-        const tempCtx=document.getElementById('chart-temp-pan'); if(tempCtx){ mkChart(tempCtx,'bar',{labels:tempRows.map(r=>r[0]),datasets:[{label:'Temp (┬░C)',data:tempRows.map(r=>parseFloat(r[2])),backgroundColor:palette}]},{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}); }
+        const tempCtx=document.getElementById('chart-temp-pan'); if(tempCtx){ mkChart(tempCtx,'bar',{labels:tempRows.map(r=>r[0]),datasets:[{label:'Temp (°C)',data:tempRows.map(r=>parseFloat(r[2])),backgroundColor:palette}]},{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}); }
 
-        // ====== Nuevas gr├íficas anal├¡ticas ======
+        // ====== Nuevas gráficas analíticas ======
         // 1. Boxplot por tipo de masa (custom sin plugins externos)
         (function(){
             const canvas=document.getElementById('chart-boxplot-tipo'); if(!canvas) return;
@@ -2175,7 +2150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let stats=Object.keys(grupos).map(k=>{ const arr=[...grupos[k]].sort((a,b)=>a-b); if(!arr.length) return {tipo:k,n:0}; const q=p=>{const pos=(arr.length-1)*p; const b=Math.floor(pos); const r=pos-b; return r? arr[b]+(arr[b+1]-arr[b])*r:arr[b];}; return {tipo:k,n:arr.length,min:arr[0],q1:q(0.25),med:q(0.5),q3:q(0.75),max:arr[arr.length-1],iqr:q(0.75)-q(0.25)}; });
             stats.sort((a,b)=> (a.med||0)-(b.med||0));
             const labels=stats.map(s=>s.tipo);
-            if(explicacion){ explicacion.classList.remove('hidden'); explicacion.textContent='Caja = Q1ΓÇôQ3; l├¡nea roja = mediana; bigotes = min y max; n = registros por tipo; IQR% = (Q3-Q1)/(max-min). Pasa el mouse o toca una caja para ver detalle.'; }
+            if(explicacion){ explicacion.classList.remove('hidden'); explicacion.textContent='Caja = Q1–Q3; línea roja = mediana; bigotes = min y max; n = registros por tipo; IQR% = (Q3-Q1)/(max-min). Pasa el mouse o toca una caja para ver detalle.'; }
             if(statsDiv){ const headers=['Tipo','n','min','Q1','Med','Q3','max','IQR','IQR%']; const rows=stats.map(s=>{ if(!s.n) return [s.tipo,0,'-','-','-','-','-','-','-']; const span=(s.max-s.min)||1; const pct=((s.iqr)*100/span).toFixed(1)+'%'; return [s.tipo,s.n,s.min,s.q1.toFixed(0),s.med.toFixed(0),s.q3.toFixed(0),s.max,s.iqr.toFixed(0),pct]; }); statsDiv.innerHTML=tableFromRows(headers,rows); }
             const datasetMed=stats.map((s,i)=>({x:i,y:s.med||0}));
             const chart=new Chart(canvas,{ type:'scatter', data:{labels,datasets:[{label:'med',data:datasetMed,pointRadius:0}]}, options:{animation:false,responsive:true,interaction:{mode:'nearest',intersect:false},plugins:{legend:{display:false},tooltip:{padding:8,backgroundColor:'rgba(15,23,42,0.9)',titleFont:{size:12,weight:'bold'},bodyFont:{size:11},callbacks:{title:(items)=>{ const i=items[0].dataIndex; return stats[i]?.tipo||''; },label:(ctx)=>{ const s=stats[ctx.dataIndex]; if(!s||!s.n) return s.tipo+': sin datos'; return `n=${s.n}  min:${s.min}s  Q1:${s.q1.toFixed(0)}s  Med:${s.med.toFixed(0)}s  Q3:${s.q3.toFixed(0)}s  max:${s.max}s  IQR:${s.iqr.toFixed(0)}s`; }}}},scales:{x:{type:'category',labels,offset:true,grid:{display:false}},y:{beginAtZero:true,title:{display:true,text:'Segundos'}}}}, plugins:[
@@ -2242,7 +2217,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const total=Math.max(0,Math.floor((ultimoEnd-primerStart)/1000));
                 puntos.push({x:tm,y:total});
             }));
-            // Regresi├│n lineal simple
+            // Regresión lineal simple
             if(puntos.length>1){
                 const n=puntos.length; let sumX=0,sumY=0,sumXY=0,sumX2=0,sumY2=0; puntos.forEach(p=>{sumX+=p.x; sumY+=p.y; sumXY+=p.x*p.y; sumX2+=p.x*p.x; sumY2+=p.y*p.y;});
                 const denom = (n*sumX2 - sumX*sumX);
@@ -2251,15 +2226,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const regData=[{x:minX,y:m*minX+b},{x:maxX,y:m*maxX+b}];
                 const chart = mkChart(el,'scatter',{datasets:[
                     {label:'Temp vs Tiempo (s)', data:puntos, backgroundColor:'#2563eb'},
-                    {type:'line', label:'Regresi├│n', data:regData, borderColor:'#f59e0b', borderWidth:2, pointRadius:0, fill:false}
-                ]},{responsive:true, scales:{x:{title:{display:true,text:'Temp masa (┬░C)'}}, y:{title:{display:true,text:'Tiempo total (s)'}, beginAtZero:true}}, plugins:{legend:{position:'bottom'}}});
+                    {type:'line', label:'Regresión', data:regData, borderColor:'#f59e0b', borderWidth:2, pointRadius:0, fill:false}
+                ]},{responsive:true, scales:{x:{title:{display:true,text:'Temp masa (°C)'}}, y:{title:{display:true,text:'Tiempo total (s)'}, beginAtZero:true}}, plugins:{legend:{position:'bottom'}}});
                 // Mostrar r en esquina superior
                 setTimeout(()=>{
                     const ctx = chart.ctx; ctx.save(); ctx.font='12px Inter'; ctx.fillStyle='#1f2937';
                     ctx.fillText('r = '+r.toFixed(3), 50, 20); ctx.restore();
                 },60);
             } else {
-                mkChart(el,'scatter',{datasets:[{label:'Temp vs Tiempo (s)', data:puntos, backgroundColor:'#2563eb'}]},{responsive:true, scales:{x:{title:{display:true,text:'Temp masa (┬░C)'}}, y:{title:{display:true,text:'Tiempo total (s)'}, beginAtZero:true}}, plugins:{legend:{position:'bottom'}}});
+                mkChart(el,'scatter',{datasets:[{label:'Temp vs Tiempo (s)', data:puntos, backgroundColor:'#2563eb'}]},{responsive:true, scales:{x:{title:{display:true,text:'Temp masa (°C)'}}, y:{title:{display:true,text:'Tiempo total (s)'}, beginAtZero:true}}, plugins:{legend:{position:'bottom'}}});
             }
         })();
     }
@@ -2319,14 +2294,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!datos || !datos.length){ alert('No hay datos para exportar.'); return; }
     const { resumenRows, panRows, amaRows, procRows, tempRows, cruzHeaders, cruzRows } = computeTablasStatsFromData(datos);
         const rows=[];
-        rows.push(['Resumen de tiempos (s)']); rows.push(['M├⌐trica','Valor']); resumenRows.forEach(r=> rows.push(r)); rows.push([]);
+        rows.push(['Resumen de tiempos (s)']); rows.push(['Métrica','Valor']); resumenRows.forEach(r=> rows.push(r)); rows.push([]);
         rows.push(['Promedios por tipo de masa']); rows.push(['Tipo masa','N','Prom (s)','Desv (s)','%Desv']); panRows.forEach(r=> rows.push(r)); rows.push([]);
         rows.push(['Promedios por amasadora']); rows.push(['Amasadora','N','Prom (s)','Desv (s)','%Desv']); amaRows.forEach(r=> rows.push(r)); rows.push([]);
         rows.push(['Promedios por proceso']); rows.push(['Proceso','N','Prom (s)','Desv (s)','%Desv']); procRows.forEach(r=> rows.push(r)); rows.push([]);
-        rows.push(['Temperatura por tipo de masa']); rows.push(['Tipo masa','N','Prom (┬░C)','Desv (┬░C)','%Desv']); tempRows.forEach(r=> rows.push(r)); rows.push([]);
+        rows.push(['Temperatura por tipo de masa']); rows.push(['Tipo masa','N','Prom (°C)','Desv (°C)','%Desv']); tempRows.forEach(r=> rows.push(r)); rows.push([]);
         rows.push(['Temp. masa (Amasadora vs Tipo de masa)']); rows.push(cruzHeaders); cruzRows.forEach(r=> rows.push(r)); rows.push([]);
-        // Personal por d├¡a (m├¡nΓÇôm├íx)
-        rows.push(['Personal por d├¡a (m├¡nΓÇôm├íx)']); rows.push(['Fecha','N m├íquinas','Personal m├¡n','Personal m├íx','Midpoint','Rango']);
+        // Personal por día (mín–máx)
+        rows.push(['Personal por día (mín–máx)']); rows.push(['Fecha','N máquinas','Personal mín','Personal máx','Midpoint','Rango']);
         (function(){
             const perDay = {};
             datos.forEach(reg=>{
@@ -2351,10 +2326,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 rows.push([fecha, b.n, min, max, midpoint, rango]);
             });
         })();
-        // TA/H por d├¡a
+        // TA/H por día
         rows.push([]);
-        rows.push(['TA y Humedad por d├¡a']);
-        rows.push(['Fecha','N m├íquinas','TA prom','H prom']);
+        rows.push(['TA y Humedad por día']);
+        rows.push(['Fecha','N máquinas','TA prom','H prom']);
         (function(){
             const acc={};
             const datos = getTablasData();
@@ -2387,9 +2362,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function exportTablasPDF(){
         const { jsPDF } = window.jspdf || {};
-        if(!jsPDF){ alert('jsPDF no carg├│'); return; }
+        if(!jsPDF){ alert('jsPDF no cargó'); return; }
         const wrap = document.getElementById('tablas-wrapper') || document.getElementById('view-tablas');
-        if(!wrap){ alert('No se encontr├│ el contenedor de Tablas'); return; }
+        if(!wrap){ alert('No se encontró el contenedor de Tablas'); return; }
         try{
             const canvas = await html2canvas(wrap, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
             const imgData = canvas.toDataURL('image/png');
@@ -2448,11 +2423,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     async function exportResultadosTabPDF(){
         const { jsPDF } = window.jspdf || {};
-        if(!jsPDF){ alert('jsPDF no carg├│'); return; }
+        if(!jsPDF){ alert('jsPDF no cargó'); return; }
         const source = getResultadosSource();
         let resultados = [];
         if(source==='bd'){
-            // Usar cach├⌐ BD si est├í disponible; de lo contrario, traerlo
+            // Usar caché BD si está disponible; de lo contrario, traerlo
             let data = Array.isArray(window.BD_CACHE)? window.BD_CACHE : [];
             if(!data || !data.length){ try{ data = await fetchRegistrosBD(); }catch(_){} }
             resultados = mapBDToResultados(data);
@@ -2470,7 +2445,7 @@ document.addEventListener('DOMContentLoaded', () => {
         function footer(){
             const total=pdf.internal.getNumberOfPages();
             pdf.setFontSize(9); pdf.setTextColor(110);
-            const foot='P├ígina '+page+' / '+total; const w=pdf.getTextWidth(foot);
+            const foot='Página '+page+' / '+total; const w=pdf.getTextWidth(foot);
             pdf.text(foot, pageW - marginX - w, pageH - 12);
         }
         header();
@@ -2478,7 +2453,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const diasN=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
         // Encabezados (incluye Pers(rango) y Pers(mid))
     const cols=['Fecha','Lote','Dia','TA','H','Pers(rango)','Pers(mid)','Am','Tipo','Hi','TM','Pr','Min','Seg','Ini','Fin','T1','T2','TMT','Tot(s)','Obs'];
-        // Nota: estos anchos pueden exceder el ancho de la p├ígina, manteniendo el estilo existente
+        // Nota: estos anchos pueden exceder el ancho de la página, manteniendo el estilo existente
         const colWidths=[55,40,40,25,25,40,28,40,55,35,40,36,24,24,40,40,28,28,36,42,90];
         function drawHeaderRow(){
             pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(20);
@@ -2494,7 +2469,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(fecha && fecha.length===10){ const [Y,M,D]=fecha.split('-').map(Number); dia=diasN[new Date(Y,M-1,D).getDay()]||''; }
             let dailyTA='', dailyH='';
             if(reg.maquinas && reg.maquinas.length){ const m0=reg.maquinas[0]; dailyTA=m0.tempAmbiente||''; dailyH=m0.humedad||''; }
-            // Agregar personas por d├¡a (rango y midpoint)
+            // Agregar personas por día (rango y midpoint)
             let pmins=[], pmaxs=[];
             (reg.maquinas||[]).forEach(m=>{ const vmin=parseInt(m.personalMin); if(!isNaN(vmin)) pmins.push(vmin); const vmax=parseInt(m.personalMax); if(!isNaN(vmax)) pmaxs.push(vmax); });
             if(!pmins.length && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMin); if(!isNaN(v)) pmins.push(v); }
@@ -2527,12 +2502,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         min, seg, ini, fin,
                         i===1? tm1:'', i===1? tm2:'', i===1? tmTot:'', i===1? (totalSeg??''):'', i===1? (maq.observaciones||''):''
                     ];
-                    // Salto de p├ígina si necesario
+                    // Salto de página si necesario
                     if(y+14>pageH-30){ footer(); pdf.addPage(); page++; header(); y=marginY+10; drawHeaderRow(); y+=6; }
                     let x=marginX; const h=12; pdf.setFontSize(7.5); pdf.setDrawColor(225); pdf.setFillColor(255,255,255); pdf.setTextColor(40);
                     row.forEach((cell,ci)=>{
                         let txt=(''+(cell==null?'':cell));
-                        if(txt.length>18) txt=txt.slice(0,17)+'ΓÇª';
+                        if(txt.length>18) txt=txt.slice(0,17)+'…';
                         pdf.rect(x,y-9,colWidths[ci],h,'S');
                         pdf.text(txt, x+2, y);
                         x+=colWidths[ci];
@@ -2546,7 +2521,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const stamp=new Date().toISOString().replace(/[:T]/g,'-').split('.')[0];
         pdf.save(`resultados_${source}_tabla_${stamp}.pdf`);
     }
-    // CSV ordenado y compactando factores solo una vez (Locales o BD seg├║n subpesta├▒a)
+    // CSV ordenado y compactando factores solo una vez (Locales o BD según subpestaña)
     async function exportResultadosTabCSV(){
         const source = getResultadosSource();
         let resultados = [];
@@ -2577,7 +2552,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Factores diarios (TA,H) y Personas (rango y midpoint)
             let dailyTA=''; let dailyH='';
             if(reg.maquinas && reg.maquinas.length){ const m0=reg.maquinas[0]; dailyTA=m0.tempAmbiente||''; dailyH=m0.humedad||''; }
-            // Personal por d├¡a (rango y midpoint) agregado en este registro
+            // Personal por día (rango y midpoint) agregado en este registro
             let pmins=[], pmaxs=[];
             (reg.maquinas||[]).forEach(m=>{ const vmin=parseInt(m.personalMin); if(!isNaN(vmin)) pmins.push(vmin); const vmax=parseInt(m.personalMax); if(!isNaN(vmax)) pmaxs.push(vmax); });
             if(!pmins.length && reg.maquinas && reg.maquinas[0]){ const v=parseInt(reg.maquinas[0].personalMin); if(!isNaN(v)) pmins.push(v); }
@@ -2587,14 +2562,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const dailyPersMid = (typeof dailyPersMin==='number' && typeof dailyPersMax==='number')? Math.round((dailyPersMin+dailyPersMax)/2): '';
             const dailyPersRange = (typeof dailyPersMin==='number' && typeof dailyPersMax==='number')? `${dailyPersMin}-${dailyPersMax}`: '';
             (reg.maquinas||[]).forEach(maq=>{
-                const baseFecha = (fechaPrev===fecha)? '' : fecha; // solo primera vez del d├¡a
+                const baseFecha = (fechaPrev===fecha)? '' : fecha; // solo primera vez del día
                 const baseDia = (baseFecha? dia : '');
                 const baseTA = (baseFecha? dailyTA : '');
                 const baseH = (baseFecha? dailyH : '');
                 const basePersRange = (baseFecha? dailyPersRange : '');
                 const basePersMid = (baseFecha? dailyPersMid : '');
                 fechaPrev=fecha; // marcar
-                // Calcular tiempos muertos m├íquina
+                // Calcular tiempos muertos máquina
                 let tm1='', tm2='';
                 if(maq.proceso1 && maq.proceso2 && maq.proceso1.endTime && maq.proceso2.startTime){ tm1 = Math.max(0, Math.floor((maq.proceso2.startTime - maq.proceso1.endTime)/1000)); }
                 if(maq.proceso2 && maq.proceso3 && maq.proceso2.endTime && maq.proceso3.startTime){ tm2 = Math.max(0, Math.floor((maq.proceso3.startTime - maq.proceso2.endTime)/1000)); }
@@ -2635,11 +2610,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('DOMContentLoaded', ()=>{
         initAuthUI();
         guardRoute();
-        // Actualizar visibilidad de Ajustes seg├║n estado de sesi├│n
+        // Actualizar visibilidad de Ajustes según estado de sesión
         try{ updateAjustesVisibility(); }catch(_){ }
         document.getElementById('btn-export-resultados-pdf')?.addEventListener('click', exportResultadosTabPDF);
         document.getElementById('btn-export-resultados-csv')?.addEventListener('click', exportResultadosTabCSV);
-            // Toggle descripciones de gr├íficas
+            // Toggle descripciones de gráficas
             document.querySelectorAll('#view-tablas .chart-title').forEach(h=>{
                 h.addEventListener('click', ()=>{
                     const desc = h.nextElementSibling;
@@ -2650,7 +2625,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // iniciar oculto siempre
                 const d=h.nextElementSibling; if(d && d.classList.contains('chart-desc')) d.style.display='none';
             });
-        // Inyecci├│n de controles BD si a├║n no existen (sin override de API)
+        // Inyección de controles BD si aún no existen (sin override de API)
         if(!document.getElementById('sync-status')){
             const filtros = document.querySelector('#view-resultados .flex.flex-wrap.gap-4');
             if(filtros){
@@ -2669,10 +2644,10 @@ document.addEventListener('DOMContentLoaded', () => {
         initApiLogic();
     });
 
-    // ================= BACKEND SYNC / API DIN├üMICA =================
+    // ================= BACKEND SYNC / API DINÁMICA =================
     function getDefaultApiBase(){
         try{
-            // Siempre usar la URL p├║blica del backend
+            // Siempre usar la URL pública del backend
             return 'https://pdt-backend-1.onrender.com';
         }catch(_){ return ''; }
     }
@@ -2793,12 +2768,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!localStorage.getItem('APP_PASS_HASH')){
             try{ sha256Hex(DEFAULT_PASS).then(h=> localStorage.setItem('APP_PASS_HASH', h)); }catch(_){ }
         }
-        // Cancel estricto: si est├í bloqueado, no permite cerrar el overlay
+        // Cancel estricto: si está bloqueado, no permite cerrar el overlay
         document.getElementById('auth-cancel')?.addEventListener('click', ()=>{
             if(isLocked()){
                 // Mantener overlay visible y dar feedback sutil
                 const msg = document.getElementById('auth-msg');
-                if(msg){ msg.textContent = 'App bloqueada: ingresa la clave o restabl├⌐cela.'; msg.className='mt-3 text-sm text-red-600'; }
+                if(msg){ msg.textContent = 'App bloqueada: ingresa la clave o restablécela.'; msg.className='mt-3 text-sm text-red-600'; }
                 return;
             }
             hideAuthOverlay();
@@ -2831,7 +2806,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }catch(e){ msgEl.textContent=e.message||String(e); msgEl.classList.add('text-red-600'); }
         });
-        // primer uso: si no hay hash (se establecer├í el por defecto), pedir inicio de sesi├│n (no configuraci├│n)
+        // primer uso: si no hay hash (se establecerá el por defecto), pedir inicio de sesión (no configuración)
         if(!localStorage.getItem('APP_PASS_HASH')){ showAuthOverlay(false); }
     }
     function guardRoute(){
@@ -2894,9 +2869,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('resultadosMezclado', JSON.stringify(merged));
                 setStatus(`Sync completado. Nuevos registros: ${nuevos}`, 'ok');
             } else {
-                setStatus('Sync completado. No hab├¡a nuevos registros.', 'info');
+                setStatus('Sync completado. No había nuevos registros.', 'info');
             }
-            // Refrescar vistas si est├ín visibles
+            // Refrescar vistas si están visibles
             if(!document.getElementById('view-resultados')?.classList.contains('hidden')){ if(typeof cargarResultados==='function') cargarResultados(); }
             if(!document.getElementById('view-tablas')?.classList.contains('hidden')){ if(typeof buildTablasVista==='function') buildTablasVista(); }
         }catch(e){ setStatus('Error sync: '+(e.message||e),'err'); }
@@ -2906,7 +2881,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const registrosFecha = todos.filter(r=>r.fecha===fecha);
         if(!registrosFecha.length) return null;
         const amasadoras=[];
-        // Acumuladores para resumen del d├¡a
+        // Acumuladores para resumen del día
         let cantidadAmasadoras = 0;
         let tm1SegDia = 0, tm2SegDia = 0, muertosSegDia = 0, totalRealSegDia = 0, totalProcesosSegDia = 0;
         let sumTempMasa = 0, countTempMasa = 0;
@@ -2917,7 +2892,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const p=m['proceso'+i];
                 if(p){ procesos.push({ id:i, minutos: parseInt(p.minutos)||0, segundos: parseInt(p.segundos)||0, startTime: p.startTime||null, endTime: p.endTime||null }); }
             }
-            // Derivados por m├íquina
+            // Derivados por máquina
             const p1 = m.proceso1||{}; const p2 = m.proceso2||{}; const p3 = m.proceso3||{};
             const toSecs = (pp)=> (parseInt(pp?.minutos)||0)*60 + (parseInt(pp?.segundos)||0);
             const sumProcesosSeg = toSecs(p1)+toSecs(p2)+toSecs(p3);
@@ -2927,7 +2902,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const totalRealSeg = (p1?.startTime && p3?.endTime) ? Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)) : null;
             const nombreMaq = m.nombre||m.id||'';
             const numeroAmasadora = (nombreMaq.match(/\d+/)?.[0]) || '';
-            // Acumular para resumen de d├¡a
+            // Acumular para resumen de día
             cantidadAmasadoras += 1;
             if (tm1Seg!=null) tm1SegDia += tm1Seg;
             if (tm2Seg!=null) tm2SegDia += tm2Seg;
@@ -2947,18 +2922,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 lote: m.lote||'',
                 tempMasa: m.tempMasa||'',
                 observaciones: m.observaciones||'',
-                // factores por m├íquina (duplicados aqu├¡ para conservar contexto por equipo)
+                // factores por máquina (duplicados aquí para conservar contexto por equipo)
                 personalMin: m.personalMin||r.maquinas?.[0]?.personalMin||'',
                 personalMax: m.personalMax||r.maquinas?.[0]?.personalMax||'',
                 tempAmbiente: m.tempAmbiente||r.tempAmbiente||'',
                 humedad: m.humedad||r.humedad||'',
-                // m├⌐tricas derivadas
+                // métricas derivadas
                 tm1Seg, tm2Seg, muertosSeg, totalRealSeg, totalProcesosSeg: sumProcesosSeg,
                 procesos
             });
         }));
         if(!amasadoras.length) return null;
-    // Tomar factores generales de la primera m├íquina
+    // Tomar factores generales de la primera máquina
     const ref = registrosFecha[0].maquinas[0];
         return {
             fecha,
@@ -2986,7 +2961,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!fecha){ setStatus('Selecciona una fecha en el campo superior para enviar.', 'err'); return; }
         const payload = construirPayloadFecha(fecha);
         if(!payload){
-            setStatus('No hay datos guardados para la fecha seleccionada. Primero guarda al menos una m├íquina antes de enviar.', 'info');
+            setStatus('No hay datos guardados para la fecha seleccionada. Primero guarda al menos una máquina antes de enviar.', 'info');
             return;
         }
         try{
@@ -2996,8 +2971,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = base + '/registros';
             const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
-            setStatus('┬íResultados guardados exitosamente en la base de datos!', 'ok');
-            mostrarToast('┬íResultados guardados exitosamente en la base de datos!', 'success');
+            setStatus('¡Resultados guardados exitosamente en la base de datos!', 'ok');
+            mostrarToast('¡Resultados guardados exitosamente en la base de datos!', 'success');
         }catch(e){ setStatus('Error enviando: '+(e.message||e),'err'); mostrarToast('Error enviando: '+(e.message||e),'error'); }
     }
     function initApiLogic(){
@@ -3013,7 +2988,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const todos = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
                 const hayDatos = fecha && todos.some(r=>r.fecha===fecha);
                 if(!fecha){ setStatus('Selecciona una fecha para enviar.', 'info'); return; }
-                if(!hayDatos){ setStatus('No hay datos guardados para esa fecha. Guarda al menos una m├íquina en Medici├│n.', 'info'); }
+                if(!hayDatos){ setStatus('No hay datos guardados para esa fecha. Guarda al menos una máquina en Medición.', 'info'); }
                 else { setStatus('Listo para enviar a la BD.', 'info'); }
             }
             fechaInput?.addEventListener('input', hintDatosParaFecha);
@@ -3023,63 +2998,5 @@ document.addEventListener('DOMContentLoaded', () => {
         // Auto sync inicial (suave)
         setTimeout(()=>{ if(!localStorage.getItem('SYNC_INICIAL_REALIZADA')){ syncDesdeBD().finally(()=> localStorage.setItem('SYNC_INICIAL_REALIZADA','1')); } }, 1200);
     }
-    // === Deduplicate management buttons ===
-    document.addEventListener('click', (e)=>{
-        if(e.target.id==='btn-clear-sent-cache'){
-            if(confirm('┬┐Seguro que deseas limpiar el registro de m├íquinas ya enviadas?')){
-                localStorage.removeItem('ENVIADAS_BD');
-                document.getElementById('dedupe-stats')?.textContent='Registro ENVIADAS_BD limpiado.';
-                try{ cargarResultados(); }catch(_){ }
-            }
-        }
-        if(e.target.id==='btn-clear-signatures'){
-            if(confirm('┬┐Limpiar lista de firmas (permitir├í reenviar mismos datos)?')){
-                localStorage.removeItem('ENVIOS_BD_SIGS');
-                document.getElementById('dedupe-stats')?.textContent='Lista de firmas limpiada.';
-                try{ cargarResultados(); }catch(_){ }
-            }
-        }
-        if(e.target.id==='btn-clear-todo-dedupe'){
-            if(confirm('Reset TOTAL (firmas + enviadas). ┬┐Continuar?')){
-                localStorage.removeItem('ENVIADAS_BD');
-                localStorage.removeItem('ENVIOS_BD_SIGS');
-                document.getElementById('dedupe-stats')?.textContent='Dedupe reiniciado.';
-                try{ cargarResultados(); }catch(_){ }
-            }
-        }
-    });
-    function updateDedupeStatsUI(){
-        try{
-            const firmas = JSON.parse(localStorage.getItem('ENVIOS_BD_SIGS')||'[]');
-            const sent = JSON.parse(localStorage.getItem('ENVIADAS_BD')||'{}');
-            const el = document.getElementById('dedupe-stats'); if(!el) return;
-            el.textContent = `Firmas: ${firmas.length} ┬╖ M├íquinas marcadas enviadas: ${Object.keys(sent).length}`;
-        }catch(_){ }
-    }
-    updateDedupeStatsUI();
-// ================== PATCH: Anti-duplicados + Selecci├│n m├║ltiple BD ==================
-if(!window.__DEDUP_PATCH_APPLIED__){
-    window.__DEDUP_PATCH_APPLIED__=true;
-    function __sig(fecha, maq){ const p1Start=maq?.proceso1?.startTime||''; const nombre=(maq?.nombre||maq?.id||'').trim().toLowerCase(); const tipo=(maq?.tipoMasa||maq?.tipoPan||'').trim().toLowerCase(); return `${fecha}__${nombre}__${tipo}__${p1Start}`; }
-    function __hasSig(sig){ try{ return JSON.parse(localStorage.getItem('ENVIOS_BD_SIGS')||'[]').includes(sig);}catch(_){return false;} }
-    function __addSig(sig){ try{ let arr=JSON.parse(localStorage.getItem('ENVIOS_BD_SIGS')||'[]'); if(!arr.includes(sig)){ arr.push(sig); if(arr.length>500) arr=arr.slice(-500); localStorage.setItem('ENVIOS_BD_SIGS',JSON.stringify(arr)); } }catch(_){}}
-    function __markSent(fecha,rIdx,mIdx){ try{ const key='ENVIADAS_BD'; const map=JSON.parse(localStorage.getItem(key)||'{}'); map[`${fecha}__${rIdx}__${mIdx}`]=Date.now(); localStorage.setItem(key,JSON.stringify(map)); }catch(_){}}
-    function __wasSent(fecha,rIdx,mIdx){ try{ const map=JSON.parse(localStorage.getItem('ENVIADAS_BD')||'{}'); return !!map[`${fecha}__${rIdx}__${mIdx}`]; }catch(_){ return false; } }
-    function __disableSendBtn(rIdx,mIdx){ const btn=document.querySelector(`button.enviar-bd[data-idx="${rIdx}"][data-maqidx="${mIdx}"]`); if(btn){ btn.disabled=true; btn.classList.add('opacity-50','cursor-not-allowed'); btn.textContent='Enviado'; }}
-    if(typeof cargarResultados==='function'){
-        const __origCR=cargarResultados; cargarResultados=function(){ __origCR(); try{ const res=JSON.parse(localStorage.getItem('resultadosMezclado')||'[]'); res.forEach((reg,rIdx)=> (reg.maquinas||[]).forEach((m,mIdx)=>{ const sig=__sig(reg.fecha,m); if(__wasSent(reg.fecha,rIdx,mIdx)||__hasSig(sig)){ __markSent(reg.fecha,rIdx,mIdx); __disableSendBtn(rIdx,mIdx);} })); }catch(_){}};
-    }
-    (function(){ const cont=document.getElementById('resultados-lista'); if(!cont) return; const clone=cont.cloneNode(true); cont.parentNode.replaceChild(clone,cont); let lock=false; clone.addEventListener('click',async e=>{ const btn=e.target.closest('.enviar-bd'); if(!btn||lock) return; lock=true; const idx=+btn.getAttribute('data-idx'); const maqIdx=+btn.getAttribute('data-maqidx'); const status=document.getElementById('local-bd-status'); try{ const all=JSON.parse(localStorage.getItem('resultadosMezclado')||'[]'); const reg=all[idx]; if(!reg) throw new Error('Registro no encontrado'); const maq=reg.maquinas?.[maqIdx]; if(!maq) throw new Error('Amasadora no encontrada'); if(__wasSent(reg.fecha,idx,maqIdx)){ status.textContent='Ya enviada.'; status.className='text-xs text-amber-600 text-center'; return;} const sig=__sig(reg.fecha,maq); if(__hasSig(sig)){ status.textContent='Duplicado (firma) ignorado.'; status.className='text-xs text-amber-600 text-center'; __markSent(reg.fecha,idx,maqIdx); __disableSendBtn(idx,maqIdx); return;} const procesos=[]; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p) procesos.push({id:i,minutos:+p.minutos||0,segundos:+p.segundos||0,startTime:p.startTime||null,endTime:p.endTime||null}); } const p1=maq.proceso1||{}, p2=maq.proceso2||{}, p3=maq.proceso3||{}; const toSecs=p=> (parseInt(p.minutos)||0)*60+(parseInt(p.segundos)||0); const tm1=(p1.endTime&&p2.startTime)? Math.max(0,(p2.startTime-p1.endTime)/1000|0):0; const tm2=(p2.endTime&&p3.startTime)? Math.max(0,(p3.startTime-p2.endTime)/1000|0):0; const muertos=tm1+tm2; const totalReal=(p1.startTime&&p3.endTime)? Math.max(0,(p3.endTime-p1.startTime)/1000|0):0; const totalProc=toSecs(p1)+toSecs(p2)+toSecs(p3); const nombre=maq.nombre||maq.id||''; const num=maq.numeroAmasadora||(nombre.match(/\d+/)?.[0])||''; const payload={ fecha:reg.fecha,tempAmbiente:maq.tempAmbiente||reg.maquinas?.[0]?.tempAmbiente||'',humedad:maq.humedad||reg.maquinas?.[0]?.humedad||'',personalMin:reg.maquinas?.[0]?.personalMin||'',personalMax:reg.maquinas?.[0]?.personalMax||'',resumenDia:{fecha:reg.fecha,cantidadAmasadoras:1,tm1SegDia:tm1,tm2SegDia:tm2,muertosSegDia:muertos,totalRealSegDia:totalReal,totalProcesosSegDia:totalProc}, amasadoras:[{id:maq.id||num||'',nombre,numeroAmasadora:num,tipoMasa:maq.tipoMasa||maq.tipoPan||'',hielo:maq.hielo||'',lote:maq.lote||'',tempMasa:maq.tempMasa||'',observaciones:maq.observaciones||'',personalMin:maq.personalMin||reg.maquinas?.[0]?.personalMin||'',personalMax:maq.personalMax||reg.maquinas?.[0]?.personalMax||'',tempAmbiente:maq.tempAmbiente||reg.maquinas?.[0]?.tempAmbiente||'',humedad:maq.humedad||reg.maquinas?.[0]?.humedad||'',tm1Seg:tm1,tm2Seg:tm2,muertosSeg:muertos,totalRealSeg:totalReal,totalProcesosSeg:totalProc,procesos}]}; const base=resolveApiBase(); const r=await fetch(base+'/registros',{method:'POST',headers:apiHeaders(true),body:JSON.stringify(payload)}); if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt);} __addSig(sig); __markSent(reg.fecha,idx,maqIdx); __disableSendBtn(idx,maqIdx); status.textContent='Tarjeta enviada (sin duplicados).'; status.className='text-xs text-green-600 text-center'; }catch(err){ status.textContent='Error: '+(err.message||err); status.className='text-xs text-red-600 text-center'; }finally{ lock=false; }}); })();
-    (function(){ const btn=document.getElementById('btn-enviar-todo-bd'); if(!btn) return; const clone=btn.cloneNode(true); btn.parentNode.replaceChild(clone,btn); clone.addEventListener('click', async()=>{ const status=document.getElementById('local-bd-status'); const fecha=document.getElementById('filtro-fecha')?.value || document.getElementById('fecha')?.value; if(!fecha){ status.textContent='Selecciona una fecha.'; status.className='text-xs text-red-600 text-center'; return;} try{ const all=JSON.parse(localStorage.getItem('resultadosMezclado')||'[]'); const regs=all.filter(r=>r.fecha===fecha); if(!regs.length){ status.textContent='Sin datos locales para esa fecha.'; status.className='text-xs text-stone-600 text-center'; return;} const amasadoras=[]; regs.forEach((r,rIdx)=> (r.maquinas||[]).forEach((m,mIdx)=>{ const sig=__sig(r.fecha,m); if(__wasSent(r.fecha,rIdx,mIdx)||__hasSig(sig)) return; const procesos=[]; for(let i=1;i<=3;i++){ const p=m['proceso'+i]; if(p) procesos.push({id:i,minutos:+p.minutos||0,segundos:+p.segundos||0,startTime:p.startTime||null,endTime:p.endTime||null}); } amasadoras.push({id:m.id||m.numeroAmasadora||'',nombre:m.nombre||m.id||'',numeroAmasadora:m.numeroAmasadora||((m.nombre||m.id||'').match(/\d+/)?.[0])||'',tipoMasa:m.tipoMasa||m.tipoPan||'',hielo:m.hielo||'',lote:m.lote||'',tempMasa:m.tempMasa||'',observaciones:m.observaciones||'',personalMin:m.personalMin||regs[0].maquinas?.[0]?.personalMin||'',personalMax:m.personalMax||regs[0].maquinas?.[0]?.personalMax||'',tempAmbiente:m.tempAmbiente||regs[0].maquinas?.[0]?.tempAmbiente||'',humedad:m.humedad||regs[0].maquinas?.[0]?.humedad||'',procesos}); })); if(!amasadoras.length){ status.textContent='No hab├¡a m├íquinas nuevas para enviar.'; status.className='text-xs text-amber-600 text-center'; return;} const ref=amasadoras[0]; const payload={fecha,tempAmbiente:ref.tempAmbiente||'',humedad:ref.humedad||'',personalMin:ref.personalMin||'',personalMax:ref.personalMax||'',resumenDia:{fecha,cantidadAmasadoras:amasadoras.length},amasadoras}; const base=resolveApiBase(); const r=await fetch(base+'/registros',{method:'POST',headers:apiHeaders(true),body:JSON.stringify(payload)}); if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt);} regs.forEach((r,rIdx)=> (r.maquinas||[]).forEach((m,mIdx)=>{ const sig=__sig(r.fecha,m); __addSig(sig); __markSent(r.fecha,rIdx,mIdx); __disableSendBtn(rIdx,mIdx);})); status.textContent=`┬íEnviado a BD! (${amasadoras.length} nuevas)`; status.className='text-xs text-green-600 text-center'; }catch(e){ status.textContent='Error: '+(e.message||e); status.className='text-xs text-red-600 text-center'; } }); })();
-    // Selecci├│n m├║ltiple en BD
-    let __BD_SELECT_MODE=false; const __BD_IDS=new Set();
-    function __updateSelUI(){ const cnt=document.getElementById('bd-selected-count'); const del=document.getElementById('bd-delete-selected'); if(!cnt||!del) return; const n=__BD_IDS.size; cnt.textContent=n?`${n} seleccionado(s)`:''; cnt.classList.toggle('hidden',!n); del.classList.toggle('hidden',!n); }
-    async function __deleteSelected(){ if(!__BD_IDS.size) return; if(!confirm(`┬┐Borrar ${__BD_IDS.size} registro(s) seleccionados?`)) return; const status=document.getElementById('sync-status'); const base=resolveApiBase(); let ok=0,fail=0; for(const id of Array.from(__BD_IDS)){ try{ const r=await fetch(base+'/registros/'+id,{method:'DELETE',headers:apiHeaders(false)}); if(r.ok){ ok++; __BD_IDS.delete(id);} else fail++; if(status) status.textContent=`Eliminando... ${ok} ok / ${fail} err`; }catch(_){ fail++; if(status) status.textContent=`Eliminando... ${ok} ok / ${fail} err`; } } if(status) status.textContent=`Borrado m├║ltiple: ${ok} ok / ${fail} error(es)`; if(typeof loadBDView==='function') loadBDView(); __updateSelUI(); }
-    if(typeof renderBDList==='function'){ const __origR=renderBDList; renderBDList=function(){ __origR(); if(!__BD_SELECT_MODE) return; const cont=document.getElementById('bd-lista'); if(!cont) return; cont.querySelectorAll('.bd-select-box').forEach(n=>n.remove()); cont.querySelectorAll('#bd-lista > div').forEach(card=>{ const idMatch=card.innerHTML.match(/Registro ID:\s*(\d+)/); const id=idMatch? idMatch[1]:null; if(!id) return; const box=document.createElement('div'); box.className='bd-select-box mb-2'; box.innerHTML=`<label class=\"inline-flex items-center gap-2 text-xs text-stone-600\"><input type=\"checkbox\" data-bd-id=\"${id}\" class=\"bd-select h-4 w-4 border rounded\" ${__BD_IDS.has(id)?'checked':''}><span>Seleccionar</span></label>`; card.insertBefore(box,card.firstChild); }); }; }
-    document.addEventListener('click',e=>{ if(e.target.id==='bd-toggle-select'){ __BD_SELECT_MODE=!__BD_SELECT_MODE; e.target.textContent=__BD_SELECT_MODE?'Salir selecci├│n':'Seleccionar'; if(!__BD_SELECT_MODE){ __BD_IDS.clear(); __updateSelUI(); } if(typeof renderBDList==='function') renderBDList(); } if(e.target.id==='bd-delete-selected'){ __deleteSelected(); }});
-    document.getElementById('bd-lista')?.addEventListener('change',e=>{ const chk=e.target.closest('.bd-select'); if(!chk) return; const id=chk.getAttribute('data-bd-id'); if(!id) return; if(chk.checked) __BD_IDS.add(id); else __BD_IDS.delete(id); __updateSelUI(); });
-    setTimeout(()=>{ if(!document.getElementById('bd-wrapper')?.classList.contains('hidden')){ if(typeof renderBDList==='function') renderBDList(); } },400);
-}
-// ================== FIN PATCH ==================
 </script>
 </html>
