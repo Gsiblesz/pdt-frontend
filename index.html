@@ -368,6 +368,26 @@
   
 </div>
 <script>
+// ==== DEBUG OVERLAY (temporal para diagnosticar bloqueo de navegación) ====
+(function(){
+    const earlyDiv = document.createElement('div');
+    earlyDiv.id='app-debug';
+    earlyDiv.style.cssText='position:fixed;top:0;left:0;right:0;background:#111;color:#fff;font:11px/1.3 monospace;padding:4px 6px;z-index:999999;display:none;max-height:120px;overflow:auto;';
+    document.addEventListener('DOMContentLoaded',()=>{ document.body.appendChild(earlyDiv); });
+    function dbg(msg){
+        try{
+            const el=document.getElementById('app-debug');
+            if(!el) return; el.style.display='block';
+            const time = new Date().toISOString().split('T')[1].split('.')[0];
+            el.innerHTML += `<div>[${time}] ${msg.replace(/</g,'&lt;')}</div>`;
+        }catch(_){ }
+    }
+    window.__DBG = dbg;
+    window.addEventListener('error', ev=>{ dbg('ERROR: '+(ev.message||ev.error)); });
+    window.addEventListener('unhandledrejection', ev=>{ dbg('PROMISE REJECTION: '+(ev.reason && ev.reason.message? ev.reason.message: ev.reason)); });
+    dbg('Debug activo: cargando script principal');
+})();
+// ==== FIN DEBUG OVERLAY ====
 // Cargar libs si faltan
 window.html2canvas || document.write('<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"><\/script>');
 window.jspdf || document.write('<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"><\/script>');
