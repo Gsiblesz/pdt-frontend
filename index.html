@@ -2110,17 +2110,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return `<button data-fecha="${f}" class="px-3 py-1 text-xs rounded-full border ${activo?'bg-blue-600 text-white border-blue-600 shadow':'border-stone-300 bg-white hover:bg-blue-50 hover:border-blue-400'} transition flex items-center gap-1">${f}<span class='inline-block text-[10px] px-1 rounded ${activo?'bg-white/20 text-white':'bg-stone-200 text-stone-700'}'>${mapa[f]}</span></button>`;
                 }).join('');
                 if(fechasTotal) fechasTotal.textContent = `(${fechas.length})`;
-                // Botón para limpiar filtro de día
-                if((_modoFechaSel==='dia' && _diaSel) && !document.getElementById('tablas-fechas-clear')){
-                    const clearBtn = document.createElement('button');
-                    clearBtn.id='tablas-fechas-clear';
-                    clearBtn.className='mt-3 text-[11px] underline text-blue-700';
-                    clearBtn.textContent='Quitar filtro de día';
-                    clearBtn.addEventListener('click', ()=>{ localStorage.setItem('TABLAS_FECHA_MODO','rango'); localStorage.removeItem('TABLAS_BD_DIA'); buildTablasVista(); });
-                    fechasList.parentNode.appendChild(clearBtn);
-                } else if(!(_modoFechaSel==='dia' && _diaSel)){
-                    const existing=document.getElementById('tablas-fechas-clear'); if(existing) existing.remove();
-                }
                 fechasList.querySelectorAll('button[data-fecha]').forEach(btn=>{
                     btn.addEventListener('click', ()=>{
                         const f = btn.getAttribute('data-fecha');
