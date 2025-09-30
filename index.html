@@ -85,6 +85,16 @@
                     <button id="toggle-ajustes" class="text-sm text-stone-600 underline">Mostrar ajustes</button>
                 </div>
                 <div id="ajustes-content" class="space-y-4 text-base hidden">
+                    <div class="p-3 rounded-lg border bg-stone-50">
+                        <h4 class="font-semibold mb-1 text-stone-700">Gestión de duplicados / caché envío</h4>
+                        <p class="text-xs text-stone-600 mb-2">Estos controles permiten limpiar las firmas de envíos y el registro interno de máquinas ya enviadas. Úsalo sólo si necesitas reenviar deliberadamente datos.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="btn-clear-sent-cache" class="bg-stone-500 text-white px-3 py-1 rounded text-sm hover:bg-stone-600">Limpiar "ya enviadas"</button>
+                            <button id="btn-clear-signatures" class="bg-stone-500 text-white px-3 py-1 rounded text-sm hover:bg-stone-600">Limpiar firmas</button>
+                            <button id="btn-clear-todo-dedupe" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">Reset dedupe total</button>
+                        </div>
+                        <div id="dedupe-stats" class="mt-2 text-xs text-stone-500"></div>
+                    </div>
                     <div>
                         <label class="block font-semibold text-stone-700">URL de la API</label>
                         <input id="settings-api-url" class="w-full border rounded px-3 py-2 text-base" placeholder="https://tu-backend" />
@@ -1414,7 +1424,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .replace(/[^A-Za-z0-9 %.,;:_\-\(\)\[\]\{\}/\\+\/=<>\?\!\|\'\"]+/g, '') // solo ASCII seguro
                 .normalize('NFC');
         }
-        resultados.forEach(res => {
+        resultados.forEach((reg, idx)=>{
             const fecha = limpiarTexto(res.fecha || '');
             (res.maquinas||[]).forEach(maq => {
                 let totalSegundos = 0;
@@ -1426,6 +1436,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     tiempoMuerto1 = Math.max(0, Math.floor((maq.proceso2.startTime - maq.proceso1.endTime)/1000));
                 }
                 if (maq.proceso2 && maq.proceso3 && maq.proceso2.endTime && maq.proceso3.startTime) {
+                // Badge enviado (dedupe) si existe firma/registro
+                let enviadoBadge='';
+                try {
+                    const sig = (function(){ const p1=procesos[0]; const start=p1?.startTime||''; const nombre=(m.nombre||m.id||'').toString().trim().toLowerCase(); const tipo=(m.tipoMasa||m.tipoPan||'').toString().trim().toLowerCase(); return `${reg.fecha}__${nombre}__${tipo}__${start}`; })();
+                    const firmas = JSON.parse(localStorage.getItem('ENVIOS_BD_SIGS')||'[]');
+                    const sentMap = JSON.parse(localStorage.getItem('ENVIADAS_BD')||'{}');
+                    const keySent = `${reg.fecha}__${idx}__${maqIdx}`;
+                    if(firmas.includes(sig) || sentMap[keySent]){
+                        enviadoBadge = '<span class="ml-2 inline-block bg-green-600 text-white text-[10px] px-2 py-0.5 rounded-full align-middle">BD</span>';
+                    }
+                }catch(_){ }
                     tiempoMuerto2 = Math.max(0, Math.floor((maq.proceso3.startTime - maq.proceso2.endTime)/1000));
                 }
                 let totalMuertos = (tiempoMuerto1 || 0) + (tiempoMuerto2 || 0);
@@ -1434,7 +1455,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const proc = maq[`proceso${i}`] || {};
                     const t = (parseInt(proc.minutos)||0)*60 + (parseInt(proc.segundos)||0);
                     totalSegundos += t;
-                    // Día de la semana limpio
+                            <h4 class="font-semibold text-stone-800">${reg.fecha} · Máquina ${m.nombre||m.id||''} ${enviadoBadge}</h4>
                     let diaSemana = '';
                     if (firstRow && fecha && fecha.length===10) {
                         const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -3002,6 +3023,40 @@ document.addEventListener('DOMContentLoaded', () => {
         // Auto sync inicial (suave)
         setTimeout(()=>{ if(!localStorage.getItem('SYNC_INICIAL_REALIZADA')){ syncDesdeBD().finally(()=> localStorage.setItem('SYNC_INICIAL_REALIZADA','1')); } }, 1200);
     }
+    // === Deduplicate management buttons ===
+    document.addEventListener('click', (e)=>{
+        if(e.target.id==='btn-clear-sent-cache'){
+            if(confirm('¿Seguro que deseas limpiar el registro de máquinas ya enviadas?')){
+                localStorage.removeItem('ENVIADAS_BD');
+                document.getElementById('dedupe-stats')?.textContent='Registro ENVIADAS_BD limpiado.';
+                try{ cargarResultados(); }catch(_){ }
+            }
+        }
+        if(e.target.id==='btn-clear-signatures'){
+            if(confirm('¿Limpiar lista de firmas (permitirá reenviar mismos datos)?')){
+                localStorage.removeItem('ENVIOS_BD_SIGS');
+                document.getElementById('dedupe-stats')?.textContent='Lista de firmas limpiada.';
+                try{ cargarResultados(); }catch(_){ }
+            }
+        }
+        if(e.target.id==='btn-clear-todo-dedupe'){
+            if(confirm('Reset TOTAL (firmas + enviadas). ¿Continuar?')){
+                localStorage.removeItem('ENVIADAS_BD');
+                localStorage.removeItem('ENVIOS_BD_SIGS');
+                document.getElementById('dedupe-stats')?.textContent='Dedupe reiniciado.';
+                try{ cargarResultados(); }catch(_){ }
+            }
+        }
+    });
+    function updateDedupeStatsUI(){
+        try{
+            const firmas = JSON.parse(localStorage.getItem('ENVIOS_BD_SIGS')||'[]');
+            const sent = JSON.parse(localStorage.getItem('ENVIADAS_BD')||'{}');
+            const el = document.getElementById('dedupe-stats'); if(!el) return;
+            el.textContent = `Firmas: ${firmas.length} · Máquinas marcadas enviadas: ${Object.keys(sent).length}`;
+        }catch(_){ }
+    }
+    updateDedupeStatsUI();
 // ================== PATCH: Anti-duplicados + Selección múltiple BD ==================
 if(!window.__DEDUP_PATCH_APPLIED__){
     window.__DEDUP_PATCH_APPLIED__=true;
