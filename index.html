@@ -84,7 +84,10 @@
                     </div>
                     <div>
                         <label class="block font-semibold text-stone-700">Clave de API</label>
-                        <input id="settings-api-key" type="password" class="w-full border rounded px-3 py-2 text-base" placeholder="••••••" />
+                        <div class="relative flex items-center gap-2">
+                            <input id="settings-api-key" type="password" class="w-full border rounded px-3 py-2 text-base pr-16" placeholder="••••••" />
+                            <button type="button" id="settings-api-toggle" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded border border-stone-300 bg-stone-100 hover:bg-stone-200">Mostrar</button>
+                        </div>
                         <label class="inline-flex items-center gap-2 mt-2"><input id="settings-remember-key" type="checkbox" class="scale-110" /> Recordar en este dispositivo</label>
                         <button id="settings-save-key" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded">Guardar clave</button>
                         <div id="settings-key-status" class="mt-2 text-sm text-stone-600"></div>
@@ -842,6 +845,17 @@ document.addEventListener('DOMContentLoaded', () => {
             observaciones,
             ...procesos
         };
+        // Validación: procesos completos (tiempo > 0 y con start & end)
+        const incompletos = [];
+        machine.processes.forEach(p=>{
+            const o = maquinaObj['proceso'+p.id];
+            const totalSeg = ((o?.minutos||0)*60) + (o?.segundos||0);
+            if(!o || totalSeg===0 || !o.startTime || !o.endTime){ incompletos.push(p.name); }
+        });
+        if(incompletos.length){
+            mostrarMsgMaquina(machineId, 'Completa procesos: '+incompletos.join(', '), false);
+            return;
+        }
     let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
     resultados.push({ fecha, maquinas: [maquinaObj] });
     localStorage.setItem('resultadosMezclado', JSON.stringify(resultados));
@@ -1931,6 +1945,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 else { const msg = (r.status===401||r.status===403)?'Clave inválida ❌':'Error: HTTP '+r.status; if(statusEl){statusEl.textContent=msg; statusEl.className='mt-2 text-sm text-red-600';} }
             }catch(e){ if(statusEl){ statusEl.textContent='Error de red al verificar clave'; statusEl.className='mt-2 text-sm text-red-600'; } }
         });
+        // Toggle mostrar/ocultar API key
+        const toggleBtn = document.getElementById('settings-api-toggle');
+        if(toggleBtn && settingsApiKey){
+            toggleBtn.addEventListener('click', ()=>{
+                const isPwd = settingsApiKey.type === 'password';
+                settingsApiKey.type = isPwd ? 'text' : 'password';
+                toggleBtn.textContent = isPwd ? 'Ocultar' : 'Mostrar';
+            });
+        }
         if (typeof createMachineCards === 'function') createMachineCards();
 
         // Listeners de pestañas seguros
@@ -2082,8 +2105,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mapa={};
                 datos.forEach(r=>{ if(r.fecha){ mapa[r.fecha] = (mapa[r.fecha]||0) + (r.maquinas? r.maquinas.length:0); } });
                 const fechas = Object.keys(mapa).sort();
-                fechasList.innerHTML = fechas.map(f=>`<button data-fecha="${f}" class="px-3 py-1 text-xs rounded-full border border-stone-300 bg-white hover:bg-blue-50 hover:border-blue-400 transition flex items-center gap-1">${f}<span class='inline-block text-[10px] px-1 rounded bg-stone-200 text-stone-700'>${mapa[f]}</span></button>`).join('');
+                fechasList.innerHTML = fechas.map(f=>{
+                    const activo = (_modoFechaSel==='dia' && _diaSel===f);
+                    return `<button data-fecha="${f}" class="px-3 py-1 text-xs rounded-full border ${activo?'bg-blue-600 text-white border-blue-600 shadow':'border-stone-300 bg-white hover:bg-blue-50 hover:border-blue-400'} transition flex items-center gap-1">${f}<span class='inline-block text-[10px] px-1 rounded ${activo?'bg-white/20 text-white':'bg-stone-200 text-stone-700'}'>${mapa[f]}</span></button>`;
+                }).join('');
                 if(fechasTotal) fechasTotal.textContent = `(${fechas.length})`;
+                // Botón para limpiar filtro de día
+                if((_modoFechaSel==='dia' && _diaSel) && !document.getElementById('tablas-fechas-clear')){
+                    const clearBtn = document.createElement('button');
+                    clearBtn.id='tablas-fechas-clear';
+                    clearBtn.className='mt-3 text-[11px] underline text-blue-700';
+                    clearBtn.textContent='Quitar filtro de día';
+                    clearBtn.addEventListener('click', ()=>{ localStorage.setItem('TABLAS_FECHA_MODO','rango'); localStorage.removeItem('TABLAS_BD_DIA'); buildTablasVista(); });
+                    fechasList.parentNode.appendChild(clearBtn);
+                } else if(!(_modoFechaSel==='dia' && _diaSel)){
+                    const existing=document.getElementById('tablas-fechas-clear'); if(existing) existing.remove();
+                }
                 fechasList.querySelectorAll('button[data-fecha]').forEach(btn=>{
                     btn.addEventListener('click', ()=>{
                         const f = btn.getAttribute('data-fecha');
@@ -2121,6 +2158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const procesosNombres=['Esponja','Masa','Mantequilla'];
         let totalGenerales=[]; let procesoStats=[[],[],[]];
     let masaStats={}, amasadoraStats={}, tempMasaStats={}, tempCrossRaw=[];
+    let globalRealSum=0, globalProdSum=0, globalMuertoSum=0;
     _TABLAS_DATA_LAST.forEach(reg=>{
             (reg.maquinas||[]).forEach(maq=>{
                 // total máquina (primer start a último end)
@@ -2141,6 +2179,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 (masaStats[tipo]=masaStats[tipo]||[]).push(totalSimple);
                 (amasadoraStats[ama]=amasadoraStats[ama]||[]).push(totalSimple);
                 const tm = parseFloat(maq.tempMasa); if(!isNaN(tm)) { (tempMasaStats[tipo]=tempMasaStats[tipo]||[]).push(tm); tempCrossRaw.push({tipo, ama, tm}); }
+                if(p1&&p1.startTime && p3 && p3.endTime){
+                    const real = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000));
+                    globalRealSum += real;
+                    globalProdSum += totalSimple;
+                    globalMuertoSum += Math.max(0, real - totalSimple);
+                }
             });
         });
         // Resumen tabla
@@ -2163,6 +2207,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 resumenRows.push([`%Desv ${procesosNombres[i]}`, percent(desv,prom)]);
             }
         });
+        if(globalRealSum>0){
+            const tiempoMuerto = globalMuertoSum;
+            resumenRows.push(['Tiempo productivo (s)', globalProdSum]);
+            resumenRows.push(['Tiempo muerto (s)', tiempoMuerto]);
+            resumenRows.push(['%Muerto', percent(tiempoMuerto, globalRealSum)]);
+            resumenRows.push(['OEE (%)', percent(globalProdSum, globalRealSum)]);
+        }
         const tblResumen=document.getElementById('tabla-resumen'); if(tblResumen) tblResumen.innerHTML=tableFromRows(resumenHeaders,resumenRows);
         // Pan table
     const panHeaders=['Tipo masa','N','Prom (s)','Desv (s)','%Desv'];
@@ -2468,6 +2519,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!datos || !datos.length){ alert('No hay datos para exportar.'); return; }
     const { resumenRows, panRows, amaRows, procRows, tempRows, cruzHeaders, cruzRows } = computeTablasStatsFromData(datos);
         const rows=[];
+        // Metadatos
+    const fuenteCSV = (document.getElementById('tablas-source')?.value)||localStorage.getItem('TABLAS_SOURCE')||'local';
+        const modo = localStorage.getItem('TABLAS_FECHA_MODO')||'rango';
+        const diaSel = localStorage.getItem('TABLAS_BD_DIA')||'';
+        const stamp = new Date().toISOString();
+        const totalMaquinas = datos.reduce((a,r)=> a + (r.maquinas? r.maquinas.length:0),0);
+    rows.push(['# Fuente', fuenteCSV]);
+        rows.push(['# ModoFecha', modo]);
+        if(diaSel) rows.push(['# DiaSeleccionado', diaSel]);
+        rows.push(['# Registros(fecha)', datos.length]);
+        rows.push(['# TotalMaquinas', totalMaquinas]);
+        rows.push(['# Generado', stamp]);
+        rows.push([]);
         rows.push(['Resumen de tiempos (s)']); rows.push(['Métrica','Valor']); resumenRows.forEach(r=> rows.push(r)); rows.push([]);
         rows.push(['Promedios por tipo de masa']); rows.push(['Tipo masa','N','Prom (s)','Desv (s)','%Desv']); panRows.forEach(r=> rows.push(r)); rows.push([]);
         rows.push(['Promedios por amasadora']); rows.push(['Amasadora','N','Prom (s)','Desv (s)','%Desv']); amaRows.forEach(r=> rows.push(r)); rows.push([]);
@@ -2907,6 +2971,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const ov = document.getElementById('auth-overlay'); if(!ov) return;
         // Forzar hash de clave fija
     try{ sha256Hex(DEFAULT_PASS).then(h=> localStorage.setItem('APP_PASS_HASH', h)); }catch(_){ }
+        // Rate limiting simple
+        function authMeta(){
+            try{ return JSON.parse(localStorage.getItem('AUTH_META')||'{}'); }catch(_){ return {}; }
+        }
+        function saveAuthMeta(m){ localStorage.setItem('AUTH_META', JSON.stringify(m)); }
+        function canTry(){
+            const m=authMeta();
+            const now=Date.now();
+            if(m.lockUntil && now < m.lockUntil) return false;
+            return true;
+        }
+        function registerFail(){
+            const m=authMeta();
+            m.failCount = (m.failCount||0)+1;
+            if(m.failCount>=5){
+                // Bloqueo exponencial suave: 30s * 2^(failCount-5) (máx 10 min)
+                const extra = Math.min(600000, 30000 * Math.pow(2, m.failCount-5));
+                m.lockUntil = Date.now() + extra;
+            }
+            saveAuthMeta(m);
+        }
+        function registerSuccess(){ saveAuthMeta({ failCount:0, lockUntil:0 }); }
         // Cancel estricto: si está bloqueado, no permite cerrar el overlay
         document.getElementById('auth-cancel')?.addEventListener('click', ()=>{
             if(isLocked()){
@@ -2919,13 +3005,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('auth-submit')?.addEventListener('click', async ()=>{
             const msgEl = document.getElementById('auth-msg'); msgEl.textContent=''; msgEl.className='mt-3 text-sm';
+            if(!canTry()){
+                const m=authMeta();
+                const wait = Math.max(0, Math.floor(((m.lockUntil||0)-Date.now())/1000));
+                msgEl.textContent='Demasiados intentos. Espera '+wait+'s.'; msgEl.classList.add('text-red-600');
+                return;
+            }
             const pass = document.getElementById('auth-pass').value;
-            if(pass!==DEFAULT_PASS){ msgEl.textContent='Clave incorrecta.'; msgEl.classList.add('text-red-600'); return; }
+            if(pass!==DEFAULT_PASS){ msgEl.textContent='Clave incorrecta.'; msgEl.classList.add('text-red-600'); try{ registerFail(); }catch(_){ } return; }
             sessionStorage.setItem('APP_UNLOCKED','1');
             const remember = document.getElementById('auth-recordar').checked; markRemembered(remember);
             if(remember) localStorage.removeItem('APP_LOCKED');
             try{ updateAjustesVisibility(); }catch(_){ }
             hideAuthOverlay();
+            registerSuccess();
         });
         showAuthOverlay();
     }
@@ -3049,13 +3142,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 humedad: m.humedad||r.humedad||'',
                 // métricas derivadas
                 tm1Seg, tm2Seg, muertosSeg, totalRealSeg, totalProcesosSeg: sumProcesosSeg,
-                procesos
+                procesos,
+                firma: (fecha+'|'+(numeroAmasadora||'')+'|'+(m.lote||'')+'|'+((p1 && p1.startTime) || '')+'|'+((p3 && p3.endTime) || '')),
             });
         }));
         if(!amasadoras.length) return null;
     // Tomar factores generales de la primera máquina
     const ref = registrosFecha[0].maquinas[0];
-        return {
+        const payloadBase = {
             fecha,
             tempAmbiente: ref.tempAmbiente||'',
             humedad: ref.humedad||'',
@@ -3075,6 +3169,13 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             amasadoras
         };
+        // Hash idempotente simple (no criptográfico fuerte, suficiente para dedupe)
+        try{
+            const raw = JSON.stringify(payloadBase.amasadoras.map(a=>a.firma).sort());
+            let h=0; for(let i=0;i<raw.length;i++){ h = Math.imul(31,h) + raw.charCodeAt(i) | 0; }
+            payloadBase.idempotencyKey = 'FECHA_'+fecha+'_'+(h>>>0).toString(16);
+        }catch(_){ }
+        return payloadBase;
     }
     async function pasarFechaABD(){
         const fecha = document.getElementById('fecha')?.value;
