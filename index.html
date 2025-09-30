@@ -1055,16 +1055,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const bdW = document.getElementById('bd-wrapper');
         const subLocal = document.getElementById('subtab-local');
         const subBD = document.getElementById('subtab-bd');
-        function showLocal(){ localW?.classList.remove('hidden'); bdW?.classList.add('hidden'); subLocal?.classList.add('tab-btn-active'); subBD?.classList.remove('tab-btn-active'); }
-        function showBD(){ bdW?.classList.remove('hidden'); localW?.classList.add('hidden'); subBD?.classList.add('tab-btn-active'); subLocal?.classList.remove('tab-btn-active'); loadBDView(); }
-        subLocal?.addEventListener('click', showLocal);
-        subBD?.addEventListener('click', showBD);
-        // Nueva lógica: si hay URL de API y (clave API o acceso desbloqueado) mostrar BD de inmediato; si no, mantener Local.
-        try{
-            const apiUrl = localStorage.getItem('API_URL_OVERRIDE')||'';
-            const apiKey = sessionStorage.getItem('API_KEY') || localStorage.getItem('API_KEY_PERSIST') || '';
-            if(apiUrl || apiKey){ showBD(); }
-        }catch(_){ }
+        function showLocal(){ localStorage.setItem('RESULTADOS_SUBTAB','local'); localW?.classList.remove('hidden'); bdW?.classList.add('hidden'); subLocal?.classList.add('tab-btn-active'); subBD?.classList.remove('tab-btn-active'); }
+        function showBD(){ localStorage.setItem('RESULTADOS_SUBTAB','bd'); bdW?.classList.remove('hidden'); localW?.classList.add('hidden'); subBD?.classList.add('tab-btn-active'); subLocal?.classList.remove('tab-btn-active'); loadBDView(); }
+        subLocal?.addEventListener('click', e=>{ e.preventDefault(); showLocal(); });
+        subBD?.addEventListener('click', e=>{ e.preventDefault(); showBD(); });
+        const preferred = localStorage.getItem('RESULTADOS_SUBTAB');
+        const apiUrl = localStorage.getItem('API_URL_OVERRIDE')||'';
+        const apiKey = sessionStorage.getItem('API_KEY') || localStorage.getItem('API_KEY_PERSIST') || '';
+        if(preferred==='bd' && (apiUrl||apiKey)) { showBD(); return; }
+        if(apiUrl || apiKey){
+            // Si no hay preferencia pero usuario tiene credenciales, mostrar BD directamente
+            showBD();
+        } else {
+            showLocal();
+        }
     })();
 
     // Enviar todo a la BD (local)
