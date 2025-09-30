@@ -2789,10 +2789,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const setupShown = !document.getElementById('auth-setup-fields')?.classList.contains('hidden');
             showAuthOverlay(!setupShown);
         });
-        // Si no existe hash configurado, establecer el hash de la clave por defecto sin desbloquear
-        if(!localStorage.getItem('APP_PASS_HASH')){
-            try{ sha256Hex(DEFAULT_PASS).then(h=> localStorage.setItem('APP_PASS_HASH', h)); }catch(_){ }
-        }
+        // Inicialización de clave por defecto (evitar carrera que impedía mostrar overlay):
+        // 1. Si no existe hash configurado, generarlo y justo después forzar overlay (modo login) salvo que el usuario ya esté recordado.
+        // 2. Si ya existe hash y no está desbloqueado ni recordado, mostrar overlay.
+        try{
+            if(!localStorage.getItem('APP_PASS_HASH')){
+                sha256Hex(DEFAULT_PASS).then(h=>{
+                    // Evitar sobrescribir si otra pestaña lo creó entre tanto
+                    if(!localStorage.getItem('APP_PASS_HASH')){
+                        localStorage.setItem('APP_PASS_HASH', h);
+                    }
+                    if(!isUnlocked() && !isRemembered()){
+                        // Mostrar inmediatamente el overlay de login (no modo setup)
+                        showAuthOverlay(false);
+                    }
+                });
+            } else {
+                if(!isUnlocked() && !isRemembered()){
+                    showAuthOverlay(false);
+                }
+            }
+        }catch(_){ /* silencioso */ }
         // Cancel estricto: si está bloqueado, no permite cerrar el overlay
         document.getElementById('auth-cancel')?.addEventListener('click', ()=>{
             if(isLocked()){
@@ -2831,8 +2848,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }catch(e){ msgEl.textContent=e.message||String(e); msgEl.classList.add('text-red-600'); }
         });
-        // primer uso: si no hay hash (se establecerá el por defecto), pedir inicio de sesión (no configuración)
-        if(!localStorage.getItem('APP_PASS_HASH')){ showAuthOverlay(false); }
+        // (El overlay inicial ahora se gestiona en la rama anterior; aquí ya no hacemos nada extra)
     }
     function guardRoute(){
         const hasPass = !!localStorage.getItem('APP_PASS_HASH');
