@@ -229,6 +229,24 @@
                     <div id="tabla-personal-dia" class="overflow-x-auto text-sm mb-4"></div>
                     <canvas id="chart-personal-dia" height="140"></canvas>
                 </section>
+                <!-- NUEVOS: Control Charts y OEE -->
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">OEE global (aprox)</h3>
+                    <p class="chart-desc">Indicador simplificado: (Tiempo productivo / Tiempo total real). No incluye factor de calidad. Sirve para comparar eficiencia día a día.</p>
+                    <div id="oee-indicador" class="text-sm mb-4"></div>
+                </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Control de tiempo total (Control Chart) <span class="info-hint text-blue-600 cursor-help align-middle" title="Promedio y límites ±3σ sobre el tiempo total real por máquina (orden cronológico).">ℹ️</span></h3>
+                    <p class="chart-desc">Detecta variaciones especiales: puntos fuera de límites o patrones. Líneas: CL (media), UCL/LCL (±3σ). Sólo se dibujan límites si hay al menos 5 puntos.</p>
+                    <canvas id="chart-ctrl-tiempo" height="150" class="mb-2"></canvas>
+                    <div id="chart-ctrl-tiempo-info" class="text-xs text-stone-600"></div>
+                </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Control % tiempo muerto <span class="info-hint text-blue-600 cursor-help align-middle" title="Porcentaje de tiempo inactivo respecto al total real por máquina (media y ±3σ).">ℹ️</span></h3>
+                    <p class="chart-desc">Mide estabilidad del % de inactividad. Un % muerto que se dispara puede indicar cuellos, esperas de material o coordinación.</p>
+                    <canvas id="chart-ctrl-muerto" height="150" class="mb-2"></canvas>
+                    <div id="chart-ctrl-muerto-info" class="text-xs text-stone-600"></div>
+                </section>
             </div>
         </div>
         <div id="view-medicion" class="hidden">
@@ -2204,6 +2222,60 @@ document.addEventListener('DOMContentLoaded', () => {
             resumenRows.push(['OEE (%)', percent(globalProdSum, globalRealSum)]);
         }
         const tblResumen=document.getElementById('tabla-resumen'); if(tblResumen) tblResumen.innerHTML=tableFromRows(resumenHeaders,resumenRows);
+        // OEE indicador
+        (function(){
+            const el = document.getElementById('oee-indicador'); if(!el) return;
+            const prod = globalProdSum; const real = globalRealSum; if(!(real>0)){ el.textContent='Sin datos suficientes para OEE.'; return; }
+            const oee = (prod*100/real);
+            let color='bg-stone-300 text-stone-800';
+            if(oee>=80) color='bg-emerald-600 text-white'; else if(oee>=60) color='bg-amber-500 text-white'; else color='bg-red-600 text-white';
+            el.innerHTML = `<div class="inline-flex items-center gap-3"><span class="px-3 py-1 rounded ${color} font-semibold">${oee.toFixed(1)}%</span><span class="text-stone-600">Productivo ${formatTime(prod)} / Real ${formatTime(real)} · TM muerto ${(real-prod)>0?formatTime(real-prod):'00:00:00'}</span></div>`;
+        })();
+        // Control Charts (tiempo total y % muerto)
+        (function(){
+            const canvasTiempo = document.getElementById('chart-ctrl-tiempo');
+            const canvasMuerto = document.getElementById('chart-ctrl-muerto');
+            if(!canvasTiempo && !canvasMuerto) return;
+            // Construir dataset ordenado cronológicamente por fecha y dentro de fecha por amasadora
+            const puntosTiempo=[]; const puntosPctMuerto=[]; const labels=[];
+            _TABLAS_DATA_LAST.slice().sort((a,b)=> (a.fecha||'').localeCompare(b.fecha||'')).forEach(reg=>{
+                (reg.maquinas||[]).forEach(maq=>{
+                    const p1=maq.proceso1, p3=maq.proceso3; if(!(p1&&p1.startTime&&p3&&p3.endTime)) return;
+                    const total = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000));
+                    let sumaProc=0; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ sumaProc += (parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0); } }
+                    const muerto = Math.max(0, total - sumaProc);
+                    const pctMuerto = total? (muerto*100/total):0;
+                    labels.push(reg.fecha+' M'+(maq.numeroAmasadora||maq.id||''));
+                    puntosTiempo.push(total);
+                    puntosPctMuerto.push(pctMuerto);
+                });
+            });
+            function stats(arr){ if(!arr.length) return null; const mean=arr.reduce((a,b)=>a+b,0)/arr.length; const variance=arr.reduce((a,b)=>a+(b-mean)**2,0)/arr.length; const sd=Math.sqrt(variance); return {mean, sd, ucl:mean+3*sd, lcl:Math.max(0, mean-3*sd)}; }
+            const stTiempo = stats(puntosTiempo);
+            const stMuerto = stats(puntosPctMuerto);
+            if(canvasTiempo && puntosTiempo.length){
+                const ds=[{label:'Tiempo total (s)', data:puntosTiempo, borderColor:'#2563eb', backgroundColor:'#2563eb', tension:0.15, pointRadius:4, fill:false}];
+                if(stTiempo && puntosTiempo.length>=5){
+                    const baseIdx = puntosTiempo.map((_,i)=> i);
+                    ds.push({label:'CL', data:baseIdx.map(()=> stTiempo.mean), borderColor:'#16a34a', borderWidth:1.2, pointRadius:0});
+                    ds.push({label:'UCL', data:baseIdx.map(()=> stTiempo.ucl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
+                    ds.push({label:'LCL', data:baseIdx.map(()=> stTiempo.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
+                }
+                mkChart(canvasTiempo,'line',{labels, datasets:ds},{responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}}});
+                const info=document.getElementById('chart-ctrl-tiempo-info'); if(info && stTiempo){ info.textContent = `CL=${stTiempo.mean.toFixed(1)}s · σ=${stTiempo.sd.toFixed(1)}s · UCL=${stTiempo.ucl.toFixed(1)}s · LCL=${stTiempo.lcl.toFixed(1)}s`; }
+            }
+            if(canvasMuerto && puntosPctMuerto.length){
+                const ds2=[{label:'% Muerto', data:puntosPctMuerto, borderColor:'#f59e0b', backgroundColor:'#f59e0b', tension:0.15, pointRadius:4, fill:false}];
+                if(stMuerto && puntosPctMuerto.length>=5){
+                    const baseIdx = puntosPctMuerto.map((_,i)=> i);
+                    ds2.push({label:'CL', data:baseIdx.map(()=> stMuerto.mean), borderColor:'#16a34a', borderWidth:1.2, pointRadius:0});
+                    ds2.push({label:'UCL', data:baseIdx.map(()=> stMuerto.ucl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
+                    ds2.push({label:'LCL', data:baseIdx.map(()=> stMuerto.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
+                }
+                mkChart(canvasMuerto,'line',{labels, datasets:ds2},{responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true, title:{display:true,text:'%'}}}});
+                const info2=document.getElementById('chart-ctrl-muerto-info'); if(info2 && stMuerto){ info2.textContent = `CL=${stMuerto.mean.toFixed(2)}% · σ=${stMuerto.sd.toFixed(2)}% · UCL=${stMuerto.ucl.toFixed(2)}% · LCL=${stMuerto.lcl.toFixed(2)}%`; }
+            }
+        })();
         // Pan table
     const panHeaders=['Tipo masa','N','Prom (s)','Desv (s)','%Desv'];
     const panRows=Object.keys(masaStats).map(k=>{const a=masaStats[k]; const m=Math.round(a.reduce((x,y)=>x+y,0)/a.length); const d=Math.round(std(a)); return [k,a.length,m,d,percent(d,m)];});
