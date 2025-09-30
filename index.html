@@ -1059,11 +1059,12 @@ document.addEventListener('DOMContentLoaded', () => {
         function showBD(){ bdW?.classList.remove('hidden'); localW?.classList.add('hidden'); subBD?.classList.add('tab-btn-active'); subLocal?.classList.remove('tab-btn-active'); loadBDView(); }
         subLocal?.addEventListener('click', showLocal);
         subBD?.addEventListener('click', showBD);
-        // Si no hay resultados locales en ningún dispositivo (o almacenamiento vacío), mostrar BD por defecto
+        // Nueva lógica: si hay URL de API y (clave API o acceso desbloqueado) mostrar BD de inmediato; si no, mantener Local.
         try{
-            const res = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
-            if(!res || !Array.isArray(res) || res.length===0){ showBD(); }
-        }catch(_){ showBD(); }
+            const apiUrl = localStorage.getItem('API_URL_OVERRIDE')||'';
+            const apiKey = sessionStorage.getItem('API_KEY') || localStorage.getItem('API_KEY_PERSIST') || '';
+            if(apiUrl || apiKey){ showBD(); }
+        }catch(_){ }
     })();
 
     // Enviar todo a la BD (local)
