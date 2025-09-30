@@ -29,25 +29,17 @@
         <div class="w-full h-full flex items-center justify-center p-4">
             <div class="bg-white border border-stone-300 rounded-2xl shadow-xl p-6 w-full max-w-md">
                 <h2 id="auth-title" class="text-2xl font-extrabold text-stone-900 mb-1">Clave de acceso</h2>
-                <p id="auth-sub" class="text-sm text-stone-600 mb-4">Ingresa la clave para usar la app.</p>
-                <div id="auth-setup-fields" class="hidden">
-                    <label class="block text-sm font-medium text-stone-700 mb-1">Nueva clave</label>
-                    <input id="auth-new-pass" type="password" class="w-full border rounded px-3 py-2 mb-3" placeholder="••••••" />
-                    <label class="block text-sm font-medium text-stone-700 mb-1">Confirmar clave</label>
-                    <input id="auth-new-pass2" type="password" class="w-full border rounded px-3 py-2" placeholder="••••••" />
-                    <p class="text-xs text-stone-500 mt-2">Se guardará de forma local (hash) en este navegador.</p>
-                </div>
+                <p id="auth-sub" class="text-sm text-stone-600 mb-4">Ingresa la clave fija para usar la app.</p>
                 <div id="auth-login-fields">
-                    <label class="block text-sm font-medium text-stone-700 mb-1">Clave</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Clave (fija)</label>
                     <input id="auth-pass" type="password" class="w-full border rounded px-3 py-2" placeholder="••••••" />
                     <label class="inline-flex items-center gap-2 text-sm text-stone-700 mt-3">
                         <input id="auth-recordar" type="checkbox" class="border rounded" /> Recordar en este navegador
                     </label>
                 </div>
                 <div class="mt-5 flex flex-wrap gap-2 justify-end">
-                    <button id="auth-cambiar-modo" class="text-sm text-stone-600 underline">Configurar/Restablecer clave</button>
                     <div class="flex-1"></div>
-                    <button id="auth-cancel" class="px-3 py-2 text-sm rounded border border-stone-300">Cancelar</button>
+                    <button id="auth-cancel" class="px-3 py-2 text-sm rounded border border-stone-300">Cerrar</button>
                     <button id="auth-submit" class="px-4 py-2 text-sm rounded bg-blue-600 text-white font-semibold">Continuar</button>
                 </div>
                 <div id="auth-msg" class="mt-3 text-sm"></div>
@@ -90,12 +82,9 @@
                         <input id="settings-api-url" class="w-full border rounded px-3 py-2 text-base" placeholder="https://tu-backend" />
                         <button id="settings-save-api" class="mt-2 bg-stone-700 text-white px-4 py-2 rounded">Guardar URL</button>
                     </div>
-                    <div>
-                        <label class="block font-semibold text-stone-700">Clave de API</label>
-                        <input id="settings-api-key" type="password" class="w-full border rounded px-3 py-2 text-base" placeholder="••••••" />
-                        <label class="inline-flex items-center gap-2 mt-2"><input id="settings-remember-key" type="checkbox" class="scale-110" /> Recordar en este dispositivo</label>
-                        <button id="settings-save-key" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded">Guardar clave</button>
-                        <div id="settings-key-status" class="mt-2 text-sm text-stone-600"></div>
+                    <!-- Se eliminó edición de clave API: seguridad fija -->
+                    <div class="p-3 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-600">
+                        La clave de acceso está fijada y no se puede cambiar desde este panel.
                     </div>
                 </div>
             </div>
@@ -1905,37 +1894,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Settings bindings
         const settingsApiUrl = document.getElementById('settings-api-url');
         const settingsSaveApi = document.getElementById('settings-save-api');
-        const settingsApiKey = document.getElementById('settings-api-key');
-        const settingsRememberKey = document.getElementById('settings-remember-key');
-        const settingsSaveKey = document.getElementById('settings-save-key');
+    // Eliminados controles de clave API editable
         if(settingsApiUrl){ settingsApiUrl.value = localStorage.getItem('API_URL_OVERRIDE')||''; }
         settingsSaveApi?.addEventListener('click', ()=>{
             const v = (settingsApiUrl?.value||'').trim();
             if(v){ localStorage.setItem('API_URL_OVERRIDE', v); mostrarToast('URL API guardada'); }
             else { localStorage.removeItem('API_URL_OVERRIDE'); mostrarToast('URL API borrada'); }
         });
-        settingsSaveKey?.addEventListener('click', async ()=>{
-            const k = settingsApiKey?.value||'';
-            const remember = !!settingsRememberKey?.checked;
-            const statusEl = document.getElementById('settings-key-status');
-            if(statusEl) statusEl.textContent = '';
-            if(k){ sessionStorage.setItem('API_KEY', k); if(remember) localStorage.setItem('API_KEY_PERSIST', k); else localStorage.removeItem('API_KEY_PERSIST'); mostrarToast('Clave API guardada'); }
-            else { sessionStorage.removeItem('API_KEY'); localStorage.removeItem('API_KEY_PERSIST'); mostrarToast('Clave API borrada'); }
-
-            // Verificar clave: intentamos un GET /registros (protegido). Mostramos estado.
-            try{
-                const base = resolveApiBase();
-                const r = await fetch(base + '/registros?limit=1', { headers: apiHeaders(false) });
-                if(r.ok){
-                    if(statusEl){ statusEl.textContent = 'Clave verificada ✅'; statusEl.className = 'mt-2 text-sm text-emerald-700'; }
-                } else {
-                    const msg = r.status===401||r.status===403? 'Clave inválida ❌' : ('Error: HTTP '+r.status);
-                    if(statusEl){ statusEl.textContent = msg; statusEl.className = 'mt-2 text-sm text-red-600'; }
-                }
-            }catch(e){
-                if(statusEl){ statusEl.textContent = 'Error de red al verificar clave'; statusEl.className = 'mt-2 text-sm text-red-600'; }
-            }
-        });
+        // (La clave API ahora es fija y no editable)
         if (typeof createMachineCards === 'function') createMachineCards();
 
         // Listeners de pestañas seguros
@@ -2790,9 +2756,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return (override && override.trim()) || getDefaultApiBase();
     }
     // API auth helpers: read key from session/local and build headers
-    function getApiKey(){
-        return sessionStorage.getItem('API_KEY') || localStorage.getItem('API_KEY_PERSIST') || '';
-    }
+    const FIXED_API_KEY = 'pasantias';
+    function getApiKey(){ return FIXED_API_KEY; }
     function apiHeaders(withJson){
         const h = {};
         if(withJson) h['Content-Type'] = 'application/json';
@@ -2834,53 +2799,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${fecha}__${(maq?.nombre||maq?.id||'').trim()}__${tipo}__${p1Start}`;
     }
     // ========= Seguridad simple: clave local =========
-    const DEFAULT_PASS = 'pasantias';
+    const DEFAULT_PASS = 'pasantias'; // Clave fija para acceso y API
     async function sha256Hex(str){
         const enc = new TextEncoder(); const data = enc.encode(str);
         const hash = await crypto.subtle.digest('SHA-256', data);
         const bytes = Array.from(new Uint8Array(hash));
         return bytes.map(b=> b.toString(16).padStart(2,'0')).join('');
     }
-    function showAuthOverlay(setup=false){
-        const ov = document.getElementById('auth-overlay'); if(!ov) return;
-        const setupFields = document.getElementById('auth-setup-fields');
-        const loginFields = document.getElementById('auth-login-fields');
-        const title = document.getElementById('auth-title');
-        const sub = document.getElementById('auth-sub');
-        const btnMode = document.getElementById('auth-cambiar-modo');
-        if(setup){
-            setupFields.classList.remove('hidden');
-            loginFields.classList.add('hidden');
-            title.textContent='Configurar clave';
-            sub.textContent='Define una clave de acceso para este navegador.';
-            btnMode.textContent='Usar clave existente';
-        }else{
-            setupFields.classList.add('hidden');
-            loginFields.classList.remove('hidden');
-            title.textContent='Clave de acceso';
-            sub.textContent='Ingresa la clave para usar la app.';
-            btnMode.textContent='Configurar/Restablecer clave';
-        }
-        ov.classList.remove('hidden');
-    }
+    function showAuthOverlay(){ const ov=document.getElementById('auth-overlay'); if(ov) ov.classList.remove('hidden'); }
     function hideAuthOverlay(){ const ov=document.getElementById('auth-overlay'); if(ov) ov.classList.add('hidden'); }
     function isLocked(){ return localStorage.getItem('APP_LOCKED')==='1'; }
-    function lockApp(){ localStorage.setItem('APP_LOCKED','1'); sessionStorage.removeItem('APP_UNLOCKED'); sessionStorage.removeItem('API_KEY'); try{ updateAjustesVisibility(); }catch(_){ } showAuthOverlay(false); }
+    function lockApp(){ localStorage.setItem('APP_LOCKED','1'); sessionStorage.removeItem('APP_UNLOCKED'); try{ updateAjustesVisibility(); }catch(_){ } showAuthOverlay(); }
     async function tryLogin(pass){
         const saved = localStorage.getItem('APP_PASS_HASH');
         if(!saved) return false;
         const h = await sha256Hex(pass);
         return h===saved;
     }
-    async function setNewPass(pass){
-        const h = await sha256Hex(pass);
-        localStorage.setItem('APP_PASS_HASH', h);
-        localStorage.removeItem('APP_LOCKED');
-        sessionStorage.setItem('APP_UNLOCKED','1');
-        // Use the plain pass as API key for backend requests
-        sessionStorage.setItem('API_KEY', pass);
-        try{ updateAjustesVisibility(); }catch(_){ }
-    }
+    async function setNewPass(pass){ /* Deshabilitado: clave fija */ return; }
     function isRemembered(){ return localStorage.getItem('APP_REMEMBER')==='1'; }
     function markRemembered(on){ if(on) localStorage.setItem('APP_REMEMBER','1'); else localStorage.removeItem('APP_REMEMBER'); }
     function isUnlocked(){ return !isLocked() && (sessionStorage.getItem('APP_UNLOCKED')==='1' || isRemembered()); }
@@ -2894,14 +2830,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnLock = document.getElementById('btn-lock-app');
         btnLock?.addEventListener('click', ()=> lockApp());
         const ov = document.getElementById('auth-overlay'); if(!ov) return;
-        document.getElementById('auth-cambiar-modo')?.addEventListener('click', ()=>{
-            const setupShown = !document.getElementById('auth-setup-fields')?.classList.contains('hidden');
-            showAuthOverlay(!setupShown);
-        });
-        // Si no existe hash configurado, establecer el hash de la clave por defecto sin desbloquear
-        if(!localStorage.getItem('APP_PASS_HASH')){
-            try{ sha256Hex(DEFAULT_PASS).then(h=> localStorage.setItem('APP_PASS_HASH', h)); }catch(_){ }
-        }
+        // Forzar hash de clave fija
+        try{ sha256Hex(DEFAULT_PASS).then(h=> localStorage.setItem('APP_PASS_HASH', h)); }catch(_){ }
         // Cancel estricto: si está bloqueado, no permite cerrar el overlay
         document.getElementById('auth-cancel')?.addEventListener('click', ()=>{
             if(isLocked()){
@@ -2913,44 +2843,25 @@ document.addEventListener('DOMContentLoaded', () => {
             hideAuthOverlay();
         });
         document.getElementById('auth-submit')?.addEventListener('click', async ()=>{
-            const setupShown = !document.getElementById('auth-setup-fields')?.classList.contains('hidden');
             const msgEl = document.getElementById('auth-msg'); msgEl.textContent=''; msgEl.className='mt-3 text-sm';
-            try{
-                if(setupShown){
-                    const p1 = document.getElementById('auth-new-pass').value.trim();
-                    const p2 = document.getElementById('auth-new-pass2').value.trim();
-                    if(p1.length<4) throw new Error('Usa al menos 4 caracteres.');
-                    if(p1!==p2) throw new Error('Las claves no coinciden.');
-                    await setNewPass(p1);
-                    msgEl.textContent='Clave establecida.'; msgEl.classList.add('text-green-600');
-                    try{ updateAjustesVisibility(); }catch(_){ }
-                    hideAuthOverlay();
-                }else{
-                    const pass = document.getElementById('auth-pass').value;
-                    const ok = await tryLogin(pass);
-                    if(!ok) throw new Error('Clave incorrecta.');
-                    sessionStorage.setItem('APP_UNLOCKED','1');
-                    const remember = document.getElementById('auth-recordar').checked; markRemembered(remember);
-                    if(remember) localStorage.removeItem('APP_LOCKED');
-                    // Store API key in session; persist if remember is enabled
-                    sessionStorage.setItem('API_KEY', pass);
-                    if(remember) localStorage.setItem('API_KEY_PERSIST', pass); else localStorage.removeItem('API_KEY_PERSIST');
-                    try{ updateAjustesVisibility(); }catch(_){ }
-                    hideAuthOverlay();
-                }
-            }catch(e){ msgEl.textContent=e.message||String(e); msgEl.classList.add('text-red-600'); }
+            const pass = document.getElementById('auth-pass').value;
+            if(pass!==DEFAULT_PASS){ msgEl.textContent='Clave incorrecta.'; msgEl.classList.add('text-red-600'); return; }
+            sessionStorage.setItem('APP_UNLOCKED','1');
+            const remember = document.getElementById('auth-recordar').checked; markRemembered(remember);
+            if(remember) localStorage.removeItem('APP_LOCKED');
+            try{ updateAjustesVisibility(); }catch(_){ }
+            hideAuthOverlay();
         });
-        // primer uso: si no hay hash (se establecerá el por defecto), pedir inicio de sesión (no configuración)
-        if(!localStorage.getItem('APP_PASS_HASH')){ showAuthOverlay(false); }
+        showAuthOverlay();
     }
     function guardRoute(){
         const hasPass = !!localStorage.getItem('APP_PASS_HASH');
         const unlockedSession = sessionStorage.getItem('APP_UNLOCKED')==='1';
         const remembered = isRemembered();
         if(!hasPass){ return; } // sin clave, no bloquear
-        if(isLocked()) { showAuthOverlay(false); return; }
+        if(isLocked()) { showAuthOverlay(); return; }
         if(remembered){ hideAuthOverlay(); return; }
-        if(!unlockedSession){ showAuthOverlay(false); }
+        if(!unlockedSession){ showAuthOverlay(); }
     }
     function mergeLocalRemote(localRegs, remoteRegs){
         const sigSet = new Set();
