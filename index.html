@@ -142,6 +142,12 @@
                     <span id="tablas-status" class="text-xs text-stone-600"></span>
                 </div>
             <div class="mb-8 max-w-3xl mx-auto">
+                <!-- NUEVO: Lista de fechas registradas -->
+                <div class="mb-10" id="tablas-fechas-wrapper">
+                    <h3 class="text-xl font-bold mb-3 text-stone-800 flex items-center gap-2">Fechas registradas <span id="tablas-fechas-total" class="text-sm font-normal text-stone-500"></span></h3>
+                    <div id="tablas-fechas-list" class="flex flex-wrap gap-2"></div>
+                    <div id="tablas-fechas-detalle" class="mt-4 hidden"></div>
+                </div>
                 <details open class="bg-white border border-stone-300 rounded-xl p-4 shadow-sm">
                     <summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg">Mapeo de gráficas y propósito analítico</summary>
                     <div class="mt-3 text-sm space-y-3 text-stone-700">
@@ -2057,6 +2063,46 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         _TABLAS_DATA_LAST = datos;
+        // Construir lista de fechas (si existe contenedor)
+        try{
+            const fechasList = document.getElementById('tablas-fechas-list');
+            const fechasDetalle = document.getElementById('tablas-fechas-detalle');
+            const fechasTotal = document.getElementById('tablas-fechas-total');
+            if(fechasList){
+                const mapa={};
+                datos.forEach(r=>{ if(r.fecha){ mapa[r.fecha] = (mapa[r.fecha]||0) + (r.maquinas? r.maquinas.length:0); } });
+                const fechas = Object.keys(mapa).sort();
+                fechasList.innerHTML = fechas.map(f=>`<button data-fecha="${f}" class="px-3 py-1 text-xs rounded-full border border-stone-300 bg-white hover:bg-blue-50 hover:border-blue-400 transition flex items-center gap-1">${f}<span class='inline-block text-[10px] px-1 rounded bg-stone-200 text-stone-700'>${mapa[f]}</span></button>`).join('');
+                if(fechasTotal) fechasTotal.textContent = `(${fechas.length})`;
+                fechasList.querySelectorAll('button[data-fecha]').forEach(btn=>{
+                    btn.addEventListener('click', ()=>{
+                        const f = btn.getAttribute('data-fecha');
+                        localStorage.setItem('TABLAS_FECHA_MODO','dia');
+                        localStorage.setItem('TABLAS_BD_DIA', f);
+                        const modoSelEl=document.getElementById('tablas-fecha-modo'); if(modoSelEl) modoSelEl.value='dia';
+                        const diaInputEl=document.getElementById('tablas-dia'); if(diaInputEl) diaInputEl.value=f;
+                        buildTablasVista();
+                    });
+                });
+                if(fechasDetalle){
+                    const modoActual = localStorage.getItem('TABLAS_FECHA_MODO')||'rango';
+                    const fechaDia = localStorage.getItem('TABLAS_BD_DIA')||'';
+                    if(modoActual==='dia' && fechaDia){
+                        const registrosDia = datos.filter(r=> r.fecha===fechaDia);
+                        const totalMaq = registrosDia.reduce((a,r)=> a + (r.maquinas? r.maquinas.length:0), 0);
+                        const tipos={}; registrosDia.forEach(r=> (r.maquinas||[]).forEach(m=>{ const t=m.tipoMasa||m.tipoPan||'Sin tipo'; tipos[t]=(tipos[t]||0)+1; }));
+                        fechasDetalle.classList.remove('hidden');
+                        fechasDetalle.innerHTML = `<div class='p-3 border border-blue-200 bg-blue-50 rounded-lg text-xs'><div class='font-semibold mb-1'>Detalle ${fechaDia}</div><div>Total registros: <strong>${registrosDia.length}</strong> · Total máquinas: <strong>${totalMaq}</strong></div><div class='mt-1 flex flex-wrap gap-2'>${Object.keys(tipos).map(t=>`<span class='px-2 py-0.5 rounded bg-white border border-stone-300'>${t}: ${tipos[t]}</span>`).join('')||'<em>Sin tipos</em>'}</div><button id='tablas-fechas-volver' class='mt-2 text-[11px] underline text-blue-700'>Ver todas las fechas</button></div>`;
+                        fechasDetalle.querySelector('#tablas-fechas-volver')?.addEventListener('click', ()=>{
+                            localStorage.setItem('TABLAS_FECHA_MODO','rango');
+                            localStorage.removeItem('TABLAS_BD_DIA');
+                            const modoSelEl2=document.getElementById('tablas-fecha-modo'); if(modoSelEl2) modoSelEl2.value='rango';
+                            buildTablasVista();
+                        });
+                    } else { fechasDetalle.classList.add('hidden'); fechasDetalle.innerHTML=''; }
+                }
+            }
+        }catch(_){ }
         if(!datos.length){
             ['tabla-resumen','tabla-pan','tabla-amasadora','tabla-proceso','tabla-temp','tabla-temp-cruzada','tabla-personal-dia','tabla-ta-h-dia'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML='<div class="text-stone-500">Sin datos</div>';});
             return;
