@@ -2067,8 +2067,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
         }
-        _TABLAS_DATA_LAST = datos;
-        // Construir lista de fechas (si existe contenedor)
+    // Aplicar filtro día si está activado (para que tablas y gráficas reflejen la selección de la lista de fechas)
+    const _modoFechaSel = localStorage.getItem('TABLAS_FECHA_MODO');
+    const _diaSel = localStorage.getItem('TABLAS_BD_DIA');
+    let datosParaMostrar = datos;
+    if(_modoFechaSel==='dia' && _diaSel){ datosParaMostrar = datos.filter(r=> r.fecha === _diaSel); }
+    _TABLAS_DATA_LAST = datosParaMostrar;
+    // Construir lista de fechas (si existe contenedor)
         try{
             const fechasList = document.getElementById('tablas-fechas-list');
             const fechasDetalle = document.getElementById('tablas-fechas-detalle');
@@ -2108,7 +2113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }catch(_){ }
-        if(!datos.length){
+        if(!_TABLAS_DATA_LAST.length){
             ['tabla-resumen','tabla-pan','tabla-amasadora','tabla-proceso','tabla-temp','tabla-temp-cruzada','tabla-personal-dia','tabla-ta-h-dia'].forEach(id=>{const el=document.getElementById(id); if(el) el.innerHTML='<div class="text-stone-500">Sin datos</div>';});
             return;
         }
@@ -2116,7 +2121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const procesosNombres=['Esponja','Masa','Mantequilla'];
         let totalGenerales=[]; let procesoStats=[[],[],[]];
     let masaStats={}, amasadoraStats={}, tempMasaStats={}, tempCrossRaw=[];
-        datos.forEach(reg=>{
+    _TABLAS_DATA_LAST.forEach(reg=>{
             (reg.maquinas||[]).forEach(maq=>{
                 // total máquina (primer start a último end)
                 const p1=maq.proceso1, p3=maq.proceso3;
