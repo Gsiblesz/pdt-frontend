@@ -591,8 +591,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateTimerDisplay(timerId) {
         const realTimeEl = document.getElementById(`real-${timerId}`);
         if (timers[timerId] && timers[timerId].interval) {
-            const elapsed = Math.floor((Date.now() - timers[timerId].startTime) / 1000);
-            realTimeEl.textContent = formatTime(elapsed);
+            const elapsedCurrent = Math.floor((Date.now() - timers[timerId].startTime) / 1000);
+            const baseElapsed = timers[timerId].baseElapsed || 0;
+            realTimeEl.textContent = formatTime(baseElapsed + elapsedCurrent);
         }
     }
 
@@ -601,16 +602,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         clearInterval(timers[timerId].interval);
 
-        const endTime = Date.now();
-        const startTime = timers[timerId].startTime;
-        const realTimeSeconds = Math.floor((endTime - startTime) / 1000);
+    const endTime = Date.now();
+    const startTimeRun = timers[timerId].startTime;
+    const runSeconds = Math.floor((endTime - startTimeRun) / 1000);
+    const baseElapsed = timers[timerId].baseElapsed || 0;
+    const realTimeSeconds = baseElapsed + runSeconds;
 
         const startEl = document.getElementById(`start-${timerId}`);
         const endEl = document.getElementById(`end-${timerId}`);
         const realEl = document.getElementById(`real-${timerId}`);
 
         endEl.textContent = new Date(endTime).toLocaleTimeString();
-        realEl.textContent = formatTime(realTimeSeconds);
+    realEl.textContent = formatTime(realTimeSeconds);
 
         const [machineId, processId] = timerId.replace('m', '').replace('p', '').split('-');
 
@@ -620,7 +623,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 machineTotals[machineId] = 0;
             }
             machineTotals[machineId] = machineTotals[machineId] - prevTime + realTimeSeconds;
-            completedProcessTimes[timerId] = { time: realTimeSeconds, startTime: startTime, endTime: endTime };
+            const firstStart = completedProcessTimes[timerId]?.firstStartTime || startTimeRun;
+            completedProcessTimes[timerId] = { time: realTimeSeconds, startTime: firstStart, firstStartTime: firstStart, endTime: endTime };
             // Actualizar solo el total de la máquina en el DOM (solo suma los tiempos detenidos)
             let totalTime = 0;
             for (let i = 1; i <= 3; i++) {
@@ -670,13 +674,28 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (timers[timerId] && timers[timerId].interval) return;
+            const prev = completedProcessTimes[timerId];
+            const now = Date.now();
+            const baseElapsed = prev && typeof prev.time === 'number' ? prev.time : 0;
             timers[timerId] = {
-                startTime: Date.now(),
+                startTime: now,
+                baseElapsed,
                 interval: setInterval(() => updateTimerDisplay(timerId), 1000)
             };
-            document.getElementById(`start-${timerId}`).textContent = new Date(timers[timerId].startTime).toLocaleTimeString();
+            if(!prev || !prev.firstStartTime){
+                completedProcessTimes[timerId] = { ...(prev||{}), firstStartTime: now, startTime: now, endTime: null, time: baseElapsed };
+            }
+            const startEl = document.getElementById(`start-${timerId}`);
+            if(startEl){
+                if(prev && prev.firstStartTime){
+                    startEl.textContent = new Date(prev.firstStartTime).toLocaleTimeString();
+                } else {
+                    startEl.textContent = new Date(now).toLocaleTimeString();
+                }
+            }
             document.getElementById(`end-${timerId}`).textContent = '--:--:--';
-            document.getElementById(`real-${timerId}`).textContent = '00:00:00';
+            const realEl = document.getElementById(`real-${timerId}`);
+            if(realEl) realEl.textContent = formatTime(baseElapsed);
             document.querySelector(`button[data-action="start"][data-timer-id="${timerId}"]`).disabled = true;
             document.querySelector(`button[data-action="stop"][data-timer-id="${timerId}"]`).disabled = false;
         } else if (action === 'stop') {
@@ -686,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearInterval(timers[timerId].interval);
                 delete timers[timerId];
             }
-            completedProcessTimes[timerId] = { time: 0, startTime: null, endTime: null };
+            completedProcessTimes[timerId] = { time: 0, startTime: null, firstStartTime: null, endTime: null };
             document.getElementById(`start-${timerId}`).textContent = '--:--:--';
             document.getElementById(`end-${timerId}`).textContent = '--:--:--';
             document.getElementById(`real-${timerId}`).textContent = '00:00:00';
@@ -775,13 +794,15 @@ document.addEventListener('DOMContentLoaded', () => {
             let tiempo = 0, startTime = null, endTime = null;
             const tRun = timers[timerId];
             if (tRun && tRun.startTime) {
-                startTime = tRun.startTime;
-                tiempo = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
+                startTime = completedProcessTimes[timerId]?.firstStartTime || tRun.startTime;
+                const base = tRun.baseElapsed || 0;
+                const current = Math.max(0, Math.floor((Date.now() - tRun.startTime) / 1000));
+                tiempo = base + current;
                 endTime = null; // aún en curso
             } else {
                 const comp = completedProcessTimes[timerId] || { time: 0, startTime: null, endTime: null };
                 tiempo = comp.time || 0;
-                startTime = comp.startTime || null;
+                startTime = comp.firstStartTime || comp.startTime || null;
                 endTime = comp.endTime || null;
             }
             const minutos = Math.floor((tiempo||0) / 60);
