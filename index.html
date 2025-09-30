@@ -157,10 +157,11 @@
                         <ul class="list-disc ml-5 space-y-1">
                             <li><span class="font-medium">Punto de partida (1)</span>: Resumen de tiempos.</li>
                             <li><span class="font-medium">Benchmark entre recetas (2 y 5)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo.</li>
-                            <li><span class="font-medium">Detecta dónde optimizar (3, 4 y 9)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos.</li>
-                            <li><span class="font-medium">Control de consistencia (5, 6 y 8)</span>: Temperatura de masa (general), Temp. masa (Amasadora vs Tipo), Distribución por tipo (boxplot).</li>
+                            <li><span class="font-medium">Detecta dónde optimizar (3, 4, 9 y 13)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos, OEE.</li>
+                            <li><span class="font-medium">Control de consistencia (5, 6, 8, 14 y 15)</span>: Temp. masa (general), Temp. cruzada, Boxplot tiempos, Control chart tiempo, Control chart % muerto.</li>
                             <li><span class="font-medium">Contexto y factores (7 y 11)</span>: TA y Humedad por día, Personal por día (mín–máx).</li>
                             <li><span class="font-medium">Hipótesis de proceso (10)</span>: Relación temperatura de masa vs tiempo total (scatter).</li>
+                            <li><span class="font-medium">Tendencia agregada (12)</span>: Sparkline semanal (OEE / tiempos / % muerto).</li>
                         </ul>
                         <p class="text-xs text-stone-500">Los números refieren al orden visual de las secciones inferiores.</p>
                     </div>
@@ -234,6 +235,23 @@
                     <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">OEE global (aprox)</h3>
                     <p class="chart-desc">Indicador simplificado: (Tiempo productivo / Tiempo total real). No incluye factor de calidad. Sirve para comparar eficiencia día a día.</p>
                     <div id="oee-indicador" class="text-sm mb-4"></div>
+                    <div id="sparkline-semanal-wrapper" class="text-xs text-stone-600">
+                        <div class="font-semibold text-stone-700 mb-1">Tendencia semanal</div>
+                        <div class="flex flex-wrap gap-6 items-end">
+                            <div>
+                                <div class="text-[10px] uppercase tracking-wide text-stone-500 mb-0.5">OEE%</div>
+                                <div id="spark-oee" class="spark-mini"></div>
+                            </div>
+                            <div>
+                                <div class="text-[10px] uppercase tracking-wide text-stone-500 mb-0.5">Tiempo prom (s)</div>
+                                <div id="spark-tiempo" class="spark-mini"></div>
+                            </div>
+                            <div>
+                                <div class="text-[10px] uppercase tracking-wide text-stone-500 mb-0.5">% Muerto</div>
+                                <div id="spark-muerto" class="spark-mini"></div>
+                            </div>
+                        </div>
+                    </div>
                 </section>
                 <section>
                     <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Control de tiempo total (Control Chart) <span class="info-hint text-blue-600 cursor-help align-middle" title="Promedio y límites ±3σ sobre el tiempo total real por máquina (orden cronológico).">ℹ️</span></h3>
@@ -246,6 +264,11 @@
                     <p class="chart-desc">Mide estabilidad del % de inactividad. Un % muerto que se dispara puede indicar cuellos, esperas de material o coordinación.</p>
                     <canvas id="chart-ctrl-muerto" height="150" class="mb-2"></canvas>
                     <div id="chart-ctrl-muerto-info" class="text-xs text-stone-600"></div>
+                </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Eventos fuera de control</h3>
+                    <p class="chart-desc">Lista de señales detectadas (reglas básicas: fuera de límites, run ≥7, tendencia ≥6). Ayuda a priorizar investigación.</p>
+                    <div id="tabla-eventos-control" class="overflow-x-auto text-xs"></div>
                 </section>
             </div>
         </div>
@@ -2253,6 +2276,16 @@ document.addEventListener('DOMContentLoaded', () => {
             function stats(arr){ if(!arr.length) return null; const mean=arr.reduce((a,b)=>a+b,0)/arr.length; const variance=arr.reduce((a,b)=>a+(b-mean)**2,0)/arr.length; const sd=Math.sqrt(variance); return {mean, sd, ucl:mean+3*sd, lcl:Math.max(0, mean-3*sd)}; }
             const stTiempo = stats(puntosTiempo);
             const stMuerto = stats(puntosPctMuerto);
+            const eventos=[]; // {tipo, indice, etiqueta, valor}
+            function detectarEventos(arr, st, etiquetaBuilder, isPct){
+                if(!st || arr.length<2) return;
+                // 1. Fuera de límites
+                arr.forEach((v,i)=>{ if(v>st.ucl || v<st.lcl){ eventos.push({tipo:'Fuera de límites', indice:i, etiqueta:etiquetaBuilder(i), valor: isPct? v.toFixed(2)+'%': v+'s'}); } });
+                // 2. Run >=7 del mismo lado de la media
+                let runSide=null, runLen=0; arr.forEach((v,i)=>{ const side = v>=st.mean?'up':'down'; if(side===runSide){ runLen++; } else { runSide=side; runLen=1; } if(runLen===7){ eventos.push({tipo:'Run 7 mismo lado', indice:i, etiqueta:etiquetaBuilder(i)+' (último)', valor: isPct? v.toFixed(2)+'%': v+'s'}); } });
+                // 3. Tendencia (strict monotonic) >=6
+                let trendLen=1; for(let i=1;i<arr.length;i++){ if(arr[i]>arr[i-1]){ if(trendLen>0) trendLen++; else trendLen=2; } else if(arr[i]<arr[i-1]){ if(trendLen<0) trendLen--; else trendLen=-2; } else { trendLen=1; } if(Math.abs(trendLen)===6){ eventos.push({tipo:'Tendencia 6 '+(trendLen>0?'asc':'desc'), indice:i, etiqueta:etiquetaBuilder(i)+' (último)', valor: isPct? arr[i].toFixed(2)+'%': arr[i]+'s'}); } }
+            }
             if(canvasTiempo && puntosTiempo.length){
                 const ds=[{label:'Tiempo total (s)', data:puntosTiempo, borderColor:'#2563eb', backgroundColor:'#2563eb', tension:0.15, pointRadius:4, fill:false}];
                 if(stTiempo && puntosTiempo.length>=5){
@@ -2260,6 +2293,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ds.push({label:'CL', data:baseIdx.map(()=> stTiempo.mean), borderColor:'#16a34a', borderWidth:1.2, pointRadius:0});
                     ds.push({label:'UCL', data:baseIdx.map(()=> stTiempo.ucl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
                     ds.push({label:'LCL', data:baseIdx.map(()=> stTiempo.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
+                    detectarEventos(puntosTiempo, stTiempo, (i)=>labels[i], false);
                 }
                 mkChart(canvasTiempo,'line',{labels, datasets:ds},{responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}}});
                 const info=document.getElementById('chart-ctrl-tiempo-info'); if(info && stTiempo){ info.textContent = `CL=${stTiempo.mean.toFixed(1)}s · σ=${stTiempo.sd.toFixed(1)}s · UCL=${stTiempo.ucl.toFixed(1)}s · LCL=${stTiempo.lcl.toFixed(1)}s`; }
@@ -2271,10 +2305,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     ds2.push({label:'CL', data:baseIdx.map(()=> stMuerto.mean), borderColor:'#16a34a', borderWidth:1.2, pointRadius:0});
                     ds2.push({label:'UCL', data:baseIdx.map(()=> stMuerto.ucl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
                     ds2.push({label:'LCL', data:baseIdx.map(()=> stMuerto.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
+                    detectarEventos(puntosPctMuerto, stMuerto, (i)=>labels[i], true);
                 }
                 mkChart(canvasMuerto,'line',{labels, datasets:ds2},{responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true, title:{display:true,text:'%'}}}});
                 const info2=document.getElementById('chart-ctrl-muerto-info'); if(info2 && stMuerto){ info2.textContent = `CL=${stMuerto.mean.toFixed(2)}% · σ=${stMuerto.sd.toFixed(2)}% · UCL=${stMuerto.ucl.toFixed(2)}% · LCL=${stMuerto.lcl.toFixed(2)}%`; }
             }
+            // Render tabla de eventos
+            (function(){
+                const cont = document.getElementById('tabla-eventos-control'); if(!cont) return;
+                if(!eventos.length){ cont.innerHTML='<div class="text-stone-500">Sin señales detectadas.</div>'; return; }
+                const rows = eventos.map(ev=> `<tr><td class='px-2 py-1 border-b border-stone-200'>${ev.tipo}</td><td class='px-2 py-1 border-b border-stone-200 font-mono text-xs'>${ev.etiqueta}</td><td class='px-2 py-1 border-b border-stone-200 text-right'>${ev.valor}</td></tr>`).join('');
+                cont.innerHTML = `<table class='min-w-[420px] text-[11px] border border-stone-300 bg-white rounded'><thead class='bg-stone-100 text-stone-700'><tr><th class='px-2 py-1 text-left'>Tipo</th><th class='px-2 py-1 text-left'>Etiqueta</th><th class='px-2 py-1 text-right'>Valor</th></tr></thead><tbody>${rows}</tbody></table>`;
+            })();
+            // Sparkline semanal (OEE, tiempo promedio, % muerto)
+            (function(){
+                const wrap = document.getElementById('sparkline-semanal-wrapper'); if(!wrap) return;
+                // Construir agregados por semana ISO
+                function weekKey(fecha){ if(!fecha) return ''; const [Y,M,D]=fecha.split('-').map(Number); const d=new Date(Date.UTC(Y,M-1,D)); const dow=d.getUTCDay()||7; d.setUTCDate(d.getUTCDate()+4-dow); const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1)); const week=Math.ceil((((d - yearStart)/86400000)+1)/7); return d.getUTCFullYear()+'-W'+String(week).padStart(2,'0'); }
+                const weeks={};
+                _TABLAS_DATA_LAST.forEach(reg=>{
+                    const wk = weekKey(reg.fecha); if(!wk) return; (reg.maquinas||[]).forEach(maq=>{
+                        const p1=maq.proceso1, p3=maq.proceso3; if(!(p1&&p1.startTime&&p3&&p3.endTime)) return;
+                        const real=Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000));
+                        let proc=0; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ proc += (parseInt(p.minutos)||0)*60+(parseInt(p.segundos)||0); } }
+                        const muerto=Math.max(0, real-proc);
+                        const bucket = weeks[wk] = weeks[wk] || { real:0, prod:0, muerto:0, n:0 };
+                        bucket.real += real; bucket.prod += proc; bucket.muerto += muerto; bucket.n += 1;
+                    });
+                });
+                const list = Object.keys(weeks).sort();
+                // Limitar a últimas 10 semanas
+                const ordered = list.slice(-10).map(k=> ({ semana:k, promReal: weeks[k].real/weeks[k].n, oee: weeks[k].prod/weeks[k].real, pctMuerto: weeks[k].muerto/weeks[k].real*100 }));
+                function renderSpark(arr, key, elId, suffix){ const el=document.getElementById(elId); if(!el){ return; } if(!arr.length){ el.textContent='(sin datos)'; return; } if(arr.length===1){ el.textContent = arr[0][key].toFixed(1)+suffix+' (≥2 sem para tendencia)'; return; } const w=90,h=30,p=3; const vals=arr.map(o=> o[key]); const min=Math.min(...vals), max=Math.max(...vals); const scale=v=> h-p - ((v-min)*(h-2*p)/(max-min||1)); const step=(w-2*p)/(vals.length-1); const pts=vals.map((v,i)=> (p+i*step)+','+scale(v)).join(' '); const last=vals[vals.length-1]; el.innerHTML = `<svg width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'><polyline points='${pts}' fill='none' stroke='#2563eb' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/><circle cx='${p+(vals.length-1)*step}' cy='${scale(last)}' r='3' fill='#dc2626'/></svg><div class='mt-0.5 text-[10px] text-stone-500'>Últ ${last.toFixed(1)}${suffix} (min ${min.toFixed(1)}, máx ${max.toFixed(1)})</div>`; }
+                renderSpark(ordered,'oee','spark-oee','%');
+                renderSpark(ordered,'promReal','spark-tiempo','s');
+                renderSpark(ordered,'pctMuerto','spark-muerto','%');
+            })();
         })();
         // Pan table
     const panHeaders=['Tipo masa','N','Prom (s)','Desv (s)','%Desv'];
