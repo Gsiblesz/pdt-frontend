@@ -2289,7 +2289,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })();
             // Control Charts (tiempo total y % muerto)
             (function(){
-                try {
+                // (Removido try/catch previo que causaba errores de sintaxis)
             const canvasTiempo = document.getElementById('chart-ctrl-tiempo');
             const canvasMuerto = document.getElementById('chart-ctrl-muerto');
             if(!canvasTiempo && !canvasMuerto) return;
@@ -2521,10 +2521,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const blob = new Blob([csvLines.join('\n')], {type:'text/csv;charset=utf-8;'});
                         const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='eventos_spc.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
                     };
-                }
-                } catch(err){
-                    console.error('Error construyendo control charts/SPC', err);
-                }
+                } // fin if btnExp
+                // Fin bloque SPC
             })();
             // Tabla detalle de puntos (fecha, amasadora, lote)
             (function(){
