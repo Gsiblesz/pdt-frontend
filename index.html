@@ -275,6 +275,7 @@
                             <button id="btn-export-eventos-spc" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded shadow-sm">Exportar (CSV)</button>
                         </div>
                     </div>
+                    <div id="spc-filtros" class="flex flex-wrap gap-2 mt-2 text-[11px]"></div>
                     <div id="tabla-eventos-control" class="overflow-x-auto text-xs mt-1"></div>
                 </section>
                 <section>
@@ -2318,6 +2319,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
+            // Preparar estructura de eventos agrupados por índice y métrica para tooltip compuesto
+            const eventosPorMetrica = { 'Tiempo total': {}, '% Muerto': {} };
+            eventos.forEach(ev=>{ const bucket=eventosPorMetrica[ev.metrica]; if(bucket){ (bucket[ev.indice]=bucket[ev.indice]||[]).push(ev); } });
             if(canvasTiempo && puntosTiempo.length){
                 const ds=[{label:'Tiempo total (s)', data:puntosTiempo, borderColor:'#2563eb', backgroundColor:'#2563eb', tension:0.15, pointRadius:4, fill:false}];
                 if(stTiempo && puntosTiempo.length>=5){
@@ -2337,7 +2341,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ds[0].pointRadius = (ctx)=> eventoTiposTiempo[ctx.dataIndex] ? 6 : 4;
                     ds[0].pointStyle = (ctx)=> eventoTiposTiempo[ctx.dataIndex] ? 'triangle' : 'circle';
                 }
-                const optTiempo = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const evs=eventoTiposTiempo[idx]; return evs? ['Eventos:', ...evs]: undefined; }}}}, scales:{y:{beginAtZero:true}}};
+                const optTiempo = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label(ctx){ return `Valor: ${ctx.parsed.y}s`; }, afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const detalle = `Idx ${idx}`; const fila = detalleFilas[idx]; const metaLinea = fila? [`Fecha: ${fila.fecha}`, `Amas: M${fila.amasadora}`, `Lote: ${fila.lote||''}`] : []; const evs = (eventosPorMetrica['Tiempo total'][idx]||[]).map(e=>'• '+e.tipo); return [...metaLinea, ...(evs.length?['Eventos:'].concat(evs):[])]; }}}}, scales:{y:{beginAtZero:true}}};
                 mkChart(canvasTiempo,'line',{labels, datasets:ds}, optTiempo);
                 const info=document.getElementById('chart-ctrl-tiempo-info'); if(info && stTiempo){ info.textContent = `CL=${stTiempo.mean.toFixed(1)}s · σ=${stTiempo.sd.toFixed(1)}s · UCL=${stTiempo.ucl.toFixed(1)}s · LCL=${stTiempo.lcl.toFixed(1)}s`; if(Object.keys(eventoTiposTiempo).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info.appendChild(note);} }
             }
@@ -2359,16 +2363,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     ds2[0].pointRadius = (ctx)=> eventoTiposMuerto[ctx.dataIndex] ? 6 : 4;
                     ds2[0].pointStyle = (ctx)=> eventoTiposMuerto[ctx.dataIndex] ? 'triangle' : 'circle';
                 }
-                const optMuerto = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const evs=eventoTiposMuerto[idx]; return evs? ['Eventos:', ...evs]: undefined; }}}}, scales:{y:{beginAtZero:true, title:{display:true,text:'%'}}}};
+                const optMuerto = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label(ctx){ return `%: ${ctx.parsed.y.toFixed(2)}%`; }, afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const fila = detalleFilas[idx]; const metaLinea = fila? [`Fecha: ${fila.fecha}`, `Amas: M${fila.amasadora}`, `Lote: ${fila.lote||''}`] : []; const evs = (eventosPorMetrica['% Muerto'][idx]||[]).map(e=>'• '+e.tipo); return [...metaLinea, ...(evs.length?['Eventos:'].concat(evs):[])]; }}}}, scales:{y:{beginAtZero:true, title:{display:true,text:'%'}}}};
                 mkChart(canvasMuerto,'line',{labels, datasets:ds2}, optMuerto);
                 const info2=document.getElementById('chart-ctrl-muerto-info'); if(info2 && stMuerto){ info2.textContent = `CL=${stMuerto.mean.toFixed(2)}% · σ=${stMuerto.sd.toFixed(2)}% · UCL=${stMuerto.ucl.toFixed(2)}% · LCL=${stMuerto.lcl.toFixed(2)}%`; if(Object.keys(eventoTiposMuerto).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info2.appendChild(note);} }
             }
-            // Render tabla de eventos
+            // Render filtros + tabla de eventos con filtrado dinámico
             (function(){
                 const cont = document.getElementById('tabla-eventos-control'); if(!cont) return;
-                if(!eventos.length){ cont.innerHTML='<div class="text-stone-500">Sin señales detectadas.</div>'; return; }
-                const rows = eventos.map(ev=> `<tr><td class='px-2 py-1 border-b border-stone-200 whitespace-nowrap'>${ev.tipo}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.metrica}</td><td class='px-2 py-1 border-b border-stone-200 font-mono text-xs'>${ev.etiqueta}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.lote||''}</td><td class='px-2 py-1 border-b border-stone-200 text-right'>${ev.valor}</td></tr>`).join('');
-                cont.innerHTML = `<table class='min-w-[600px] text-[11px] border border-stone-300 bg-white rounded'><thead class='bg-stone-100 text-stone-700'><tr><th class='px-2 py-1 text-left'>Tipo</th><th class='px-2 py-1 text-left'>Métrica</th><th class='px-2 py-1 text-left'>Etiqueta</th><th class='px-2 py-1 text-left'>Lote</th><th class='px-2 py-1 text-right'>Valor</th></tr></thead><tbody>${rows}</tbody></table>`;
+                const filtrosWrap = document.getElementById('spc-filtros');
+                const tiposUnicos = Array.from(new Set(eventos.map(e=>e.tipo))).sort();
+                const estado = {}; tiposUnicos.forEach(t=> estado[t]=true);
+                function renderFiltros(){ if(!filtrosWrap) return; filtrosWrap.innerHTML = tiposUnicos.map(t=> `<label class='inline-flex items-center gap-1 bg-stone-100 px-2 py-1 rounded border border-stone-300'> <input type='checkbox' data-tipo='${t}' checked class='spc-filter accent-indigo-600 scale-90'/> <span>${t}</span></label>`).join(''); filtrosWrap.querySelectorAll('input.spc-filter').forEach(inp=>{ inp.addEventListener('change',()=>{ estado[inp.getAttribute('data-tipo')] = inp.checked; renderTabla(); }); }); }
+                function renderTabla(){ if(!eventos.length){ cont.innerHTML='<div class="text-stone-500">Sin señales detectadas.</div>'; return; } const filtrados = eventos.filter(e=> estado[e.tipo]); if(!filtrados.length){ cont.innerHTML='<div class="text-stone-500">(Todos los tipos filtrados)</div>'; return; } const rows = filtrados.map(ev=> `<tr><td class='px-2 py-1 border-b border-stone-200 whitespace-nowrap'>${ev.tipo}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.metrica}</td><td class='px-2 py-1 border-b border-stone-200 font-mono text-xs'>${ev.etiqueta}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.lote||''}</td><td class='px-2 py-1 border-b border-stone-200 text-right'>${ev.valor}</td></tr>`).join(''); cont.innerHTML = `<table class='min-w-[640px] text-[11px] border border-stone-300 bg-white rounded'><thead class='bg-stone-100 text-stone-700'><tr><th class='px-2 py-1 text-left'>Tipo</th><th class='px-2 py-1 text-left'>Métrica</th><th class='px-2 py-1 text-left'>Etiqueta</th><th class='px-2 py-1 text-left'>Lote</th><th class='px-2 py-1 text-right'>Valor</th></tr></thead><tbody>${rows}</tbody></table>`; }
+                renderFiltros();
+                renderTabla();
                 // Export CSV button
                 const btnExp = document.getElementById('btn-export-eventos-spc');
                 if(btnExp){
