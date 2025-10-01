@@ -2295,8 +2295,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     ds.push({label:'LCL', data:baseIdx.map(()=> stTiempo.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
                     detectarEventos(puntosTiempo, stTiempo, (i)=>labels[i], false, 'Tiempo total');
                 }
-                mkChart(canvasTiempo,'line',{labels, datasets:ds},{responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}}});
-                const info=document.getElementById('chart-ctrl-tiempo-info'); if(info && stTiempo){ info.textContent = `CL=${stTiempo.mean.toFixed(1)}s · σ=${stTiempo.sd.toFixed(1)}s · UCL=${stTiempo.ucl.toFixed(1)}s · LCL=${stTiempo.lcl.toFixed(1)}s`; }
+                // Enriquecer puntos con eventos
+                const eventoTiposTiempo={};
+                eventos.filter(e=>e.metrica==='Tiempo total').forEach(e=>{ (eventoTiposTiempo[e.indice] = eventoTiposTiempo[e.indice]||[]).push(e.tipo); });
+                if(Object.keys(eventoTiposTiempo).length){
+                    const baseColor='#2563eb';
+                    ds[0].pointBackgroundColor = (ctx)=> eventoTiposTiempo[ctx.dataIndex] ? '#dc2626' : baseColor;
+                    ds[0].pointBorderColor = (ctx)=> eventoTiposTiempo[ctx.dataIndex] ? '#dc2626' : baseColor;
+                    ds[0].pointRadius = (ctx)=> eventoTiposTiempo[ctx.dataIndex] ? 6 : 4;
+                    ds[0].pointStyle = (ctx)=> eventoTiposTiempo[ctx.dataIndex] ? 'triangle' : 'circle';
+                }
+                const optTiempo = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const evs=eventoTiposTiempo[idx]; return evs? ['Eventos:', ...evs]: undefined; }}}}, scales:{y:{beginAtZero:true}}};
+                mkChart(canvasTiempo,'line',{labels, datasets:ds}, optTiempo);
+                const info=document.getElementById('chart-ctrl-tiempo-info'); if(info && stTiempo){ info.textContent = `CL=${stTiempo.mean.toFixed(1)}s · σ=${stTiempo.sd.toFixed(1)}s · UCL=${stTiempo.ucl.toFixed(1)}s · LCL=${stTiempo.lcl.toFixed(1)}s`; if(Object.keys(eventoTiposTiempo).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info.appendChild(note);} }
             }
             if(canvasMuerto && puntosPctMuerto.length){
                 const ds2=[{label:'% Muerto', data:puntosPctMuerto, borderColor:'#f59e0b', backgroundColor:'#f59e0b', tension:0.15, pointRadius:4, fill:false}];
@@ -2307,8 +2318,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     ds2.push({label:'LCL', data:baseIdx.map(()=> stMuerto.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
                     detectarEventos(puntosPctMuerto, stMuerto, (i)=>labels[i], true, '% Muerto');
                 }
-                mkChart(canvasMuerto,'line',{labels, datasets:ds2},{responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true, title:{display:true,text:'%'}}}});
-                const info2=document.getElementById('chart-ctrl-muerto-info'); if(info2 && stMuerto){ info2.textContent = `CL=${stMuerto.mean.toFixed(2)}% · σ=${stMuerto.sd.toFixed(2)}% · UCL=${stMuerto.ucl.toFixed(2)}% · LCL=${stMuerto.lcl.toFixed(2)}%`; }
+                const eventoTiposMuerto={};
+                eventos.filter(e=>e.metrica==='% Muerto').forEach(e=>{ (eventoTiposMuerto[e.indice] = eventoTiposMuerto[e.indice]||[]).push(e.tipo); });
+                if(Object.keys(eventoTiposMuerto).length){
+                    const baseColor='#f59e0b';
+                    ds2[0].pointBackgroundColor = (ctx)=> eventoTiposMuerto[ctx.dataIndex] ? '#dc2626' : baseColor;
+                    ds2[0].pointBorderColor = (ctx)=> eventoTiposMuerto[ctx.dataIndex] ? '#dc2626' : baseColor;
+                    ds2[0].pointRadius = (ctx)=> eventoTiposMuerto[ctx.dataIndex] ? 6 : 4;
+                    ds2[0].pointStyle = (ctx)=> eventoTiposMuerto[ctx.dataIndex] ? 'triangle' : 'circle';
+                }
+                const optMuerto = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const evs=eventoTiposMuerto[idx]; return evs? ['Eventos:', ...evs]: undefined; }}}}, scales:{y:{beginAtZero:true, title:{display:true,text:'%'}}}};
+                mkChart(canvasMuerto,'line',{labels, datasets:ds2}, optMuerto);
+                const info2=document.getElementById('chart-ctrl-muerto-info'); if(info2 && stMuerto){ info2.textContent = `CL=${stMuerto.mean.toFixed(2)}% · σ=${stMuerto.sd.toFixed(2)}% · UCL=${stMuerto.ucl.toFixed(2)}% · LCL=${stMuerto.lcl.toFixed(2)}%`; if(Object.keys(eventoTiposMuerto).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info2.appendChild(note);} }
             }
             // Render tabla de eventos
             (function(){
