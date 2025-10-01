@@ -2335,6 +2335,30 @@ document.addEventListener('DOMContentLoaded', () => {
             function expandStats(list, total){ const mean=new Array(total).fill(null), sd=new Array(total).fill(null), ucl=new Array(total).fill(null), lcl=new Array(total).fill(null), segFrom=new Array(total).fill(null), segIdx=new Array(total).fill(null); list.forEach((seg,i)=>{ const end = (i<list.length-1? list[i+1].fromIndex: total); for(let k=seg.fromIndex;k<end && k<total;k++){ mean[k]=seg.mean; sd[k]=seg.sd; ucl[k]=seg.ucl; lcl[k]=seg.lcl; segFrom[k]=seg.fromIndex; segIdx[k]=i; } }); return {mean,sd,ucl,lcl,segFrom,segIdx}; }
             const stxTiempo = expandStats(segsTiempo, puntosTiempo.length);
             const stxMuerto = expandStats(segsMuerto, puntosPctMuerto.length);
+            // Detecta primera corrida de >=8 puntos consecutivos por debajo de la media (segment-aware)
+            function findRunBelow(meanArr, arr, segIdxArr){
+                let runStart=null, runLen=0, prevSeg=null; let found=null;
+                for(let i=0;i<arr.length;i++){
+                    const seg=segIdxArr[i];
+                    if(prevSeg!==null && seg!==prevSeg){ // cambio de segmento => reiniciar
+                        runStart=null; runLen=0;
+                    }
+                    prevSeg=seg;
+                    if(meanArr[i]!=null && arr[i] < meanArr[i]){
+                        if(runLen===0) runStart=i;
+                        runLen++;
+                        if(runLen===8){ // consolidar hasta que se rompa
+                            let j=i+1;
+                            while(j<arr.length && segIdxArr[j]===seg && meanArr[j]!=null && arr[j] < meanArr[j]) j++;
+                            found={start:runStart, end:j-1, seg};
+                            break;
+                        }
+                    } else {
+                        runStart=null; runLen=0;
+                    }
+                }
+                return found;
+            }
             const eventos=[]; // {tipo, indice, etiqueta, valor, metrica, lote, segmentFrom, segmentIdx}
             function detectarEventos(arr, statsX, etiquetaBuilder, isPct, metrica, loteGetter){
                 if(!statsX.mean.length || arr.length<2) return;
@@ -2422,7 +2446,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 mkChart(canvasTiempo,'line',{labels, datasets:ds}, optTiempo);
                 const info=document.getElementById('chart-ctrl-tiempo-info'); if(info && segsTiempo.length){
                     info.textContent = segsTiempo.map((s,i)=>`S${i}#${s.fromIndex} CL=${s.mean.toFixed(1)} σ=${s.sd.toFixed(1)}`).join(' | ');
-                    if(Object.keys(eventoTiposTiempo).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info.appendChild(note);} }
+                    if(Object.keys(eventoTiposTiempo).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info.appendChild(note);} 
+                    // Alerta textual de corrida >=8 abajo de la media
+                    const runBelow = findRunBelow(stxTiempo.mean, puntosTiempo, stxTiempo.segIdx);
+                    if(runBelow){
+                        const alert=document.createElement('div');
+                        alert.className='mt-1 text-[11px] rounded bg-emerald-50 border border-emerald-300 px-2 py-1 text-emerald-700';
+                        alert.innerHTML=`<strong>Mejora sostenida:</strong> ${runBelow.end-runBelow.start+1} puntos consecutivos por debajo de la media (Segmento S${runBelow.seg} indices ${runBelow.start}–${runBelow.end}). Evalúa rebaseline si se mantiene.`;
+                        info.appendChild(alert);
+                    }
+                }
             }
             if(canvasMuerto && puntosPctMuerto.length){
                 const ds2=[{label:'% Muerto', data:puntosPctMuerto, borderColor:'#f59e0b', backgroundColor:'#f59e0b', tension:0.15, pointRadius:4, fill:false}];
@@ -2451,7 +2484,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 mkChart(canvasMuerto,'line',{labels, datasets:ds2}, optMuerto);
                 const info2=document.getElementById('chart-ctrl-muerto-info'); if(info2 && segsMuerto.length){
                     info2.textContent = segsMuerto.map((s,i)=>`S${i}#${s.fromIndex} CL=${s.mean.toFixed(2)} σ=${s.sd.toFixed(2)}`).join(' | ');
-                    if(Object.keys(eventoTiposMuerto).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info2.appendChild(note);} }
+                    if(Object.keys(eventoTiposMuerto).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info2.appendChild(note);} 
+                    // Alerta textual de corrida >=8 abajo de la media (menor % muerto = mejora)
+                    const runBelowM = findRunBelow(stxMuerto.mean, puntosPctMuerto, stxMuerto.segIdx);
+                    if(runBelowM){
+                        const alert=document.createElement('div');
+                        alert.className='mt-1 text-[11px] rounded bg-emerald-50 border border-emerald-300 px-2 py-1 text-emerald-700';
+                        alert.innerHTML=`<strong>Mejora sostenida:</strong> ${runBelowM.end-runBelowM.start+1} puntos consecutivos por debajo de la media (Segmento S${runBelowM.seg} indices ${runBelowM.start}–${runBelowM.end}). Considera nuevo segmento.`;
+                        info2.appendChild(alert);
+                    }
+                }
             }
             // Botones Rebaseline multi-segment
             const btnRbT = document.getElementById('btn-rebaseline-tiempo');
