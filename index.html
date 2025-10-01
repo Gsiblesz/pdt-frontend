@@ -155,15 +155,17 @@
                     <summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg">Mapeo de gráficas y propósito analítico</summary>
                     <div class="mt-3 text-sm space-y-3 text-stone-700">
                         <ul class="list-disc ml-5 space-y-1">
-                            <li><span class="font-medium">Punto de partida (1)</span>: Resumen de tiempos.</li>
-                            <li><span class="font-medium">Benchmark entre recetas (2 y 5)</span>: Promedios por tipo de masa (tiempos) y Temperatura de masa por tipo.</li>
-                            <li><span class="font-medium">Detecta dónde optimizar (3, 4, 9 y 13)</span>: Promedios por amasadora, Promedios por proceso, Tiempos productivos vs muertos, OEE.</li>
-                            <li><span class="font-medium">Control de consistencia (5, 6, 8, 14 y 15)</span>: Temp. masa (general), Temp. cruzada, Boxplot tiempos, Control chart tiempo, Control chart % muerto.</li>
-                            <li><span class="font-medium">Contexto y factores (7 y 11)</span>: TA y Humedad por día, Personal por día (mín–máx).</li>
-                            <li><span class="font-medium">Hipótesis de proceso (10)</span>: Relación temperatura de masa vs tiempo total (scatter).</li>
-                            <li><span class="font-medium">Tendencia agregada (12)</span>: Sparkline semanal (OEE / tiempos / % muerto).</li>
+                            <li><span class="font-medium">Punto de partida (1)</span>: Resumen de tiempos (nivel y variabilidad base).</li>
+                            <li><span class="font-medium">Benchmark (2, 5)</span>: Diferencias entre tipos de masa y su temperatura final.</li>
+                            <li><span class="font-medium">Optimización (3, 4, 9, 13)</span>: Dónde atacar: máquina lenta, etapa dominante, % muerto y eficiencia (OEE).</li>
+                            <li><span class="font-medium">Consistencia estadística (5, 6, 8, 14, 15)</span>: Control de dispersión y estabilidad (temperatura, cruce equipo/receta, boxplot, control charts con rebaseline).</li>
+                            <li><span class="font-medium">Contexto operativo (7, 11)</span>: Ambiente (TA/H) y dotación (personal rango/midpoint) para correlaciones indirectas.</li>
+                            <li><span class="font-medium">Relación causal (10)</span>: Posible dependencia entre temperatura de masa y duración total.</li>
+                            <li><span class="font-medium">Tendencia agregada (12)</span>: Evolución semanal resumida (OEE, tiempo promedio, % muerto).</li>
+                            <li><span class="font-medium">Señales y priorización (16, 17, 18)</span>: Detección SPC multi-regla, ranking (Top 3), tabla detalle indexada.</li>
+                            <li><span class="font-medium">Evolución estructural</span>: Rebaselines para reflejar cambios sostenidos sin falsos positivos.</li>
                         </ul>
-                        <p class="text-xs text-stone-500">Los números refieren al orden visual de las secciones inferiores.</p>
+                        <p class="text-xs text-stone-500">Los números refieren al orden visual abajo. Un rebaseline redefine límites a partir de un punto estable tras mejora o cambio.</p>
                     </div>
                 </details>
             </div>
@@ -2309,15 +2311,20 @@ document.addEventListener('DOMContentLoaded', () => {
             function stats(arr){ if(!arr.length) return null; const mean=arr.reduce((a,b)=>a+b,0)/arr.length; const variance=arr.reduce((a,b)=>a+(b-mean)**2,0)/arr.length; const sd=Math.sqrt(variance); return {mean, sd, ucl:mean+3*sd, lcl:Math.max(0, mean-3*sd)}; }
             const stTiempo = stats(puntosTiempo);
             const stMuerto = stats(puntosPctMuerto);
-            // Rebaseline persistence keys
-            const REBASE_KEY_TIEMPO='spc_rebase_tiempo';
-            const REBASE_KEY_MUERTO='spc_rebase_muerto';
-            function loadRebase(key){ try { return JSON.parse(localStorage.getItem(key)||'null'); } catch(e){ return null; } }
-            function saveRebase(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+            // Rebaseline multi-segment persistence
+            const REBASE_KEY_TIEMPO='spc_rebase_tiempo_segments';
+            const REBASE_KEY_MUERTO='spc_rebase_muerto_segments';
+            function loadSegments(key){ try{ const v=JSON.parse(localStorage.getItem(key)||'[]'); return Array.isArray(v)? v: []; }catch(e){ return []; } }
+            function saveSegments(key,list){ localStorage.setItem(key, JSON.stringify(list||[])); }
             function clearRebase(key){ localStorage.removeItem(key); }
-            let rebaseTiempo = loadRebase(REBASE_KEY_TIEMPO); // {fromIndex, mean, sd, ucl, lcl}
-            let rebaseMuerto = loadRebase(REBASE_KEY_MUERTO);
-            function computeRebase(fromIndex, arr){ const subset = arr.slice(fromIndex).filter(v=> typeof v==='number'); if(subset.length<2) return null; const mean=subset.reduce((a,b)=>a+b,0)/subset.length; const variance=subset.reduce((a,b)=>a+(b-mean)**2,0)/subset.length; const sd=Math.sqrt(variance); return {fromIndex, mean, sd, ucl:mean+3*sd, lcl:Math.max(0, mean-3*sd)}; }
+            function computeSegment(fromIndex, arr){ const subset=arr.slice(fromIndex).filter(v=> typeof v==='number'); if(subset.length<2) return null; const mean=subset.reduce((a,b)=>a+b,0)/subset.length; const variance=subset.reduce((a,b)=>a+(b-mean)**2,0)/subset.length; const sd=Math.sqrt(variance); return {fromIndex, mean, sd, ucl:mean+3*sd, lcl:Math.max(0, mean-3*sd)}; }
+            function normalize(list){ const m=new Map(); list.forEach(s=>{ if(s && Number.isFinite(s.fromIndex)) m.set(s.fromIndex,s); }); return Array.from(m.values()).sort((a,b)=> a.fromIndex-b.fromIndex); }
+            let segsTiempo = normalize(loadSegments(REBASE_KEY_TIEMPO));
+            let segsMuerto = normalize(loadSegments(REBASE_KEY_MUERTO));
+            function rebuildStats(list, arr){ for(let i=0;i<list.length;i++){ const seg=list[i]; const end = (i<list.length-1)? list[i+1].fromIndex: arr.length; const subset = arr.slice(seg.fromIndex, end).filter(v=> typeof v==='number'); if(subset.length>=2){ const mean=subset.reduce((a,b)=>a+b,0)/subset.length; const variance=subset.reduce((a,b)=>a+(b-mean)**2,0)/subset.length; const sd=Math.sqrt(variance); seg.mean=mean; seg.sd=sd; seg.ucl=mean+3*sd; seg.lcl=Math.max(0, mean-3*sd); } } }
+            rebuildStats(segsTiempo, puntosTiempo);
+            rebuildStats(segsMuerto, puntosPctMuerto);
+            function segmentFor(list, idx){ let current=null; for(const s of list){ if(idx>=s.fromIndex) current=s; else break; } return current; }
             const eventos=[]; // {tipo, indice, etiqueta, valor, metrica, lote}
             function detectarEventos(arr, st, etiquetaBuilder, isPct, metrica, loteGetter){
                 if(!st || arr.length<2) return;
@@ -2456,15 +2463,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(rebaseMuerto && rebaseMuerto.mean){ baseTxt += ` | Rebase desde #${rebaseMuerto.fromIndex} → CL=${rebaseMuerto.mean.toFixed(2)}% · σ=${rebaseMuerto.sd.toFixed(2)}%`; }
                     info2.textContent = baseTxt; if(Object.keys(eventoTiposMuerto).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info2.appendChild(note);} }
             }
-            // Botones Rebaseline
+            // Botones Rebaseline multi-segment
             const btnRbT = document.getElementById('btn-rebaseline-tiempo');
             const btnRbM = document.getElementById('btn-rebaseline-muerto');
             const inpRbT = document.getElementById('rebase-tiempo-indice');
             const inpRbM = document.getElementById('rebase-muerto-indice');
             const btnClrT = document.getElementById('btn-clear-rebaseline-tiempo');
             const btnClrM = document.getElementById('btn-clear-rebaseline-muerto');
-            function applyRebaseTiempo(){ const idx = parseInt(inpRbT.value,10); if(isNaN(idx)|| idx<0 || idx>=puntosTiempo.length-1){ alert('Índice inválido para rebaseline tiempo'); return; } const rb = computeRebase(idx, puntosTiempo); if(!rb){ alert('No hay suficientes puntos luego del índice para recalcular'); return; } saveRebase(REBASE_KEY_TIEMPO, rb); buildTablasVista(); }
-            function applyRebaseMuerto(){ const idx = parseInt(inpRbM.value,10); if(isNaN(idx)|| idx<0 || idx>=puntosPctMuerto.length-1){ alert('Índice inválido para rebaseline % muerto'); return; } const rb = computeRebase(idx, puntosPctMuerto); if(!rb){ alert('No hay suficientes puntos luego del índice para recalcular'); return; } saveRebase(REBASE_KEY_MUERTO, rb); buildTablasVista(); }
+            function addSegment(listKey, list, idx, arr){ if(list.some(s=> s.fromIndex===idx)){ alert('Segmento ya existe'); return false; } const seg=computeSegment(idx, arr); if(!seg){ alert('No hay suficientes puntos después del índice'); return false; } list.push(seg); list.sort((a,b)=>a.fromIndex-b.fromIndex); saveSegments(listKey, list); return true; }
+            function applyRebaseTiempo(){ const idx=parseInt(inpRbT.value,10); if(isNaN(idx)|| idx<1 || idx>=puntosTiempo.length-2){ alert('Índice inválido'); return; } if(addSegment(REBASE_KEY_TIEMPO, segsTiempo, idx, puntosTiempo)) buildTablasVista(); }
+            function applyRebaseMuerto(){ const idx=parseInt(inpRbM.value,10); if(isNaN(idx)|| idx<1 || idx>=puntosPctMuerto.length-2){ alert('Índice inválido'); return; } if(addSegment(REBASE_KEY_MUERTO, segsMuerto, idx, puntosPctMuerto)) buildTablasVista(); }
             if(btnRbT) btnRbT.onclick = applyRebaseTiempo;
             if(btnRbM) btnRbM.onclick = applyRebaseMuerto;
             if(btnClrT) btnClrT.onclick = ()=>{ clearRebase(REBASE_KEY_TIEMPO); buildTablasVista(); };
