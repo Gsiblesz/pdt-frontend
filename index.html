@@ -269,7 +269,7 @@
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Eventos fuera de control</h3>
-                            <p class="chart-desc">Lista de señales detectadas (reglas básicas: fuera de límites, run ≥7, tendencia ≥6). Ayuda a priorizar investigación.</p>
+                            <p class="chart-desc">Lista de señales detectadas (fuera de límites, run ≥7, 8 mismo lado, tendencia ≥6, 2 de 3 >2σ, 4 de 5 >1σ). Ayuda a priorizar investigación.</p>
                         </div>
                         <div class="shrink-0 mt-1">
                             <button id="btn-export-eventos-spc" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded shadow-sm">Exportar (CSV)</button>
@@ -2295,12 +2295,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const eventos=[]; // {tipo, indice, etiqueta, valor, metrica, lote}
             function detectarEventos(arr, st, etiquetaBuilder, isPct, metrica, loteGetter){
                 if(!st || arr.length<2) return;
+                const added = new Set();
+                function pushEvento(tipo,i,val,etq){ const key=tipo+'|'+i+'|'+metrica; if(added.has(key)) return; added.add(key); eventos.push({tipo, indice:i, etiqueta:etq, valor:val, metrica, lote:(loteGetter?loteGetter(i):'')}); }
                 // 1. Fuera de límites
-                arr.forEach((v,i)=>{ if(v>st.ucl || v<st.lcl){ eventos.push({tipo:'Fuera de límites', indice:i, etiqueta:etiquetaBuilder(i), valor: isPct? v.toFixed(2)+'%': v+'s', metrica, lote:(loteGetter?loteGetter(i):'')}); } });
-                // 2. Run >=7 del mismo lado de la media
-                let runSide=null, runLen=0; arr.forEach((v,i)=>{ const side = v>=st.mean?'up':'down'; if(side===runSide){ runLen++; } else { runSide=side; runLen=1; } if(runLen===7){ eventos.push({tipo:'Run 7 mismo lado', indice:i, etiqueta:etiquetaBuilder(i)+' (último)', valor: isPct? v.toFixed(2)+'%': v+'s', metrica, lote:(loteGetter?loteGetter(i):'')}); } });
+                arr.forEach((v,i)=>{ if(v>st.ucl || v<st.lcl){ pushEvento('Fuera de límites', i, isPct? v.toFixed(2)+'%': v+'s', etiquetaBuilder(i)); } });
+                // 2. Run >=7 & 8 mismo lado
+                let runSide=null, runLen=0; arr.forEach((v,i)=>{ const side=v>=st.mean?'up':'down'; if(side===runSide){ runLen++; } else { runSide=side; runLen=1; } if(runLen===7) pushEvento('Run 7 mismo lado', i, isPct? v.toFixed(2)+'%': v+'s', etiquetaBuilder(i)+' (último)'); if(runLen===8) pushEvento('8 mismo lado', i, isPct? v.toFixed(2)+'%': v+'s', etiquetaBuilder(i)+' (último)'); });
                 // 3. Tendencia (strict monotonic) >=6
-                let trendLen=1; for(let i=1;i<arr.length;i++){ if(arr[i]>arr[i-1]){ if(trendLen>0) trendLen++; else trendLen=2; } else if(arr[i]<arr[i-1]){ if(trendLen<0) trendLen--; else trendLen=-2; } else { trendLen=1; } if(Math.abs(trendLen)===6){ eventos.push({tipo:'Tendencia 6 '+(trendLen>0?'asc':'desc'), indice:i, etiqueta:etiquetaBuilder(i)+' (último)', valor: isPct? arr[i].toFixed(2)+'%': arr[i]+'s', metrica, lote:(loteGetter?loteGetter(i):'')}); } }
+                let trendLen=1; for(let i=1;i<arr.length;i++){ if(arr[i]>arr[i-1]){ if(trendLen>0) trendLen++; else trendLen=2; } else if(arr[i]<arr[i-1]){ if(trendLen<0) trendLen--; else trendLen=-2; } else { trendLen=1; } if(Math.abs(trendLen)===6){ pushEvento('Tendencia 6 '+(trendLen>0?'asc':'desc'), i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i)+' (último)'); } }
+                if(st.sd>0){
+                    // 4. 2 de 3 >2σ mismo lado (ventanas de 3)
+                    for(let i=2;i<arr.length;i++){
+                        let pos=0,neg=0; for(let j=i-2;j<=i;j++){ const z=(arr[j]-st.mean)/st.sd; if(Math.abs(z)>2){ if(z>0) pos++; else neg++; } }
+                        if(pos>=2) pushEvento('2 de 3 >2σ arriba', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
+                        if(neg>=2) pushEvento('2 de 3 >2σ abajo', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
+                    }
+                    // 5. 4 de 5 >1σ mismo lado (ventanas de 5)
+                    for(let i=4;i<arr.length;i++){
+                        let pos=0,neg=0; for(let j=i-4;j<=i;j++){ const z=(arr[j]-st.mean)/st.sd; if(Math.abs(z)>1){ if(z>0) pos++; else neg++; } }
+                        if(pos>=4) pushEvento('4 de 5 >1σ arriba', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
+                        if(neg>=4) pushEvento('4 de 5 >1σ abajo', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
+                    }
+                }
             }
             if(canvasTiempo && puntosTiempo.length){
                 const ds=[{label:'Tiempo total (s)', data:puntosTiempo, borderColor:'#2563eb', backgroundColor:'#2563eb', tension:0.15, pointRadius:4, fill:false}];
@@ -2362,7 +2378,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const now = new Date();
                         meta.push(`# Export Eventos SPC`);
                         meta.push(`# Generado: ${now.toISOString()}`);
-                        meta.push(`# Reglas: Fuera de límites; Run>=7; Tendencia>=6`);
+                        meta.push(`# Reglas: Fuera de límites; Run>=7; 8 mismo lado; Tendencia>=6; 2 de 3 >2σ; 4 de 5 >1σ`);
                         if(stTiempo) meta.push(`# Tiempo Total: mean=${stTiempo.mean.toFixed(2)} sd=${stTiempo.sd.toFixed(2)} UCL=${stTiempo.ucl.toFixed(2)} LCL=${stTiempo.lcl.toFixed(2)}`);
                         if(stMuerto) meta.push(`# % Muerto: mean=${stMuerto.mean.toFixed(2)} sd=${stMuerto.sd.toFixed(2)} UCL=${stMuerto.ucl.toFixed(2)} LCL=${stMuerto.lcl.toFixed(2)}`);
                         meta.push(`# Total eventos: ${eventos.length}`);
