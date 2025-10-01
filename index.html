@@ -277,6 +277,11 @@
                     </div>
                     <div id="tabla-eventos-control" class="overflow-x-auto text-xs mt-1"></div>
                 </section>
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Detalle de puntos de control</h3>
+                    <p class="chart-desc">Cada punto en los gráficos (orden cronológico) con identificación completa: fecha, amasadora y lote.</p>
+                    <div id="tabla-detalle-control" class="overflow-x-auto text-xs"></div>
+                </section>
             </div>
         </div>
         <div id="view-medicion" class="hidden">
@@ -2267,31 +2272,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const canvasMuerto = document.getElementById('chart-ctrl-muerto');
             if(!canvasTiempo && !canvasMuerto) return;
             // Construir dataset ordenado cronológicamente por fecha y dentro de fecha por amasadora
-            const puntosTiempo=[]; const puntosPctMuerto=[]; const labels=[];
-            _TABLAS_DATA_LAST.slice().sort((a,b)=> (a.fecha||'').localeCompare(b.fecha||'')).forEach(reg=>{
-                (reg.maquinas||[]).forEach(maq=>{
-                    const p1=maq.proceso1, p3=maq.proceso3; if(!(p1&&p1.startTime&&p3&&p3.endTime)) return;
-                    const total = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000));
-                    let sumaProc=0; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ sumaProc += (parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0); } }
-                    const muerto = Math.max(0, total - sumaProc);
-                    const pctMuerto = total? (muerto*100/total):0;
-                    labels.push(reg.fecha+' M'+(maq.numeroAmasadora||maq.id||''));
-                    puntosTiempo.push(total);
-                    puntosPctMuerto.push(pctMuerto);
+            const puntosTiempo=[]; const puntosPctMuerto=[]; const labels=[]; const lotes=[]; const detalleFilas=[];
+            _TABLAS_DATA_LAST.slice().sort((a,b)=> (a.fecha||'').localeCompare(b.fecha||''))
+                .forEach(reg=>{
+                    (reg.maquinas||[]).forEach(maq=>{
+                        const p1=maq.proceso1, p3=maq.proceso3; if(!(p1&&p1.startTime&&p3&&p3.endTime)) return;
+                        const total = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000));
+                        let sumaProc=0; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ sumaProc += (parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0); } }
+                        const muerto = Math.max(0, total - sumaProc);
+                        const pctMuerto = total? (muerto*100/total):0;
+                        const etiquetaBase = reg.fecha+' M'+(maq.numeroAmasadora||maq.id||'');
+                        labels.push(etiquetaBase);
+                        lotes.push(maq.lote||'');
+                        puntosTiempo.push(total);
+                        puntosPctMuerto.push(pctMuerto);
+                        detalleFilas.push({idx: labels.length-1, fecha: reg.fecha||'', amasadora:(maq.numeroAmasadora||maq.id||''), lote: maq.lote||'', tiempoTotal: total, pctMuerto});
+                    });
                 });
-            });
             function stats(arr){ if(!arr.length) return null; const mean=arr.reduce((a,b)=>a+b,0)/arr.length; const variance=arr.reduce((a,b)=>a+(b-mean)**2,0)/arr.length; const sd=Math.sqrt(variance); return {mean, sd, ucl:mean+3*sd, lcl:Math.max(0, mean-3*sd)}; }
             const stTiempo = stats(puntosTiempo);
             const stMuerto = stats(puntosPctMuerto);
-            const eventos=[]; // {tipo, indice, etiqueta, valor, metrica}
-            function detectarEventos(arr, st, etiquetaBuilder, isPct, metrica){
+            const eventos=[]; // {tipo, indice, etiqueta, valor, metrica, lote}
+            function detectarEventos(arr, st, etiquetaBuilder, isPct, metrica, loteGetter){
                 if(!st || arr.length<2) return;
                 // 1. Fuera de límites
-                arr.forEach((v,i)=>{ if(v>st.ucl || v<st.lcl){ eventos.push({tipo:'Fuera de límites', indice:i, etiqueta:etiquetaBuilder(i), valor: isPct? v.toFixed(2)+'%': v+'s', metrica}); } });
+                arr.forEach((v,i)=>{ if(v>st.ucl || v<st.lcl){ eventos.push({tipo:'Fuera de límites', indice:i, etiqueta:etiquetaBuilder(i), valor: isPct? v.toFixed(2)+'%': v+'s', metrica, lote:(loteGetter?loteGetter(i):'')}); } });
                 // 2. Run >=7 del mismo lado de la media
-                let runSide=null, runLen=0; arr.forEach((v,i)=>{ const side = v>=st.mean?'up':'down'; if(side===runSide){ runLen++; } else { runSide=side; runLen=1; } if(runLen===7){ eventos.push({tipo:'Run 7 mismo lado', indice:i, etiqueta:etiquetaBuilder(i)+' (último)', valor: isPct? v.toFixed(2)+'%': v+'s', metrica}); } });
+                let runSide=null, runLen=0; arr.forEach((v,i)=>{ const side = v>=st.mean?'up':'down'; if(side===runSide){ runLen++; } else { runSide=side; runLen=1; } if(runLen===7){ eventos.push({tipo:'Run 7 mismo lado', indice:i, etiqueta:etiquetaBuilder(i)+' (último)', valor: isPct? v.toFixed(2)+'%': v+'s', metrica, lote:(loteGetter?loteGetter(i):'')}); } });
                 // 3. Tendencia (strict monotonic) >=6
-                let trendLen=1; for(let i=1;i<arr.length;i++){ if(arr[i]>arr[i-1]){ if(trendLen>0) trendLen++; else trendLen=2; } else if(arr[i]<arr[i-1]){ if(trendLen<0) trendLen--; else trendLen=-2; } else { trendLen=1; } if(Math.abs(trendLen)===6){ eventos.push({tipo:'Tendencia 6 '+(trendLen>0?'asc':'desc'), indice:i, etiqueta:etiquetaBuilder(i)+' (último)', valor: isPct? arr[i].toFixed(2)+'%': arr[i]+'s', metrica}); } }
+                let trendLen=1; for(let i=1;i<arr.length;i++){ if(arr[i]>arr[i-1]){ if(trendLen>0) trendLen++; else trendLen=2; } else if(arr[i]<arr[i-1]){ if(trendLen<0) trendLen--; else trendLen=-2; } else { trendLen=1; } if(Math.abs(trendLen)===6){ eventos.push({tipo:'Tendencia 6 '+(trendLen>0?'asc':'desc'), indice:i, etiqueta:etiquetaBuilder(i)+' (último)', valor: isPct? arr[i].toFixed(2)+'%': arr[i]+'s', metrica, lote:(loteGetter?loteGetter(i):'')}); } }
             }
             if(canvasTiempo && puntosTiempo.length){
                 const ds=[{label:'Tiempo total (s)', data:puntosTiempo, borderColor:'#2563eb', backgroundColor:'#2563eb', tension:0.15, pointRadius:4, fill:false}];
@@ -2300,7 +2309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ds.push({label:'CL', data:baseIdx.map(()=> stTiempo.mean), borderColor:'#16a34a', borderWidth:1.2, pointRadius:0});
                     ds.push({label:'UCL', data:baseIdx.map(()=> stTiempo.ucl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
                     ds.push({label:'LCL', data:baseIdx.map(()=> stTiempo.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
-                    detectarEventos(puntosTiempo, stTiempo, (i)=>labels[i], false, 'Tiempo total');
+                    detectarEventos(puntosTiempo, stTiempo, (i)=>labels[i], false, 'Tiempo total', (i)=>lotes[i]);
                 }
                 // Enriquecer puntos con eventos
                 const eventoTiposTiempo={};
@@ -2323,7 +2332,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ds2.push({label:'CL', data:baseIdx.map(()=> stMuerto.mean), borderColor:'#16a34a', borderWidth:1.2, pointRadius:0});
                     ds2.push({label:'UCL', data:baseIdx.map(()=> stMuerto.ucl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
                     ds2.push({label:'LCL', data:baseIdx.map(()=> stMuerto.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
-                    detectarEventos(puntosPctMuerto, stMuerto, (i)=>labels[i], true, '% Muerto');
+                    detectarEventos(puntosPctMuerto, stMuerto, (i)=>labels[i], true, '% Muerto', (i)=>lotes[i]);
                 }
                 const eventoTiposMuerto={};
                 eventos.filter(e=>e.metrica==='% Muerto').forEach(e=>{ (eventoTiposMuerto[e.indice] = eventoTiposMuerto[e.indice]||[]).push(e.tipo); });
@@ -2342,8 +2351,8 @@ document.addEventListener('DOMContentLoaded', () => {
             (function(){
                 const cont = document.getElementById('tabla-eventos-control'); if(!cont) return;
                 if(!eventos.length){ cont.innerHTML='<div class="text-stone-500">Sin señales detectadas.</div>'; return; }
-                const rows = eventos.map(ev=> `<tr><td class='px-2 py-1 border-b border-stone-200 whitespace-nowrap'>${ev.tipo}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.metrica}</td><td class='px-2 py-1 border-b border-stone-200 font-mono text-xs'>${ev.etiqueta}</td><td class='px-2 py-1 border-b border-stone-200 text-right'>${ev.valor}</td></tr>`).join('');
-                cont.innerHTML = `<table class='min-w-[520px] text-[11px] border border-stone-300 bg-white rounded'><thead class='bg-stone-100 text-stone-700'><tr><th class='px-2 py-1 text-left'>Tipo</th><th class='px-2 py-1 text-left'>Métrica</th><th class='px-2 py-1 text-left'>Etiqueta</th><th class='px-2 py-1 text-right'>Valor</th></tr></thead><tbody>${rows}</tbody></table>`;
+                const rows = eventos.map(ev=> `<tr><td class='px-2 py-1 border-b border-stone-200 whitespace-nowrap'>${ev.tipo}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.metrica}</td><td class='px-2 py-1 border-b border-stone-200 font-mono text-xs'>${ev.etiqueta}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.lote||''}</td><td class='px-2 py-1 border-b border-stone-200 text-right'>${ev.valor}</td></tr>`).join('');
+                cont.innerHTML = `<table class='min-w-[600px] text-[11px] border border-stone-300 bg-white rounded'><thead class='bg-stone-100 text-stone-700'><tr><th class='px-2 py-1 text-left'>Tipo</th><th class='px-2 py-1 text-left'>Métrica</th><th class='px-2 py-1 text-left'>Etiqueta</th><th class='px-2 py-1 text-left'>Lote</th><th class='px-2 py-1 text-right'>Valor</th></tr></thead><tbody>${rows}</tbody></table>`;
                 // Export CSV button
                 const btnExp = document.getElementById('btn-export-eventos-spc');
                 if(btnExp){
@@ -2357,13 +2366,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         if(stTiempo) meta.push(`# Tiempo Total: mean=${stTiempo.mean.toFixed(2)} sd=${stTiempo.sd.toFixed(2)} UCL=${stTiempo.ucl.toFixed(2)} LCL=${stTiempo.lcl.toFixed(2)}`);
                         if(stMuerto) meta.push(`# % Muerto: mean=${stMuerto.mean.toFixed(2)} sd=${stMuerto.sd.toFixed(2)} UCL=${stMuerto.ucl.toFixed(2)} LCL=${stMuerto.lcl.toFixed(2)}`);
                         meta.push(`# Total eventos: ${eventos.length}`);
-                        const header = ['Tipo','Metrica','Etiqueta','Valor'];
-                        const body = eventos.map(e=> [e.tipo, e.metrica, e.etiqueta.replace(/,/g,';'), e.valor]);
+                        const header = ['Tipo','Metrica','Etiqueta','Lote','Valor'];
+                        const body = eventos.map(e=> [e.tipo, e.metrica, e.etiqueta.replace(/,/g,';'), (e.lote||'').toString().replace(/,/g,';'), e.valor]);
                         const csvLines = meta.concat(['']).concat([header.join(',')]).concat(body.map(r=> r.join(',')));
                         const blob = new Blob([csvLines.join('\n')], {type:'text/csv;charset=utf-8;'});
                         const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='eventos_spc.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
                     };
                 }
+            })();
+            // Tabla detalle de puntos (fecha, amasadora, lote)
+            (function(){
+                const cont = document.getElementById('tabla-detalle-control'); if(!cont) return;
+                if(!detalleFilas.length){ cont.innerHTML='<div class="text-stone-500">Sin puntos calculados.</div>'; return; }
+                const rows = detalleFilas.map(r=> `<tr><td class='px-1 py-0.5 border-b border-stone-200 text-right'>${r.idx}</td><td class='px-1 py-0.5 border-b border-stone-200 font-mono text-[10px]'>${r.fecha}</td><td class='px-1 py-0.5 border-b border-stone-200'>M${r.amasadora}</td><td class='px-1 py-0.5 border-b border-stone-200 font-mono text-[10px]'>${r.lote||''}</td><td class='px-1 py-0.5 border-b border-stone-200 text-right'>${r.tiempoTotal}</td><td class='px-1 py-0.5 border-b border-stone-200 text-right'>${r.pctMuerto.toFixed(2)}%</td></tr>`).join('');
+                cont.innerHTML = `<table class='min-w-[640px] text-[11px] border border-stone-300 bg-white rounded'><thead class='bg-stone-100'><tr><th class='px-1 py-0.5 text-right'>#</th><th class='px-1 py-0.5 text-left'>Fecha</th><th class='px-1 py-0.5 text-left'>Amas.</th><th class='px-1 py-0.5 text-left'>Lote</th><th class='px-1 py-0.5 text-right'>Tiempo(s)</th><th class='px-1 py-0.5 text-right'>% Muerto</th></tr></thead><tbody>${rows}</tbody></table>`;
             })();
             // Sparkline semanal (OEE, tiempo promedio, % muerto)
             (function(){
