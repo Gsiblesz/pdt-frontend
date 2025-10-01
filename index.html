@@ -255,15 +255,29 @@
                 </section>
                 <section>
                     <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Control de tiempo total (Control Chart) <span class="info-hint text-blue-600 cursor-help align-middle" title="Promedio y límites ±3σ sobre el tiempo total real por máquina (orden cronológico).">ℹ️</span></h3>
-                    <p class="chart-desc">Detecta variaciones especiales: puntos fuera de límites o patrones. Líneas: CL (media), UCL/LCL (±3σ). Sólo se dibujan límites si hay al menos 5 puntos.</p>
+                    <p class="chart-desc">Detecta variaciones especiales: puntos fuera de límites o patrones. Líneas: CL (media), UCL/LCL (±3σ). Sólo se dibujan límites si hay al menos 5 puntos. Usa rebaseline cuando el proceso cambió estructuralmente.</p>
                     <canvas id="chart-ctrl-tiempo" height="150" class="mb-2"></canvas>
-                    <div id="chart-ctrl-tiempo-info" class="text-xs text-stone-600"></div>
+                    <div class="flex items-center gap-3 mb-1">
+                        <div id="chart-ctrl-tiempo-info" class="text-xs text-stone-600 grow"></div>
+                        <div class="flex items-center gap-1">
+                            <input id="rebase-tiempo-indice" type="number" min="0" class="w-20 text-xs border rounded px-1 py-0.5" placeholder="# índice" />
+                            <button id="btn-rebaseline-tiempo" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold px-2 py-1 rounded">Rebaseline</button>
+                            <button id="btn-clear-rebaseline-tiempo" class="bg-stone-500 hover:bg-stone-600 text-white text-[11px] font-semibold px-2 py-1 rounded" title="Eliminar rebaseline guardado">Reset</button>
+                        </div>
+                    </div>
                 </section>
                 <section>
                     <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Control % tiempo muerto <span class="info-hint text-blue-600 cursor-help align-middle" title="Porcentaje de tiempo inactivo respecto al total real por máquina (media y ±3σ).">ℹ️</span></h3>
-                    <p class="chart-desc">Mide estabilidad del % de inactividad. Un % muerto que se dispara puede indicar cuellos, esperas de material o coordinación.</p>
+                    <p class="chart-desc">Mide estabilidad del % de inactividad. Rebaseline si hay nuevo estándar operativo para evitar falsas alarmas.</p>
                     <canvas id="chart-ctrl-muerto" height="150" class="mb-2"></canvas>
-                    <div id="chart-ctrl-muerto-info" class="text-xs text-stone-600"></div>
+                    <div class="flex items-center gap-3 mb-1">
+                        <div id="chart-ctrl-muerto-info" class="text-xs text-stone-600 grow"></div>
+                        <div class="flex items-center gap-1">
+                            <input id="rebase-muerto-indice" type="number" min="0" class="w-20 text-xs border rounded px-1 py-0.5" placeholder="# índice" />
+                            <button id="btn-rebaseline-muerto" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold px-2 py-1 rounded">Rebaseline</button>
+                            <button id="btn-clear-rebaseline-muerto" class="bg-stone-500 hover:bg-stone-600 text-white text-[11px] font-semibold px-2 py-1 rounded" title="Eliminar rebaseline guardado">Reset</button>
+                        </div>
+                    </div>
                 </section>
                 <section>
                     <div class="flex items-start justify-between gap-4">
@@ -2295,6 +2309,15 @@ document.addEventListener('DOMContentLoaded', () => {
             function stats(arr){ if(!arr.length) return null; const mean=arr.reduce((a,b)=>a+b,0)/arr.length; const variance=arr.reduce((a,b)=>a+(b-mean)**2,0)/arr.length; const sd=Math.sqrt(variance); return {mean, sd, ucl:mean+3*sd, lcl:Math.max(0, mean-3*sd)}; }
             const stTiempo = stats(puntosTiempo);
             const stMuerto = stats(puntosPctMuerto);
+            // Rebaseline persistence keys
+            const REBASE_KEY_TIEMPO='spc_rebase_tiempo';
+            const REBASE_KEY_MUERTO='spc_rebase_muerto';
+            function loadRebase(key){ try { return JSON.parse(localStorage.getItem(key)||'null'); } catch(e){ return null; } }
+            function saveRebase(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+            function clearRebase(key){ localStorage.removeItem(key); }
+            let rebaseTiempo = loadRebase(REBASE_KEY_TIEMPO); // {fromIndex, mean, sd, ucl, lcl}
+            let rebaseMuerto = loadRebase(REBASE_KEY_MUERTO);
+            function computeRebase(fromIndex, arr){ const subset = arr.slice(fromIndex).filter(v=> typeof v==='number'); if(subset.length<2) return null; const mean=subset.reduce((a,b)=>a+b,0)/subset.length; const variance=subset.reduce((a,b)=>a+(b-mean)**2,0)/subset.length; const sd=Math.sqrt(variance); return {fromIndex, mean, sd, ucl:mean+3*sd, lcl:Math.max(0, mean-3*sd)}; }
             const eventos=[]; // {tipo, indice, etiqueta, valor, metrica, lote}
             function detectarEventos(arr, st, etiquetaBuilder, isPct, metrica, loteGetter){
                 if(!st || arr.length<2) return;
@@ -2354,10 +2377,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 const ds=[{label:'Tiempo total (s)', data:puntosTiempo, borderColor:'#2563eb', backgroundColor:'#2563eb', tension:0.15, pointRadius:4, fill:false}];
                 if(stTiempo && puntosTiempo.length>=5){
                     const baseIdx = puntosTiempo.map((_,i)=> i);
+                    // Baseline original siempre se muestra
                     ds.push({label:'CL', data:baseIdx.map(()=> stTiempo.mean), borderColor:'#16a34a', borderWidth:1.2, pointRadius:0});
                     ds.push({label:'UCL', data:baseIdx.map(()=> stTiempo.ucl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
                     ds.push({label:'LCL', data:baseIdx.map(()=> stTiempo.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
-                    detectarEventos(puntosTiempo, stTiempo, (i)=>labels[i], false, 'Tiempo total', (i)=>lotes[i]);
+                    let stReferencia = stTiempo;
+                    if(rebaseTiempo && rebaseTiempo.fromIndex < puntosTiempo.length-1){
+                        // Calcular rebaseline en caso de estar guardado pero sin stats
+                        if(!rebaseTiempo.mean){
+                            rebaseTiempo = computeRebase(rebaseTiempo.fromIndex, puntosTiempo);
+                            if(rebaseTiempo) saveRebase(REBASE_KEY_TIEMPO, rebaseTiempo);
+                        }
+                        if(rebaseTiempo){
+                            // Dibujar sólo desde fromIndex
+                            ds.push({label:'CL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseTiempo.fromIndex? rebaseTiempo.mean:null), borderColor:'#16a34a', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
+                            ds.push({label:'UCL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseTiempo.fromIndex? rebaseTiempo.ucl:null), borderColor:'#dc2626', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
+                            ds.push({label:'LCL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseTiempo.fromIndex? rebaseTiempo.lcl:null), borderColor:'#dc2626', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
+                            stReferencia = rebaseTiempo; // Usar para eventos post cambio
+                        }
+                    }
+                    detectarEventos(puntosTiempo, stReferencia, (i)=>labels[i], false, 'Tiempo total', (i)=>lotes[i]);
                 }
                 // Enriquecer puntos con eventos
                 const eventoTiposTiempo={};
@@ -2371,7 +2410,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const optTiempo = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label(ctx){ return `Valor: ${ctx.parsed.y}s`; }, afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const detalle = `Idx ${idx}`; const fila = detalleFilas[idx]; const metaLinea = fila? [`Fecha: ${fila.fecha}`, `Amas: M${fila.amasadora}`, `Lote: ${fila.lote||''}`] : []; const evs = (eventosPorMetrica['Tiempo total'][idx]||[]).map(e=>'• '+e.tipo); return [...metaLinea, ...(evs.length?['Eventos:'].concat(evs):[])]; }}}}, scales:{y:{beginAtZero:true}}};
                 mkChart(canvasTiempo,'line',{labels, datasets:ds}, optTiempo);
-                const info=document.getElementById('chart-ctrl-tiempo-info'); if(info && stTiempo){ info.textContent = `CL=${stTiempo.mean.toFixed(1)}s · σ=${stTiempo.sd.toFixed(1)}s · UCL=${stTiempo.ucl.toFixed(1)}s · LCL=${stTiempo.lcl.toFixed(1)}s`; if(Object.keys(eventoTiposTiempo).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info.appendChild(note);} }
+                const info=document.getElementById('chart-ctrl-tiempo-info'); if(info && stTiempo){
+                    let baseTxt = `CL=${stTiempo.mean.toFixed(1)}s · σ=${stTiempo.sd.toFixed(1)}s · UCL=${stTiempo.ucl.toFixed(1)}s · LCL=${stTiempo.lcl.toFixed(1)}s`;
+                    if(rebaseTiempo && rebaseTiempo.mean){
+                        baseTxt += ` | Rebase desde #${rebaseTiempo.fromIndex} → CL=${rebaseTiempo.mean.toFixed(1)}s · σ=${rebaseTiempo.sd.toFixed(1)}s`;
+                    }
+                    info.textContent = baseTxt;
+                    if(Object.keys(eventoTiposTiempo).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info.appendChild(note);} }
             }
             if(canvasMuerto && puntosPctMuerto.length){
                 const ds2=[{label:'% Muerto', data:puntosPctMuerto, borderColor:'#f59e0b', backgroundColor:'#f59e0b', tension:0.15, pointRadius:4, fill:false}];
@@ -2380,7 +2425,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     ds2.push({label:'CL', data:baseIdx.map(()=> stMuerto.mean), borderColor:'#16a34a', borderWidth:1.2, pointRadius:0});
                     ds2.push({label:'UCL', data:baseIdx.map(()=> stMuerto.ucl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
                     ds2.push({label:'LCL', data:baseIdx.map(()=> stMuerto.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
-                    detectarEventos(puntosPctMuerto, stMuerto, (i)=>labels[i], true, '% Muerto', (i)=>lotes[i]);
+                    let stRef = stMuerto;
+                    if(rebaseMuerto && rebaseMuerto.fromIndex < puntosPctMuerto.length-1){
+                        if(!rebaseMuerto.mean){
+                            rebaseMuerto = computeRebase(rebaseMuerto.fromIndex, puntosPctMuerto);
+                            if(rebaseMuerto) saveRebase(REBASE_KEY_MUERTO, rebaseMuerto);
+                        }
+                        if(rebaseMuerto){
+                            ds2.push({label:'CL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseMuerto.fromIndex? rebaseMuerto.mean:null), borderColor:'#16a34a', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
+                            ds2.push({label:'UCL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseMuerto.fromIndex? rebaseMuerto.ucl:null), borderColor:'#dc2626', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
+                            ds2.push({label:'LCL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseMuerto.fromIndex? rebaseMuerto.lcl:null), borderColor:'#dc2626', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
+                            stRef = rebaseMuerto;
+                        }
+                    }
+                    detectarEventos(puntosPctMuerto, stRef, (i)=>labels[i], true, '% Muerto', (i)=>lotes[i]);
                 }
                 const eventoTiposMuerto={};
                 eventos.filter(e=>e.metrica==='% Muerto').forEach(e=>{ (eventoTiposMuerto[e.indice] = eventoTiposMuerto[e.indice]||[]).push(e.tipo); });
@@ -2393,8 +2451,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const optMuerto = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label(ctx){ return `%: ${ctx.parsed.y.toFixed(2)}%`; }, afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const fila = detalleFilas[idx]; const metaLinea = fila? [`Fecha: ${fila.fecha}`, `Amas: M${fila.amasadora}`, `Lote: ${fila.lote||''}`] : []; const evs = (eventosPorMetrica['% Muerto'][idx]||[]).map(e=>'• '+e.tipo); return [...metaLinea, ...(evs.length?['Eventos:'].concat(evs):[])]; }}}}, scales:{y:{beginAtZero:true, title:{display:true,text:'%'}}}};
                 mkChart(canvasMuerto,'line',{labels, datasets:ds2}, optMuerto);
-                const info2=document.getElementById('chart-ctrl-muerto-info'); if(info2 && stMuerto){ info2.textContent = `CL=${stMuerto.mean.toFixed(2)}% · σ=${stMuerto.sd.toFixed(2)}% · UCL=${stMuerto.ucl.toFixed(2)}% · LCL=${stMuerto.lcl.toFixed(2)}%`; if(Object.keys(eventoTiposMuerto).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info2.appendChild(note);} }
+                const info2=document.getElementById('chart-ctrl-muerto-info'); if(info2 && stMuerto){
+                    let baseTxt = `CL=${stMuerto.mean.toFixed(2)}% · σ=${stMuerto.sd.toFixed(2)}% · UCL=${stMuerto.ucl.toFixed(2)}% · LCL=${stMuerto.lcl.toFixed(2)}%`;
+                    if(rebaseMuerto && rebaseMuerto.mean){ baseTxt += ` | Rebase desde #${rebaseMuerto.fromIndex} → CL=${rebaseMuerto.mean.toFixed(2)}% · σ=${rebaseMuerto.sd.toFixed(2)}%`; }
+                    info2.textContent = baseTxt; if(Object.keys(eventoTiposMuerto).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info2.appendChild(note);} }
             }
+            // Botones Rebaseline
+            const btnRbT = document.getElementById('btn-rebaseline-tiempo');
+            const btnRbM = document.getElementById('btn-rebaseline-muerto');
+            const inpRbT = document.getElementById('rebase-tiempo-indice');
+            const inpRbM = document.getElementById('rebase-muerto-indice');
+            const btnClrT = document.getElementById('btn-clear-rebaseline-tiempo');
+            const btnClrM = document.getElementById('btn-clear-rebaseline-muerto');
+            function applyRebaseTiempo(){ const idx = parseInt(inpRbT.value,10); if(isNaN(idx)|| idx<0 || idx>=puntosTiempo.length-1){ alert('Índice inválido para rebaseline tiempo'); return; } const rb = computeRebase(idx, puntosTiempo); if(!rb){ alert('No hay suficientes puntos luego del índice para recalcular'); return; } saveRebase(REBASE_KEY_TIEMPO, rb); buildTablasVista(); }
+            function applyRebaseMuerto(){ const idx = parseInt(inpRbM.value,10); if(isNaN(idx)|| idx<0 || idx>=puntosPctMuerto.length-1){ alert('Índice inválido para rebaseline % muerto'); return; } const rb = computeRebase(idx, puntosPctMuerto); if(!rb){ alert('No hay suficientes puntos luego del índice para recalcular'); return; } saveRebase(REBASE_KEY_MUERTO, rb); buildTablasVista(); }
+            if(btnRbT) btnRbT.onclick = applyRebaseTiempo;
+            if(btnRbM) btnRbM.onclick = applyRebaseMuerto;
+            if(btnClrT) btnClrT.onclick = ()=>{ clearRebase(REBASE_KEY_TIEMPO); buildTablasVista(); };
+            if(btnClrM) btnClrM.onclick = ()=>{ clearRebase(REBASE_KEY_MUERTO); buildTablasVista(); };
             // Render filtros + tabla de eventos con filtrado dinámico
             (function(){
                 const cont = document.getElementById('tabla-eventos-control'); if(!cont) return;
