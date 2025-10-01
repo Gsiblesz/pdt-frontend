@@ -275,6 +275,7 @@
                             <button id="btn-export-eventos-spc" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded shadow-sm">Exportar (CSV)</button>
                         </div>
                     </div>
+                    <div id="spc-top3" class="mt-2 hidden"></div>
                     <div id="spc-filtros" class="flex flex-wrap gap-2 mt-2 text-[11px]"></div>
                     <div id="tabla-eventos-control" class="overflow-x-auto text-xs mt-1"></div>
                 </section>
@@ -2319,6 +2320,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
+            // Asignar score a cada evento
+            function scoreEvento(tipo){
+                if(tipo==='Fuera de límites') return 100;
+                if(tipo.startsWith('2 de 3')) return 85;
+                if(tipo.startsWith('4 de 5')) return 75;
+                if(tipo==='8 mismo lado') return 60;
+                if(tipo==='Run 7 mismo lado') return 55;
+                if(tipo.startsWith('Tendencia 6')) return 50;
+                return 40;
+            }
+            // Esta función debe llamarse tras detectar todos los eventos
+            function prepararTopEventos(){
+                eventos.forEach(e=> e.score = scoreEvento(e.tipo));
+                // Orden: score DESC luego indice DESC (más reciente) y limitar 3
+                const top = eventos.slice().sort((a,b)=> b.score - a.score || b.indice - a.indice).slice(0,3);
+                const wrap = document.getElementById('spc-top3'); if(!wrap) return; if(!top.length){ wrap.classList.add('hidden'); return; }
+                wrap.classList.remove('hidden');
+                wrap.innerHTML = `<div class='flex flex-wrap gap-2 items-stretch'>${top.map(ev=>{
+                    const badgeColor = ev.score>=90? 'bg-red-600' : ev.score>=80? 'bg-orange-600' : ev.score>=70? 'bg-amber-500' : ev.score>=60? 'bg-indigo-600':'bg-stone-500';
+                    return `<div class='border border-stone-300 rounded-md px-2 py-1 bg-white shadow-sm flex flex-col gap-0.5 min-w-[160px]'>
+                        <div class='flex items-center justify-between gap-2'><span class='text-[10px] font-semibold uppercase tracking-wide text-stone-500'>${ev.metrica}</span><span class='text-[10px] font-mono text-stone-400'>#${ev.indice}</span></div>
+                        <div class='text-[12px] font-semibold text-stone-800 leading-tight'>${ev.tipo}</div>
+                        <div class='text-[11px] text-stone-600'>${ev.etiqueta}</div>
+                        <div class='flex items-center justify-between mt-0.5'><span class='text-[11px] text-stone-600'>Lote: <span class='font-mono'>${ev.lote||'-'}</span></span><span class='px-1.5 py-0.5 rounded text-[10px] font-bold text-white ${badgeColor}'>${ev.score}</span></div>
+                    </div>`; }).join('')}</div>`;
+            }
             // Preparar estructura de eventos agrupados por índice y métrica para tooltip compuesto
             const eventosPorMetrica = { 'Tiempo total': {}, '% Muerto': {} };
             eventos.forEach(ev=>{ const bucket=eventosPorMetrica[ev.metrica]; if(bucket){ (bucket[ev.indice]=bucket[ev.indice]||[]).push(ev); } });
@@ -2375,6 +2402,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const estado = {}; tiposUnicos.forEach(t=> estado[t]=true);
                 function renderFiltros(){ if(!filtrosWrap) return; filtrosWrap.innerHTML = tiposUnicos.map(t=> `<label class='inline-flex items-center gap-1 bg-stone-100 px-2 py-1 rounded border border-stone-300'> <input type='checkbox' data-tipo='${t}' checked class='spc-filter accent-indigo-600 scale-90'/> <span>${t}</span></label>`).join(''); filtrosWrap.querySelectorAll('input.spc-filter').forEach(inp=>{ inp.addEventListener('change',()=>{ estado[inp.getAttribute('data-tipo')] = inp.checked; renderTabla(); }); }); }
                 function renderTabla(){ if(!eventos.length){ cont.innerHTML='<div class="text-stone-500">Sin señales detectadas.</div>'; return; } const filtrados = eventos.filter(e=> estado[e.tipo]); if(!filtrados.length){ cont.innerHTML='<div class="text-stone-500">(Todos los tipos filtrados)</div>'; return; } const rows = filtrados.map(ev=> `<tr><td class='px-2 py-1 border-b border-stone-200 whitespace-nowrap'>${ev.tipo}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.metrica}</td><td class='px-2 py-1 border-b border-stone-200 font-mono text-xs'>${ev.etiqueta}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.lote||''}</td><td class='px-2 py-1 border-b border-stone-200 text-right'>${ev.valor}</td></tr>`).join(''); cont.innerHTML = `<table class='min-w-[640px] text-[11px] border border-stone-300 bg-white rounded'><thead class='bg-stone-100 text-stone-700'><tr><th class='px-2 py-1 text-left'>Tipo</th><th class='px-2 py-1 text-left'>Métrica</th><th class='px-2 py-1 text-left'>Etiqueta</th><th class='px-2 py-1 text-left'>Lote</th><th class='px-2 py-1 text-right'>Valor</th></tr></thead><tbody>${rows}</tbody></table>`; }
+                prepararTopEventos();
                 renderFiltros();
                 renderTabla();
                 // Export CSV button
@@ -2390,8 +2418,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         if(stTiempo) meta.push(`# Tiempo Total: mean=${stTiempo.mean.toFixed(2)} sd=${stTiempo.sd.toFixed(2)} UCL=${stTiempo.ucl.toFixed(2)} LCL=${stTiempo.lcl.toFixed(2)}`);
                         if(stMuerto) meta.push(`# % Muerto: mean=${stMuerto.mean.toFixed(2)} sd=${stMuerto.sd.toFixed(2)} UCL=${stMuerto.ucl.toFixed(2)} LCL=${stMuerto.lcl.toFixed(2)}`);
                         meta.push(`# Total eventos: ${eventos.length}`);
-                        const header = ['Tipo','Metrica','Etiqueta','Lote','Valor'];
-                        const body = eventos.map(e=> [e.tipo, e.metrica, e.etiqueta.replace(/,/g,';'), (e.lote||'').toString().replace(/,/g,';'), e.valor]);
+                        const header = ['Tipo','Metrica','Etiqueta','Lote','Valor','Score'];
+                        const body = eventos.map(e=> [e.tipo, e.metrica, e.etiqueta.replace(/,/g,';'), (e.lote||'').toString().replace(/,/g,';'), e.valor, e.score||scoreEvento(e.tipo)]);
                         const csvLines = meta.concat(['']).concat([header.join(',')]).concat(body.map(r=> r.join(',')));
                         const blob = new Blob([csvLines.join('\n')], {type:'text/csv;charset=utf-8;'});
                         const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='eventos_spc.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
