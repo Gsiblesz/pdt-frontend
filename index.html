@@ -267,6 +267,7 @@
                             <button id="btn-clear-rebaseline-tiempo" class="bg-stone-500 hover:bg-stone-600 text-white text-[11px] font-semibold px-2 py-1 rounded" title="Eliminar rebaseline guardado">Reset</button>
                         </div>
                     </div>
+                    <div id="segments-tiempo" class="text-[10px] text-stone-600 mb-2 space-y-0.5"></div>
                 </section>
                 <section>
                     <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Control % tiempo muerto <span class="info-hint text-blue-600 cursor-help align-middle" title="Porcentaje de tiempo inactivo respecto al total real por máquina (media y ±3σ).">ℹ️</span></h3>
@@ -280,6 +281,7 @@
                             <button id="btn-clear-rebaseline-muerto" class="bg-stone-500 hover:bg-stone-600 text-white text-[11px] font-semibold px-2 py-1 rounded" title="Eliminar rebaseline guardado">Reset</button>
                         </div>
                     </div>
+                    <div id="segments-muerto" class="text-[10px] text-stone-600 mb-2 space-y-0.5"></div>
                 </section>
                 <section>
                     <div class="flex items-start justify-between gap-4">
@@ -2311,7 +2313,7 @@ document.addEventListener('DOMContentLoaded', () => {
             function stats(arr){ if(!arr.length) return null; const mean=arr.reduce((a,b)=>a+b,0)/arr.length; const variance=arr.reduce((a,b)=>a+(b-mean)**2,0)/arr.length; const sd=Math.sqrt(variance); return {mean, sd, ucl:mean+3*sd, lcl:Math.max(0, mean-3*sd)}; }
             const stTiempo = stats(puntosTiempo);
             const stMuerto = stats(puntosPctMuerto);
-            // Rebaseline multi-segment persistence
+            // Multi-segment persistence (base + adicionales)
             const REBASE_KEY_TIEMPO='spc_rebase_tiempo_segments';
             const REBASE_KEY_MUERTO='spc_rebase_muerto_segments';
             function loadSegments(key){ try{ const v=JSON.parse(localStorage.getItem(key)||'[]'); return Array.isArray(v)? v: []; }catch(e){ return []; } }
@@ -2321,34 +2323,44 @@ document.addEventListener('DOMContentLoaded', () => {
             function normalize(list){ const m=new Map(); list.forEach(s=>{ if(s && Number.isFinite(s.fromIndex)) m.set(s.fromIndex,s); }); return Array.from(m.values()).sort((a,b)=> a.fromIndex-b.fromIndex); }
             let segsTiempo = normalize(loadSegments(REBASE_KEY_TIEMPO));
             let segsMuerto = normalize(loadSegments(REBASE_KEY_MUERTO));
-            function rebuildStats(list, arr){ for(let i=0;i<list.length;i++){ const seg=list[i]; const end = (i<list.length-1)? list[i+1].fromIndex: arr.length; const subset = arr.slice(seg.fromIndex, end).filter(v=> typeof v==='number'); if(subset.length>=2){ const mean=subset.reduce((a,b)=>a+b,0)/subset.length; const variance=subset.reduce((a,b)=>a+(b-mean)**2,0)/subset.length; const sd=Math.sqrt(variance); seg.mean=mean; seg.sd=sd; seg.ucl=mean+3*sd; seg.lcl=Math.max(0, mean-3*sd); } } }
+            // Ensure base segment exists
+            if(puntosTiempo.length>=5 && !segsTiempo.some(s=> s.fromIndex===0) && stTiempo){ const base=computeSegment(0,puntosTiempo); if(base) segsTiempo.unshift(base); }
+            if(puntosPctMuerto.length>=5 && !segsMuerto.some(s=> s.fromIndex===0) && stMuerto){ const base=computeSegment(0,puntosPctMuerto); if(base) segsMuerto.unshift(base); }
+            function rebuildStats(list, arr){ for(let i=0;i<list.length;i++){ const seg=list[i]; const end = (i<list.length-1)? list[i+1].fromIndex: arr.length; const subset = arr.slice(seg.fromIndex, end).filter(v=> typeof v==='number'); if(subset.length>=2){ const mean=subset.reduce((a,b)=>a+b,0)/subset.length; const variance=subset.reduce((a,b)=>a+(b-mean)**2,0)/subset.length; const sd=Math.sqrt(variance); seg.mean=mean; seg.sd=sd; seg.ucl=mean+3*sd; seg.lcl=Math.max(0, mean-3*sd); seg.length=subset.length; } } }
             rebuildStats(segsTiempo, puntosTiempo);
             rebuildStats(segsMuerto, puntosPctMuerto);
             function segmentFor(list, idx){ let current=null; for(const s of list){ if(idx>=s.fromIndex) current=s; else break; } return current; }
-            const eventos=[]; // {tipo, indice, etiqueta, valor, metrica, lote}
-            function detectarEventos(arr, st, etiquetaBuilder, isPct, metrica, loteGetter){
-                if(!st || arr.length<2) return;
+            // Build per-index stats arrays for dynamic evaluation
+            function expandStats(list, total){ const mean=new Array(total).fill(null), sd=new Array(total).fill(null), ucl=new Array(total).fill(null), lcl=new Array(total).fill(null), segFrom=new Array(total).fill(null), segIdx=new Array(total).fill(null); list.forEach((seg,i)=>{ const end = (i<list.length-1? list[i+1].fromIndex: total); for(let k=seg.fromIndex;k<end && k<total;k++){ mean[k]=seg.mean; sd[k]=seg.sd; ucl[k]=seg.ucl; lcl[k]=seg.lcl; segFrom[k]=seg.fromIndex; segIdx[k]=i; } }); return {mean,sd,ucl,lcl,segFrom,segIdx}; }
+            const stxTiempo = expandStats(segsTiempo, puntosTiempo.length);
+            const stxMuerto = expandStats(segsMuerto, puntosPctMuerto.length);
+            const eventos=[]; // {tipo, indice, etiqueta, valor, metrica, lote, segmentFrom, segmentIdx}
+            function detectarEventos(arr, statsX, etiquetaBuilder, isPct, metrica, loteGetter){
+                if(!statsX.mean.length || arr.length<2) return;
                 const added = new Set();
-                function pushEvento(tipo,i,val,etq){ const key=tipo+'|'+i+'|'+metrica; if(added.has(key)) return; added.add(key); eventos.push({tipo, indice:i, etiqueta:etq, valor:val, metrica, lote:(loteGetter?loteGetter(i):'')}); }
-                // 1. Fuera de límites
-                arr.forEach((v,i)=>{ if(v>st.ucl || v<st.lcl){ pushEvento('Fuera de límites', i, isPct? v.toFixed(2)+'%': v+'s', etiquetaBuilder(i)); } });
-                // 2. Run >=7 & 8 mismo lado
-                let runSide=null, runLen=0; arr.forEach((v,i)=>{ const side=v>=st.mean?'up':'down'; if(side===runSide){ runLen++; } else { runSide=side; runLen=1; } if(runLen===7) pushEvento('Run 7 mismo lado', i, isPct? v.toFixed(2)+'%': v+'s', etiquetaBuilder(i)+' (último)'); if(runLen===8) pushEvento('8 mismo lado', i, isPct? v.toFixed(2)+'%': v+'s', etiquetaBuilder(i)+' (último)'); });
-                // 3. Tendencia (strict monotonic) >=6
-                let trendLen=1; for(let i=1;i<arr.length;i++){ if(arr[i]>arr[i-1]){ if(trendLen>0) trendLen++; else trendLen=2; } else if(arr[i]<arr[i-1]){ if(trendLen<0) trendLen--; else trendLen=-2; } else { trendLen=1; } if(Math.abs(trendLen)===6){ pushEvento('Tendencia 6 '+(trendLen>0?'asc':'desc'), i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i)+' (último)'); } }
-                if(st.sd>0){
-                    // 4. 2 de 3 >2σ mismo lado (ventanas de 3)
-                    for(let i=2;i<arr.length;i++){
-                        let pos=0,neg=0; for(let j=i-2;j<=i;j++){ const z=(arr[j]-st.mean)/st.sd; if(Math.abs(z)>2){ if(z>0) pos++; else neg++; } }
-                        if(pos>=2) pushEvento('2 de 3 >2σ arriba', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
-                        if(neg>=2) pushEvento('2 de 3 >2σ abajo', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
+                function pushEvento(tipo,i,val,etq){ const key=tipo+'|'+i+'|'+metrica; if(added.has(key)) return; added.add(key); eventos.push({tipo, indice:i, etiqueta:etq, valor:val, metrica, lote:(loteGetter?loteGetter(i):''), segmentFrom: statsX.segFrom[i], segmentIdx: statsX.segIdx[i]}); }
+                // 1. Fuera de límites (segment-specific)
+                arr.forEach((v,i)=>{ if(statsX.ucl[i]!=null && (v>statsX.ucl[i] || v<statsX.lcl[i])){ pushEvento('Fuera de límites', i, isPct? v.toFixed(2)+'%': v+'s', etiquetaBuilder(i)); } });
+                // 2. Run >=7 & 8 mismo lado (respect segmented mean)
+                let runSide=null, runLen=0; arr.forEach((v,i)=>{ const mean=statsX.mean[i]; if(mean==null) return; const side=v>=mean?'up':'down'; const prevSeg= statsX.segIdx[i-1]; const curSeg= statsX.segIdx[i]; if(i>0 && prevSeg!==curSeg){ // reset run when segment boundary changes
+                        runSide=side; runLen=1; return;
                     }
-                    // 5. 4 de 5 >1σ mismo lado (ventanas de 5)
-                    for(let i=4;i<arr.length;i++){
-                        let pos=0,neg=0; for(let j=i-4;j<=i;j++){ const z=(arr[j]-st.mean)/st.sd; if(Math.abs(z)>1){ if(z>0) pos++; else neg++; } }
-                        if(pos>=4) pushEvento('4 de 5 >1σ arriba', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
-                        if(neg>=4) pushEvento('4 de 5 >1σ abajo', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
-                    }
+                    if(side===runSide){ runLen++; } else { runSide=side; runLen=1; }
+                    if(runLen===7) pushEvento('Run 7 mismo lado', i, isPct? v.toFixed(2)+'%': v+'s', etiquetaBuilder(i)+' (último)');
+                    if(runLen===8) pushEvento('8 mismo lado', i, isPct? v.toFixed(2)+'%': v+'s', etiquetaBuilder(i)+' (último)');
+                });
+                // 3. Tendencia 6 asc/desc (global, independent of segments, but reset on boundary)
+                let trendLen=1; for(let i=1;i<arr.length;i++){ const prevSeg=statsX.segIdx[i-1]; const curSeg=statsX.segIdx[i]; if(prevSeg!==curSeg){ trendLen=1; continue; } if(arr[i]>arr[i-1]){ if(trendLen>0) trendLen++; else trendLen=2; } else if(arr[i]<arr[i-1]){ if(trendLen<0) trendLen--; else trendLen=-2; } else { trendLen=1; } if(Math.abs(trendLen)===6){ pushEvento('Tendencia 6 '+(trendLen>0?'asc':'desc'), i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i)+' (último)'); } }
+                // 4 & 5. Zone rules with segment-specific σ
+                for(let i=2;i<arr.length;i++){
+                    const segIdx = statsX.segIdx[i]; if(segIdx==null) continue; const mean=statsX.mean[i]; const sd=statsX.sd[i]; if(!sd) continue; let pos=0,neg=0; for(let j=i-2;j<=i;j++){ if(statsX.segIdx[j]!==segIdx) { pos=0; neg=0; continue; } const z=(arr[j]-mean)/sd; if(Math.abs(z)>2){ if(z>0) pos++; else neg++; } }
+                    if(pos>=2) pushEvento('2 de 3 >2σ arriba', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
+                    if(neg>=2) pushEvento('2 de 3 >2σ abajo', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
+                }
+                for(let i=4;i<arr.length;i++){
+                    const segIdx = statsX.segIdx[i]; if(segIdx==null) continue; const mean=statsX.mean[i]; const sd=statsX.sd[i]; if(!sd) continue; let pos=0,neg=0; for(let j=i-4;j<=i;j++){ if(statsX.segIdx[j]!==segIdx) { pos=0; neg=0; continue; } const z=(arr[j]-mean)/sd; if(Math.abs(z)>1){ if(z>0) pos++; else neg++; } }
+                    if(pos>=4) pushEvento('4 de 5 >1σ arriba', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
+                    if(neg>=4) pushEvento('4 de 5 >1σ abajo', i, isPct? arr[i].toFixed(2)+'%': arr[i]+'s', etiquetaBuilder(i));
                 }
             }
             // Asignar score a cada evento
@@ -2382,28 +2394,18 @@ document.addEventListener('DOMContentLoaded', () => {
             eventos.forEach(ev=>{ const bucket=eventosPorMetrica[ev.metrica]; if(bucket){ (bucket[ev.indice]=bucket[ev.indice]||[]).push(ev); } });
             if(canvasTiempo && puntosTiempo.length){
                 const ds=[{label:'Tiempo total (s)', data:puntosTiempo, borderColor:'#2563eb', backgroundColor:'#2563eb', tension:0.15, pointRadius:4, fill:false}];
-                if(stTiempo && puntosTiempo.length>=5){
-                    const baseIdx = puntosTiempo.map((_,i)=> i);
-                    // Baseline original siempre se muestra
-                    ds.push({label:'CL', data:baseIdx.map(()=> stTiempo.mean), borderColor:'#16a34a', borderWidth:1.2, pointRadius:0});
-                    ds.push({label:'UCL', data:baseIdx.map(()=> stTiempo.ucl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
-                    ds.push({label:'LCL', data:baseIdx.map(()=> stTiempo.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
-                    let stReferencia = stTiempo;
-                    if(rebaseTiempo && rebaseTiempo.fromIndex < puntosTiempo.length-1){
-                        // Calcular rebaseline en caso de estar guardado pero sin stats
-                        if(!rebaseTiempo.mean){
-                            rebaseTiempo = computeRebase(rebaseTiempo.fromIndex, puntosTiempo);
-                            if(rebaseTiempo) saveRebase(REBASE_KEY_TIEMPO, rebaseTiempo);
-                        }
-                        if(rebaseTiempo){
-                            // Dibujar sólo desde fromIndex
-                            ds.push({label:'CL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseTiempo.fromIndex? rebaseTiempo.mean:null), borderColor:'#16a34a', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
-                            ds.push({label:'UCL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseTiempo.fromIndex? rebaseTiempo.ucl:null), borderColor:'#dc2626', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
-                            ds.push({label:'LCL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseTiempo.fromIndex? rebaseTiempo.lcl:null), borderColor:'#dc2626', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
-                            stReferencia = rebaseTiempo; // Usar para eventos post cambio
-                        }
-                    }
-                    detectarEventos(puntosTiempo, stReferencia, (i)=>labels[i], false, 'Tiempo total', (i)=>lotes[i]);
+                if(segsTiempo.length && puntosTiempo.length>=5){
+                    // Add segment lines
+                    segsTiempo.forEach((seg,i)=>{
+                        const baseIdx = puntosTiempo.map((_,k)=> k>=seg.fromIndex? seg.mean:null);
+                        const uclIdx = puntosTiempo.map((_,k)=> k>=seg.fromIndex? seg.ucl:null);
+                        const lclIdx = puntosTiempo.map((_,k)=> k>=seg.fromIndex? seg.lcl:null);
+                        const showLabel = (i===0)? 'CL' : '';
+                        ds.push({label:showLabel, data:baseIdx, borderColor:'#16a34a', borderWidth:1.1, pointRadius:0, borderDash: i===0? []:[2,2]});
+                        ds.push({label:showLabel? 'UCL': '', data:uclIdx, borderColor:'#dc2626', borderWidth:1.1, pointRadius:0, borderDash: i===0? [6,4]:[2,2]});
+                        ds.push({label:showLabel? 'LCL': '', data:lclIdx, borderColor:'#dc2626', borderWidth:1.1, pointRadius:0, borderDash: i===0? [6,4]:[2,2]});
+                    });
+                    detectarEventos(puntosTiempo, stxTiempo, (i)=>labels[i], false, 'Tiempo total', (i)=>lotes[i]);
                 }
                 // Enriquecer puntos con eventos
                 const eventoTiposTiempo={};
@@ -2415,37 +2417,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     ds[0].pointRadius = (ctx)=> eventoTiposTiempo[ctx.dataIndex] ? 6 : 4;
                     ds[0].pointStyle = (ctx)=> eventoTiposTiempo[ctx.dataIndex] ? 'triangle' : 'circle';
                 }
-                const optTiempo = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label(ctx){ return `Valor: ${ctx.parsed.y}s`; }, afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const detalle = `Idx ${idx}`; const fila = detalleFilas[idx]; const metaLinea = fila? [`Fecha: ${fila.fecha}`, `Amas: M${fila.amasadora}`, `Lote: ${fila.lote||''}`] : []; const evs = (eventosPorMetrica['Tiempo total'][idx]||[]).map(e=>'• '+e.tipo); return [...metaLinea, ...(evs.length?['Eventos:'].concat(evs):[])]; }}}}, scales:{y:{beginAtZero:true}}};
+                const optTiempo = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label(ctx){ return `Valor: ${ctx.parsed.y}s`; }, afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const fila = detalleFilas[idx]; const metaLinea = fila? [`Fecha: ${fila.fecha}`, `Amas: M${fila.amasadora}`, `Lote: ${fila.lote||''}`, `Segmento desde #${stxTiempo.segFrom[idx]}`] : [`Segmento desde #${stxTiempo.segFrom[idx]}`]; const evs = (eventosPorMetrica['Tiempo total'][idx]||[]).map(e=>'• '+e.tipo); return [...metaLinea, ...(evs.length?['Eventos:'].concat(evs):[])]; }}}}, scales:{y:{beginAtZero:true}}};
                 mkChart(canvasTiempo,'line',{labels, datasets:ds}, optTiempo);
-                const info=document.getElementById('chart-ctrl-tiempo-info'); if(info && stTiempo){
-                    let baseTxt = `CL=${stTiempo.mean.toFixed(1)}s · σ=${stTiempo.sd.toFixed(1)}s · UCL=${stTiempo.ucl.toFixed(1)}s · LCL=${stTiempo.lcl.toFixed(1)}s`;
-                    if(rebaseTiempo && rebaseTiempo.mean){
-                        baseTxt += ` | Rebase desde #${rebaseTiempo.fromIndex} → CL=${rebaseTiempo.mean.toFixed(1)}s · σ=${rebaseTiempo.sd.toFixed(1)}s`;
-                    }
-                    info.textContent = baseTxt;
+                const info=document.getElementById('chart-ctrl-tiempo-info'); if(info && segsTiempo.length){
+                    info.textContent = segsTiempo.map((s,i)=>`S${i}#${s.fromIndex} CL=${s.mean.toFixed(1)} σ=${s.sd.toFixed(1)}`).join(' | ');
                     if(Object.keys(eventoTiposTiempo).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info.appendChild(note);} }
             }
             if(canvasMuerto && puntosPctMuerto.length){
                 const ds2=[{label:'% Muerto', data:puntosPctMuerto, borderColor:'#f59e0b', backgroundColor:'#f59e0b', tension:0.15, pointRadius:4, fill:false}];
-                if(stMuerto && puntosPctMuerto.length>=5){
-                    const baseIdx = puntosPctMuerto.map((_,i)=> i);
-                    ds2.push({label:'CL', data:baseIdx.map(()=> stMuerto.mean), borderColor:'#16a34a', borderWidth:1.2, pointRadius:0});
-                    ds2.push({label:'UCL', data:baseIdx.map(()=> stMuerto.ucl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
-                    ds2.push({label:'LCL', data:baseIdx.map(()=> stMuerto.lcl), borderColor:'#dc2626', borderDash:[6,4], borderWidth:1.2, pointRadius:0});
-                    let stRef = stMuerto;
-                    if(rebaseMuerto && rebaseMuerto.fromIndex < puntosPctMuerto.length-1){
-                        if(!rebaseMuerto.mean){
-                            rebaseMuerto = computeRebase(rebaseMuerto.fromIndex, puntosPctMuerto);
-                            if(rebaseMuerto) saveRebase(REBASE_KEY_MUERTO, rebaseMuerto);
-                        }
-                        if(rebaseMuerto){
-                            ds2.push({label:'CL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseMuerto.fromIndex? rebaseMuerto.mean:null), borderColor:'#16a34a', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
-                            ds2.push({label:'UCL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseMuerto.fromIndex? rebaseMuerto.ucl:null), borderColor:'#dc2626', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
-                            ds2.push({label:'LCL (Rebase)', data:baseIdx.map((_,i)=> i>=rebaseMuerto.fromIndex? rebaseMuerto.lcl:null), borderColor:'#dc2626', borderDash:[2,2], borderWidth:1.2, pointRadius:0});
-                            stRef = rebaseMuerto;
-                        }
-                    }
-                    detectarEventos(puntosPctMuerto, stRef, (i)=>labels[i], true, '% Muerto', (i)=>lotes[i]);
+                if(segsMuerto.length && puntosPctMuerto.length>=5){
+                    segsMuerto.forEach((seg,i)=>{
+                        const baseIdx = puntosPctMuerto.map((_,k)=> k>=seg.fromIndex? seg.mean:null);
+                        const uclIdx = puntosPctMuerto.map((_,k)=> k>=seg.fromIndex? seg.ucl:null);
+                        const lclIdx = puntosPctMuerto.map((_,k)=> k>=seg.fromIndex? seg.lcl:null);
+                        const showLabel = (i===0)? 'CL' : '';
+                        ds2.push({label:showLabel, data:baseIdx, borderColor:'#16a34a', borderWidth:1.1, pointRadius:0, borderDash: i===0? []:[2,2]});
+                        ds2.push({label:showLabel? 'UCL': '', data:uclIdx, borderColor:'#dc2626', borderWidth:1.1, pointRadius:0, borderDash: i===0? [6,4]:[2,2]});
+                        ds2.push({label:showLabel? 'LCL': '', data:lclIdx, borderColor:'#dc2626', borderWidth:1.1, pointRadius:0, borderDash: i===0? [6,4]:[2,2]});
+                    });
+                    detectarEventos(puntosPctMuerto, stxMuerto, (i)=>labels[i], true, '% Muerto', (i)=>lotes[i]);
                 }
                 const eventoTiposMuerto={};
                 eventos.filter(e=>e.metrica==='% Muerto').forEach(e=>{ (eventoTiposMuerto[e.indice] = eventoTiposMuerto[e.indice]||[]).push(e.tipo); });
@@ -2456,12 +2446,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     ds2[0].pointRadius = (ctx)=> eventoTiposMuerto[ctx.dataIndex] ? 6 : 4;
                     ds2[0].pointStyle = (ctx)=> eventoTiposMuerto[ctx.dataIndex] ? 'triangle' : 'circle';
                 }
-                const optMuerto = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label(ctx){ return `%: ${ctx.parsed.y.toFixed(2)}%`; }, afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const fila = detalleFilas[idx]; const metaLinea = fila? [`Fecha: ${fila.fecha}`, `Amas: M${fila.amasadora}`, `Lote: ${fila.lote||''}`] : []; const evs = (eventosPorMetrica['% Muerto'][idx]||[]).map(e=>'• '+e.tipo); return [...metaLinea, ...(evs.length?['Eventos:'].concat(evs):[])]; }}}}, scales:{y:{beginAtZero:true, title:{display:true,text:'%'}}}};
+                const optMuerto = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label(ctx){ return `%: ${ctx.parsed.y.toFixed(2)}%`; }, afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const fila = detalleFilas[idx]; const metaLinea = fila? [`Fecha: ${fila.fecha}`, `Amas: M${fila.amasadora}`, `Lote: ${fila.lote||''}`, `Segmento desde #${stxMuerto.segFrom[idx]}`] : [`Segmento desde #${stxMuerto.segFrom[idx]}`]; const evs = (eventosPorMetrica['% Muerto'][idx]||[]).map(e=>'• '+e.tipo); return [...metaLinea, ...(evs.length?['Eventos:'].concat(evs):[])]; }}}}, scales:{y:{beginAtZero:true, title:{display:true,text:'%'}}}};
                 mkChart(canvasMuerto,'line',{labels, datasets:ds2}, optMuerto);
-                const info2=document.getElementById('chart-ctrl-muerto-info'); if(info2 && stMuerto){
-                    let baseTxt = `CL=${stMuerto.mean.toFixed(2)}% · σ=${stMuerto.sd.toFixed(2)}% · UCL=${stMuerto.ucl.toFixed(2)}% · LCL=${stMuerto.lcl.toFixed(2)}%`;
-                    if(rebaseMuerto && rebaseMuerto.mean){ baseTxt += ` | Rebase desde #${rebaseMuerto.fromIndex} → CL=${rebaseMuerto.mean.toFixed(2)}% · σ=${rebaseMuerto.sd.toFixed(2)}%`; }
-                    info2.textContent = baseTxt; if(Object.keys(eventoTiposMuerto).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info2.appendChild(note);} }
+                const info2=document.getElementById('chart-ctrl-muerto-info'); if(info2 && segsMuerto.length){
+                    info2.textContent = segsMuerto.map((s,i)=>`S${i}#${s.fromIndex} CL=${s.mean.toFixed(2)} σ=${s.sd.toFixed(2)}`).join(' | ');
+                    if(Object.keys(eventoTiposMuerto).length){ const note=document.createElement('div'); note.className='text-[11px] text-stone-500 mt-1'; note.textContent='Triángulo rojo = punto con evento SPC'; info2.appendChild(note);} }
             }
             // Botones Rebaseline multi-segment
             const btnRbT = document.getElementById('btn-rebaseline-tiempo');
@@ -2471,6 +2460,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const btnClrT = document.getElementById('btn-clear-rebaseline-tiempo');
             const btnClrM = document.getElementById('btn-clear-rebaseline-muerto');
             function addSegment(listKey, list, idx, arr){ if(list.some(s=> s.fromIndex===idx)){ alert('Segmento ya existe'); return false; } const seg=computeSegment(idx, arr); if(!seg){ alert('No hay suficientes puntos después del índice'); return false; } list.push(seg); list.sort((a,b)=>a.fromIndex-b.fromIndex); saveSegments(listKey, list); return true; }
+            function removeSegment(listKey, list, idx){ const i=list.findIndex(s=> s.fromIndex===idx); if(i<=0) { alert('No se puede eliminar el segmento base o no existe.'); return false; } list.splice(i,1); saveSegments(listKey, list); return true; }
+            function renderSegmentsUI(){
+                const contT=document.getElementById('segments-tiempo'); const contM=document.getElementById('segments-muerto');
+                function mk(list,key){ return list.map((s,i)=>`<span class='inline-flex items-center gap-1 px-1.5 py-0.5 rounded border ${i===0?'bg-stone-200 border-stone-300':'bg-white border-stone-300'}'>S${i}@${s.fromIndex}<span class='text-[9px] text-stone-500'>CL ${s.mean.toFixed(1)}${key==='muerto'?'%':'s'}</span>${i>0?`<button data-del-seg='${key}:${s.fromIndex}' class='text-red-600 hover:text-red-800 font-bold leading-none' title='Eliminar segmento'>×</button>`:''}</span>`).join(' '); }
+                if(contT) contT.innerHTML = segsTiempo.length? mk(segsTiempo,'tiempo') : '<em>Sin segmentos</em>';
+                if(contM) contM.innerHTML = segsMuerto.length? mk(segsMuerto,'muerto') : '<em>Sin segmentos</em>';
+            }
+            renderSegmentsUI();
+            document.addEventListener('click', e=>{
+                const btn=e.target.closest('button[data-del-seg]'); if(!btn) return; const val=btn.getAttribute('data-del-seg'); const [kind, from]=val.split(':'); const idx=parseInt(from,10); if(kind==='tiempo'){ if(removeSegment(REBASE_KEY_TIEMPO,segsTiempo,idx)) buildTablasVista(); } else if(kind==='muerto'){ if(removeSegment(REBASE_KEY_MUERTO,segsMuerto,idx)) buildTablasVista(); }
+            });
             function applyRebaseTiempo(){ const idx=parseInt(inpRbT.value,10); if(isNaN(idx)|| idx<1 || idx>=puntosTiempo.length-2){ alert('Índice inválido'); return; } if(addSegment(REBASE_KEY_TIEMPO, segsTiempo, idx, puntosTiempo)) buildTablasVista(); }
             function applyRebaseMuerto(){ const idx=parseInt(inpRbM.value,10); if(isNaN(idx)|| idx<1 || idx>=puntosPctMuerto.length-2){ alert('Índice inválido'); return; } if(addSegment(REBASE_KEY_MUERTO, segsMuerto, idx, puntosPctMuerto)) buildTablasVista(); }
             if(btnRbT) btnRbT.onclick = applyRebaseTiempo;
@@ -2484,7 +2484,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tiposUnicos = Array.from(new Set(eventos.map(e=>e.tipo))).sort();
                 const estado = {}; tiposUnicos.forEach(t=> estado[t]=true);
                 function renderFiltros(){ if(!filtrosWrap) return; filtrosWrap.innerHTML = tiposUnicos.map(t=> `<label class='inline-flex items-center gap-1 bg-stone-100 px-2 py-1 rounded border border-stone-300'> <input type='checkbox' data-tipo='${t}' checked class='spc-filter accent-indigo-600 scale-90'/> <span>${t}</span></label>`).join(''); filtrosWrap.querySelectorAll('input.spc-filter').forEach(inp=>{ inp.addEventListener('change',()=>{ estado[inp.getAttribute('data-tipo')] = inp.checked; renderTabla(); }); }); }
-                function renderTabla(){ if(!eventos.length){ cont.innerHTML='<div class="text-stone-500">Sin señales detectadas.</div>'; return; } const filtrados = eventos.filter(e=> estado[e.tipo]); if(!filtrados.length){ cont.innerHTML='<div class="text-stone-500">(Todos los tipos filtrados)</div>'; return; } const rows = filtrados.map(ev=> `<tr><td class='px-2 py-1 border-b border-stone-200 whitespace-nowrap'>${ev.tipo}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.metrica}</td><td class='px-2 py-1 border-b border-stone-200 font-mono text-xs'>${ev.etiqueta}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.lote||''}</td><td class='px-2 py-1 border-b border-stone-200 text-right'>${ev.valor}</td></tr>`).join(''); cont.innerHTML = `<table class='min-w-[640px] text-[11px] border border-stone-300 bg-white rounded'><thead class='bg-stone-100 text-stone-700'><tr><th class='px-2 py-1 text-left'>Tipo</th><th class='px-2 py-1 text-left'>Métrica</th><th class='px-2 py-1 text-left'>Etiqueta</th><th class='px-2 py-1 text-left'>Lote</th><th class='px-2 py-1 text-right'>Valor</th></tr></thead><tbody>${rows}</tbody></table>`; }
+                function renderTabla(){ if(!eventos.length){ cont.innerHTML='<div class="text-stone-500">Sin señales detectadas.</div>'; return; } const filtrados = eventos.filter(e=> estado[e.tipo]); if(!filtrados.length){ cont.innerHTML='<div class="text-stone-500">(Todos los tipos filtrados)</div>'; return; } const rows = filtrados.map(ev=> `<tr><td class='px-2 py-1 border-b border-stone-200 whitespace-nowrap'>${ev.tipo}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.metrica}</td><td class='px-2 py-1 border-b border-stone-200 font-mono text-[10px]'>${ev.etiqueta}</td><td class='px-2 py-1 border-b border-stone-200'>${ev.lote||''}</td><td class='px-2 py-1 border-b border-stone-200 text-center'>S${(ev.segmentIdx??0)}</td><td class='px-2 py-1 border-b border-stone-200 text-right'>${ev.valor}</td></tr>`).join(''); cont.innerHTML = `<table class='min-w-[720px] text-[11px] border border-stone-300 bg-white rounded'><thead class='bg-stone-100 text-stone-700'><tr><th class='px-2 py-1 text-left'>Tipo</th><th class='px-2 py-1 text-left'>Métrica</th><th class='px-2 py-1 text-left'>Etiqueta</th><th class='px-2 py-1 text-left'>Lote</th><th class='px-2 py-1 text-left'>Seg</th><th class='px-2 py-1 text-right'>Valor</th></tr></thead><tbody>${rows}</tbody></table>`; }
                 prepararTopEventos();
                 renderFiltros();
                 renderTabla();
@@ -2514,8 +2514,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         if(stTiempo) meta.push(`# Tiempo Total: mean=${stTiempo.mean.toFixed(2)} sd=${stTiempo.sd.toFixed(2)} UCL=${stTiempo.ucl.toFixed(2)} LCL=${stTiempo.lcl.toFixed(2)}`);
                         if(stMuerto) meta.push(`# % Muerto: mean=${stMuerto.mean.toFixed(2)} sd=${stMuerto.sd.toFixed(2)} UCL=${stMuerto.ucl.toFixed(2)} LCL=${stMuerto.lcl.toFixed(2)}`);
                         meta.push(`# Total eventos: ${eventos.length}`);
-                        const header = ['Tipo','Metrica','Etiqueta','Lote','Valor','Score'];
-                        const body = eventos.map(e=> [e.tipo, e.metrica, e.etiqueta.replace(/,/g,';'), (e.lote||'').toString().replace(/,/g,';'), e.valor, e.score||scoreEvento(e.tipo)]);
+                        const header = ['Tipo','Metrica','Etiqueta','Lote','Valor','Score','SegmentIdx','SegmentFrom'];
+                        const body = eventos.map(e=> [e.tipo, e.metrica, e.etiqueta.replace(/,/g,';'), (e.lote||'').toString().replace(/,/g,';'), e.valor, e.score||scoreEvento(e.tipo), e.segmentIdx, e.segmentFrom]);
                         const csvLines = meta.concat(['']).concat([header.join(',')]).concat(body.map(r=> r.join(',')));
                         const blob = new Blob([csvLines.join('\n')], {type:'text/csv;charset=utf-8;'});
                         const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='eventos_spc.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
@@ -2548,7 +2548,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const list = Object.keys(weeks).sort();
                 // Limitar a últimas 10 semanas
                 const ordered = list.slice(-10).map(k=> ({ semana:k, promReal: weeks[k].real/weeks[k].n, oee: weeks[k].prod/weeks[k].real, pctMuerto: weeks[k].muerto/weeks[k].real*100 }));
-                function renderSpark(arr, key, elId, suffix){ const el=document.getElementById(elId); if(!el){ return; } if(!arr.length){ el.textContent='(sin datos)'; return; } if(arr.length===1){ el.textContent = arr[0][key].toFixed(1)+suffix+' (≥2 sem para tendencia)'; return; } const w=90,h=30,p=3; const vals=arr.map(o=> o[key]); const min=Math.min(...vals), max=Math.max(...vals); const scale=v=> h-p - ((v-min)*(h-2*p)/(max-min||1)); const step=(w-2*p)/(vals.length-1); const pts=vals.map((v,i)=> (p+i*step)+','+scale(v)).join(' '); const last=vals[vals.length-1]; el.innerHTML = `<svg width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'><polyline points='${pts}' fill='none' stroke='#2563eb' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/><circle cx='${p+(vals.length-1)*step}' cy='${scale(last)}' r='3' fill='#dc2626'/></svg><div class='mt-0.5 text-[10px] text-stone-500'>Últ ${last.toFixed(1)}${suffix} (min ${min.toFixed(1)}, máx ${max.toFixed(1)})</div>`; }
+                function renderSpark(arr, key, elId, suffix){ const el=document.getElementById(elId); if(!el){ return; } if(!arr.length){ el.textContent='(sin datos)'; return; } if(arr.length===1){ el.textContent = arr[0][key].toFixed(1)+suffix+' (≥2 sem para tendencia)'; return; } const w=100,h=32,p=3; const vals=arr.map(o=> o[key]); const min=Math.min(...vals), max=Math.max(...vals); const scale=v=> h-p - ((v-min)*(h-2*p)/(max-min||1)); const step=(w-2*p)/(vals.length-1); const first=vals[0]; const last=vals[vals.length-1]; let color='#2563eb'; if(key==='oee'){ if(last-first>1) color='#16a34a'; else if(first-last>1) color='#dc2626'; } else if(key==='promReal'){ if(first-last>30) color='#16a34a'; else if(last-first>30) color='#dc2626'; } else if(key==='pctMuerto'){ if(first-last>1) color='#16a34a'; else if(last-first>1) color='#dc2626'; } const avg = vals.reduce((a,b)=>a+b,0)/vals.length; const pts=vals.map((v,i)=> (p+i*step)+','+scale(v)).join(' '); const avgY=scale(avg); el.innerHTML = `<svg width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'>
+<polyline points='${pts}' fill='none' stroke='${color}' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/>
+<line x1='${p}' y1='${avgY}' x2='${w-p}' y2='${avgY}' stroke='#94a3b8' stroke-dasharray='3,3' stroke-width='1'/>
+<circle cx='${p+(vals.length-1)*step}' cy='${scale(last)}' r='3' fill='${color==='\u001b[0m#dc2626'? '#dc2626': color}'/>
+</svg><div class='mt-0.5 text-[10px] text-stone-500'>Últ ${last.toFixed(1)}${suffix} (min ${min.toFixed(1)}, máx ${max.toFixed(1)}, media ${avg.toFixed(1)})</div>`; }
                 renderSpark(ordered,'oee','spark-oee','%');
                 renderSpark(ordered,'promReal','spark-tiempo','s');
                 renderSpark(ordered,'pctMuerto','spark-muerto','%');
