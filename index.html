@@ -2287,8 +2287,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if(oee>=80) color='bg-emerald-600 text-white'; else if(oee>=60) color='bg-amber-500 text-white'; else color='bg-red-600 text-white';
             el.innerHTML = `<div class="inline-flex items-center gap-3"><span class="px-3 py-1 rounded ${color} font-semibold">${oee.toFixed(1)}%</span><span class="text-stone-600">Productivo ${formatTime(prod)} / Real ${formatTime(real)} · TM muerto ${(real-prod)>0?formatTime(real-prod):'00:00:00'}</span></div>`;
         })();
-        // Control Charts (tiempo total y % muerto)
-        (function(){
+            // Control Charts (tiempo total y % muerto)
+            (function(){
+                try {
             const canvasTiempo = document.getElementById('chart-ctrl-tiempo');
             const canvasMuerto = document.getElementById('chart-ctrl-muerto');
             if(!canvasTiempo && !canvasMuerto) return;
@@ -2521,6 +2522,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='eventos_spc.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
                     };
                 }
+                } catch(err){
+                    console.error('Error construyendo control charts/SPC', err);
+                }
             })();
             // Tabla detalle de puntos (fecha, amasadora, lote)
             (function(){
@@ -2551,7 +2555,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 function renderSpark(arr, key, elId, suffix){ const el=document.getElementById(elId); if(!el){ return; } if(!arr.length){ el.textContent='(sin datos)'; return; } if(arr.length===1){ el.textContent = arr[0][key].toFixed(1)+suffix+' (≥2 sem para tendencia)'; return; } const w=100,h=32,p=3; const vals=arr.map(o=> o[key]); const min=Math.min(...vals), max=Math.max(...vals); const scale=v=> h-p - ((v-min)*(h-2*p)/(max-min||1)); const step=(w-2*p)/(vals.length-1); const first=vals[0]; const last=vals[vals.length-1]; let color='#2563eb'; if(key==='oee'){ if(last-first>1) color='#16a34a'; else if(first-last>1) color='#dc2626'; } else if(key==='promReal'){ if(first-last>30) color='#16a34a'; else if(last-first>30) color='#dc2626'; } else if(key==='pctMuerto'){ if(first-last>1) color='#16a34a'; else if(last-first>1) color='#dc2626'; } const avg = vals.reduce((a,b)=>a+b,0)/vals.length; const pts=vals.map((v,i)=> (p+i*step)+','+scale(v)).join(' '); const avgY=scale(avg); el.innerHTML = `<svg width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'>
 <polyline points='${pts}' fill='none' stroke='${color}' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/>
 <line x1='${p}' y1='${avgY}' x2='${w-p}' y2='${avgY}' stroke='#94a3b8' stroke-dasharray='3,3' stroke-width='1'/>
-<circle cx='${p+(vals.length-1)*step}' cy='${scale(last)}' r='3' fill='${color==='\u001b[0m#dc2626'? '#dc2626': color}'/>
+<circle cx='${p+(vals.length-1)*step}' cy='${scale(last)}' r='3' fill='${color}'/>
 </svg><div class='mt-0.5 text-[10px] text-stone-500'>Últ ${last.toFixed(1)}${suffix} (min ${min.toFixed(1)}, máx ${max.toFixed(1)}, media ${avg.toFixed(1)})</div>`; }
                 renderSpark(ordered,'oee','spark-oee','%');
                 renderSpark(ordered,'promReal','spark-tiempo','s');
