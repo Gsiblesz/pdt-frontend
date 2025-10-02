@@ -225,6 +225,14 @@
                 <section>
                     <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Patrones (Globales vs Lotes) <span class="info-hint text-blue-600 cursor-help align-middle" title="Ranking global de factores y comparación de lotes extremos (% muerto).">ℹ️</span></h3>
                     <p class="chart-desc">Izquierda: factores globales que se asocian estadísticamente a menor % muerto y mayor productividad. Derecha: comparación de lotes con % muerto más alto vs más bajo, mostrando factores comunes. Usa ambos para priorizar mejoras y replicar buenas prácticas.</p>
+                    <details class="mb-3">
+                        <summary class="cursor-pointer text-xs text-stone-600">Cómo se calcula (clic para ver)</summary>
+                        <div class="mt-2 text-[11px] leading-relaxed text-stone-600 space-y-1">
+                            <p><strong>Global:</strong> Se filtran outliers de % muerto por IQR. Con el conjunto base se calcula una línea base (media) de % muerto y productividad (tiempo procesos / total). Cada factor (categoría o tercil numérico) se evalúa si tiene menor % muerto y mayor productividad con suficientes muestras (Min muestras factor). El score combina: mejora relativa en % muerto y productividad, t-score aproximado y tamaño de muestra (log).</p>
+                            <p><strong>Lotes extremos:</strong> Se promedia % muerto por lote. Se escogen los N lotes con mayor y menor % muerto (aplicando mínimo de máquinas) y se listan los factores dominantes (moda) y el rango de temperatura de masa.</p>
+                            <p><strong>Interacción:</strong> Cambiar parámetros sólo recalcula esta sección y mantiene tu posición en la página.</p>
+                        </div>
+                    </details>
                     <div class="flex flex-wrap items-center gap-4 mb-4 text-[11px]">
                         <label class="flex items-center gap-1">Min muestras factor: <input id="patrones-min-grupo" type="number" min="2" max="20" value="3" class="w-14 border rounded px-1 py-0.5" /></label>
                         <label class="flex items-center gap-1">Top factores: <input id="patrones-top-fact" type="number" min="1" max="15" value="5" class="w-14 border rounded px-1 py-0.5" /></label>
@@ -1726,7 +1734,17 @@ document.addEventListener('DOMContentLoaded', () => {
     [bdDesdeEl, bdHastaEl, bdLoteEl, bdTipoEl].forEach(el=> el?.addEventListener('change', ()=>{ persistFilters(); buildTablasVista(); }));
     const topNPatronesEl = document.getElementById('patrones-lote-topN');
     if(topNPatronesEl){ topNPatronesEl.addEventListener('change', ()=> buildTablasVista()); }
-    ['patrones-min-grupo','patrones-top-fact','patrones-lote-minN'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.addEventListener('change', ()=> buildTablasVista()); }});
+    // Recalculo ligero de panel de patrones sin redibujar toda la vista (preserva scroll)
+    function recalcPatronesLigero(){
+        const y = window.scrollY;
+        try { if(typeof renderPatrones==='function') renderPatrones(); } catch(_){ }
+        try { if(typeof window.__calcularPatronesLote==='function') window.__calcularPatronesLote(); } catch(_){ }
+        requestAnimationFrame(()=> window.scrollTo(0,y));
+    }
+    ['patrones-min-grupo','patrones-top-fact','patrones-lote-minN','patrones-lote-topN'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el){ el.addEventListener('change', recalcPatronesLigero); }
+    });
     document.getElementById('tablas-bd-clear')?.addEventListener('click', function(){
         if(bdDesdeEl) bdDesdeEl.value=''; if(bdHastaEl) bdHastaEl.value=''; if(bdLoteEl) bdLoteEl.value=''; if(bdTipoEl) bdTipoEl.value='';
         ['TABLAS_BD_DESDE','TABLAS_BD_HASTA','TABLAS_BD_LOTE','TABLAS_BD_TIPO'].forEach(k=> localStorage.removeItem(k));
@@ -2386,7 +2404,7 @@ document.addEventListener('DOMContentLoaded', () => {
            Construir ranking de lotes con mayor y menor % de tiempo muerto
            y detectar factores comunes: tipoMasa, hielo, amasadora, rango tempMasa.
         */
-        (function calcularPatronesLote(){
+    (function calcularPatronesLote(){
             const panel = document.getElementById('patrones-lote-panel');
             const statusEl = document.getElementById('patrones-lote-status');
             if(!panel) return; // si no existe sección, salir
@@ -2500,9 +2518,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             // Wire buttons
             const btnAll=document.getElementById('patrones-recalc-todo');
-            if(btnAll && !btnAll.__wired){ btnAll.__wired=true; btnAll.addEventListener('click', ()=>{ renderPatrones(); calcularPatronesLote(); }); }
+            if(btnAll && !btnAll.__wired){ btnAll.__wired=true; btnAll.addEventListener('click', ()=>{ const y=window.scrollY; renderPatrones(); calcularPatronesLote(); requestAnimationFrame(()=>window.scrollTo(0,y)); }); }
             const btnCSVL=document.getElementById('patrones-export-lotes'); if(btnCSVL && !btnCSVL.__wired){ btnCSVL.__wired=true; btnCSVL.addEventListener('click', exportLotes); }
             const btnCSVG=document.getElementById('patrones-export-global'); if(btnCSVG && !btnCSVG.__wired){ btnCSVG.__wired=true; btnCSVG.addEventListener('click', exportGlobal); }
+            // Exponer para recalculo ligero
+            window.__calcularPatronesLote = calcularPatronesLote;
         })();
         // Resumen tabla
         const resumenHeaders=['Métrica','Valor'];
