@@ -545,6 +545,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let tempData = {};
     try { tempData = JSON.parse(localStorage.getItem('tempAmasadoras')||'{}'); } catch(_){}
     machineCardsContainer.innerHTML = '';
+    // Ensure datalist for tipoPan suggestions exists
+    if(!document.getElementById('lista-tipo-pan')){
+        const dl=document.createElement('datalist'); dl.id='lista-tipo-pan'; document.body.appendChild(dl);
+    }
         let sortedMachines = [...machineData];
         const ordenIds = ['3', '1', '2'];
         sortedMachines.sort((a, b) => ordenIds.indexOf(a.id) - ordenIds.indexOf(b.id));
@@ -606,7 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </select>
                         <input type="text" id="tipoMasaOtro-${machine.id}" placeholder="Especificar otro" class="mt-2 px-3 py-2 rounded-lg border border-dashed border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-masa-otro${temp.tipoMasa==='__OTRO__'?'':' hidden'}" value="${temp.tipoMasaOtro||''}" />
                         <label for="tipoPan-${machine.id}" class="block mb-2 mt-6 text-base font-semibold text-stone-800">Tipo de pan (Libre):</label>
-                        <input type="text" id="tipoPan-${machine.id}" placeholder="Ej: Hamburguesa" class="mt-0 px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 ${temp.tipoMasa==='Tradicional'?'':'opacity-60'}" ${temp.tipoMasa==='Tradicional'?'':'disabled'} value="${temp.tipoPan||''}" />
+                        <input list="lista-tipo-pan" type="text" id="tipoPan-${machine.id}" placeholder="Ej: Hamburguesa" class="mt-0 px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 ${temp.tipoMasa==='Tradicional'?'':'opacity-60'} tipo-pan-input" ${temp.tipoMasa==='Tradicional'?'':'disabled'} value="${temp.tipoPan||''}" data-machine="${machine.id}" />
                         <div class="flex items-center gap-4 mt-4 mb-2">
                             <span class="text-base font-semibold text-stone-800">Hielo:</span>
                             <label class="inline-flex items-center">
@@ -863,6 +867,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Ya no hay select de tipoPan (campo libre); se controla al cambiar tipoMasa
     });
+
+    // --- Autocompletado y normalización de Tipo de pan ---
+    function collectTipoPanValores(){
+        const valores=new Set();
+        // Desde registros guardados
+        try{
+            const data=JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+            data.forEach(r=> (r.maquinas||[]).forEach(m=>{
+                if(m.tipoPan && typeof m.tipoPan==='string' && m.tipoPan.trim()) valores.add(m.tipoPan.trim());
+            }));
+        }catch(_){ }
+        // Desde inputs actuales
+        document.querySelectorAll('input.tipo-pan-input').forEach(inp=>{ if(inp.value.trim()) valores.add(inp.value.trim()); });
+        return Array.from(valores).sort();
+    }
+    function refreshTipoPanDatalist(){
+        const dl=document.getElementById('lista-tipo-pan'); if(!dl) return;
+        const vals=collectTipoPanValores();
+        const frag=document.createDocumentFragment();
+        vals.slice(0,60).forEach(v=>{ const opt=document.createElement('option'); opt.value=v; frag.appendChild(opt); });
+        dl.innerHTML=''; dl.appendChild(frag);
+    }
+    // Normalizar: capitalizar primera letra, trim y colapsar espacios
+    function normalizePan(str){
+        if(!str) return '';
+        str=str.replace(/\s+/g,' ').trim();
+        return str.charAt(0).toUpperCase()+str.slice(1);
+    }
+    // Validación simple: longitud <= 40 y solo letras/números/espacios/acentos
+    function validarPan(str){
+        if(!str) return true; // vacío permitido si no Tradicional
+        if(str.length>40) return false;
+        return /^[\p{L}0-9 ][\p{L}0-9 .-]*$/u.test(str);
+    }
+    // Escuchar blur e input para normalizar y refrescar
+    document.addEventListener('blur', function(e){
+        if(e.target.matches('input.tipo-pan-input')){
+            const inp=e.target; if(inp.disabled) return;
+            const norm=normalizePan(inp.value);
+            if(!validarPan(norm)){
+                inp.classList.add('border-red-500','ring-red-400');
+            }else{
+                inp.classList.remove('border-red-500','ring-red-400');
+                inp.value=norm;
+                refreshTipoPanDatalist();
+            }
+        }
+    }, true);
+    document.addEventListener('input', function(e){
+        if(e.target.matches('input.tipo-pan-input')){
+            const inp=e.target; if(inp.disabled) return;
+            if(validarPan(inp.value)) inp.classList.remove('border-red-500','ring-red-400');
+            else inp.classList.add('border-red-500','ring-red-400');
+        }
+    });
+    // Inicial
+    refreshTipoPanDatalist();
 
     // Bloque eliminado: código huérfano de guardado general (sustituido por guardarResultadosPorMaquina)
 
