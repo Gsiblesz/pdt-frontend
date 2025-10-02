@@ -221,6 +221,32 @@
                     <p class="chart-desc">Cuantifica ineficiencia: mayor porcentaje de tiempo muerto = oportunidad directa de optimización.</p>
                     <canvas id="chart-stacked-muertos" height="140"></canvas>
                 </section>
+                <!-- PANEL COMBINADO: Patrones Globales vs Lotes -->
+                <section>
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Patrones (Globales vs Lotes) <span class="info-hint text-blue-600 cursor-help align-middle" title="Ranking global de factores y comparación de lotes extremos (% muerto).">ℹ️</span></h3>
+                    <p class="chart-desc">Izquierda: factores globales que se asocian estadísticamente a menor % muerto y mayor productividad. Derecha: comparación de lotes con % muerto más alto vs más bajo, mostrando factores comunes. Usa ambos para priorizar mejoras y replicar buenas prácticas.</p>
+                    <div class="flex flex-wrap items-center gap-4 mb-4 text-[11px]">
+                        <label class="flex items-center gap-1">Min muestras factor: <input id="patrones-min-grupo" type="number" min="2" max="20" value="3" class="w-14 border rounded px-1 py-0.5" /></label>
+                        <label class="flex items-center gap-1">Top factores: <input id="patrones-top-fact" type="number" min="1" max="15" value="5" class="w-14 border rounded px-1 py-0.5" /></label>
+                        <span class="mx-2 hidden md:inline text-stone-300">|</span>
+                        <label class="flex items-center gap-1">Top N lotes: <input id="patrones-lote-topN" type="number" min="2" max="10" value="3" class="w-14 border rounded px-1 py-0.5" /></label>
+                        <label class="flex items-center gap-1">Min máquinas/lote: <input id="patrones-lote-minN" type="number" min="1" max="20" value="1" class="w-16 border rounded px-1 py-0.5" /></label>
+                        <button id="patrones-recalc-todo" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded">Recalcular</button>
+                        <button id="patrones-export-global" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 py-1.5 rounded">CSV Global</button>
+                        <button id="patrones-export-lotes" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1.5 rounded">CSV Lotes</button>
+                        <span id="patrones-lote-status" class="text-stone-500"></span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="border border-stone-300 rounded-lg p-3 bg-white">
+                            <div class="text-[11px] font-semibold uppercase tracking-wide mb-1 text-stone-700">Factores globales</div>
+                            <div id="patrones-panel" class="text-xs"></div>
+                        </div>
+                        <div class="border border-stone-300 rounded-lg p-3 bg-white">
+                            <div class="text-[11px] font-semibold uppercase tracking-wide mb-1 text-stone-700">Lotes extremos</div>
+                            <div id="patrones-lote-panel" class="text-xs"></div>
+                        </div>
+                    </div>
+                </section>
                 <section>
                     <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Relación temperatura de masa vs tiempo total <span class="info-hint text-blue-600 cursor-help align-middle" title="Correlación tiempo vs calor.">ℹ️</span></h3>
                     <p class="chart-desc">Evalúa si la temperatura final se asocia a mayor o menor duración (r cercano a 0 indica poca relación).</p>
@@ -857,7 +883,110 @@ document.addEventListener('DOMContentLoaded', () => {
     function guardarResultadosPorMaquina(machineId, btn) {
         const fecha = document.getElementById('fecha').value;
         if (!fecha) {
+        // Fin de la función pasarFechaABD
             mostrarMsgMaquina(machineId, 'Selecciona una fecha para guardar.', false);
+
+    /*********************
+     * DETECCIÓN DE PATRONES (EXPERIMENTAL)
+     * Analiza todos los registros locales y busca qué variables (lote, tipoMasa, hielo, tempMasa, personal, humedad, tempAmbiente)
+     * se correlacionan más con: (a) menor % muerto, (b) mayor productividad (tiempoProcesos / tiempoReal).
+     * Resultado: ranking simple de factores con score heurístico.
+     *********************/
+    function analizarPatrones(){
+        let data = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+        const puntos=[]; // { pctMuerto, ratioProd, tipoMasa, hielo, tempMasa, tempAmbiente, humedad, personal }
+        data.forEach(r=> (r.maquinas||[]).forEach(m=>{
+            const p1=m.proceso1, p3=m.proceso3; if(!(p1&&p1.startTime&&p3&&p3.endTime)) return;
+            const total = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000));
+            if(total<=0) return;
+            let sumaProc=0; for(let i=1;i<=3;i++){ const p=m['proceso'+i]; if(p){ sumaProc += (parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0); } }
+            if(sumaProc<=0) return;
+            const pctMuerto = Math.max(0,total - sumaProc)*100/total;
+            const ratioProd = sumaProc/total;
+            puntos.push({
+                pctMuerto,
+                ratioProd,
+                tipoMasa:(m.tipoMasa||m.tipoPan||'').trim()||'_vacío_',
+                hielo:(m.hielo||'').trim()||'_vacío_',
+                tempMasa: parseFloat(m.tempMasa),
+                tempAmbiente: parseFloat(m.tempAmbiente||r.tempAmbiente),
+                humedad: parseFloat(m.humedad||r.humedad),
+                personal: parseInt(m.personal||m.personalMin||m.personalMax)||NaN
+            });
+        }));
+        if(!puntos.length) return { resumen:'Sin datos suficientes', factores:[] };
+        const avg = arr=> arr.reduce((a,b)=>a+b,0)/arr.length;
+        // Filtrado robusto de outliers sobre pctMuerto (IQR)
+        const sortedPct = puntos.map(p=>p.pctMuerto).sort((a,b)=>a-b);
+        const q = qn=> sortedPct[Math.min(sortedPct.length-1, Math.max(0, Math.floor(qn*(sortedPct.length-1))))];
+        const q1=q(0.25), q3=q(0.75); const iqr=q3-q1; const lowFence=q1-1.5*iqr; const highFence=q3+1.5*iqr;
+        const filtrados = puntos.filter(p=> p.pctMuerto>=lowFence && p.pctMuerto<=highFence);
+        const baseSet = filtrados.length>=5? filtrados: puntos;
+        const basePct = avg(baseSet.map(p=>p.pctMuerto));
+        const baseRatio = avg(baseSet.map(p=>p.ratioProd));
+        // Desv estándar para t-score aproximado
+        function sd(arr){ if(arr.length<2) return 0; const m=avg(arr); return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/(arr.length-1)); }
+        const sdPct = sd(baseSet.map(p=>p.pctMuerto));
+        const sdRatio = sd(baseSet.map(p=>p.ratioProd));
+        const minGrupo = parseInt(document.getElementById('patrones-min-grupo')?.value||'3') || 3;
+        function scoreCategorico(campo){
+            const grupos={}; baseSet.forEach(p=>{ const k=p[campo]; (grupos[k]=grupos[k]||[]).push(p); });
+            const res=[]; Object.entries(grupos).forEach(([k, arr])=>{
+                if(arr.length<minGrupo) return;
+                const pctAvg = avg(arr.map(x=>x.pctMuerto));
+                const ratioAvg = avg(arr.map(x=>x.ratioProd));
+                const mejoraMuerto = (basePct - pctAvg);
+                const mejoraProd = (ratioAvg - baseRatio);
+                // t-like score (normalizado) evitando div/0
+                const tMuerto = sdPct? mejoraMuerto / sdPct : 0;
+                const tProd = sdRatio? mejoraProd / sdRatio : 0;
+                const score = (tProd - tMuerto) + Math.log(arr.length+1)*0.25 + (mejoraProd/baseRatio + (mejoraMuerto/basePct))*0.5;
+                res.push({ valor:k, n:arr.length, pctAvg, ratioAvg, mejoraMuerto:mejoraMuerto/basePct, mejoraProd:mejoraProd/baseRatio, score });
+            });
+            res.sort((a,b)=> b.score - a.score);
+            const top = res[0];
+            return { campo, grupos:res, top };
+        }
+        function scoreNumerico(campo){
+            const vals = baseSet.map(p=> p[campo]).filter(v=> Number.isFinite(v));
+            if(vals.length< (minGrupo*2)) return null;
+            const sorted = vals.slice().sort((a,b)=>a-b);
+            const q1 = sorted[Math.floor(sorted.length/3)];
+            const q2 = sorted[Math.floor(2*sorted.length/3)];
+            function bucket(v){ if(v<=q1) return 'Bajo'; if(v<=q2) return 'Medio'; return 'Alto'; }
+            baseSet.forEach(p=>{ if(Number.isFinite(p[campo])) p['__b_'+campo]=bucket(p[campo]); });
+            return scoreCategorico('__b_'+campo);
+        }
+        const catCampos=['tipoMasa','hielo'];
+        const numCampos=['tempMasa','tempAmbiente','humedad','personal'];
+        const resultados=[];
+        catCampos.forEach(c=>{ const r=scoreCategorico(c); if(r?.top) resultados.push(r); });
+        numCampos.forEach(c=>{ const r=scoreNumerico(c); if(r?.top) resultados.push({...r, campo:c}); });
+        resultados.sort((a,b)=>(b.top?.score||0)-(a.top?.score||0));
+        const topLimit = parseInt(document.getElementById('patrones-top-fact')?.value||'5')||5;
+        return { resumen:`Muestras: ${puntos.length} (usadas ${baseSet.length}) · Base %Muerto=${basePct.toFixed(1)} · Base Prod=${(baseRatio*100).toFixed(1)}%`, factores:resultados.slice(0, topLimit) };
+    }
+
+    // Render sencillo en un panel si existe contenedor #patrones-panel
+    function renderPatrones(){
+        const panel = document.getElementById('patrones-panel'); if(!panel) return;
+        const r = analizarPatrones();
+        if(!r || !r.factores.length){ panel.innerHTML = `<div class='text-stone-500 text-sm'>${r?.resumen||'Sin datos'}</div>`; return; }
+        panel.innerHTML = `<div class='text-[12px] text-stone-600 mb-1 font-mono'>${r.resumen}</div>` +
+            r.factores.slice(0,5).map(f=>{
+                const top=f.top;
+                const etiqueta = f.campo.startsWith('__b_')? f.campo.replace('__b_','')+' (terciles)': f.campo;
+                return `<div class='mb-1 p-2 border border-stone-300 rounded bg-white'>
+                    <div class='text-[11px] font-semibold text-stone-700 uppercase'>${etiqueta}</div>
+                    <div class='text-[11px] text-stone-600'>Mejor grupo: <strong>${top.valor}</strong> (n=${top.n}) · %Muerto=${top.pctAvg.toFixed(1)}% · Prod=${(top.ratioAvg*100).toFixed(1)}%</div>
+                    <div class='text-[10px] text-emerald-700'>Score ${(top.score).toFixed(2)} · Δ%Muerto ${(top.mejoraMuerto*100).toFixed(1)}% · ΔProd ${(top.mejoraProd*100).toFixed(1)}%</div>
+                </div>`;
+            }).join('');
+    }
+
+    // Intentar render al cargar vistas de tablas
+    try { renderPatrones(); } catch(_){ }
+
             return;
         }
         const machine = machineData.find(m => m.id === machineId);
@@ -1595,6 +1724,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if(bdTipoEl) localStorage.setItem('TABLAS_BD_TIPO', bdTipoEl.value||'');
     }
     [bdDesdeEl, bdHastaEl, bdLoteEl, bdTipoEl].forEach(el=> el?.addEventListener('change', ()=>{ persistFilters(); buildTablasVista(); }));
+    const topNPatronesEl = document.getElementById('patrones-lote-topN');
+    if(topNPatronesEl){ topNPatronesEl.addEventListener('change', ()=> buildTablasVista()); }
+    ['patrones-min-grupo','patrones-top-fact','patrones-lote-minN'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.addEventListener('change', ()=> buildTablasVista()); }});
     document.getElementById('tablas-bd-clear')?.addEventListener('click', function(){
         if(bdDesdeEl) bdDesdeEl.value=''; if(bdHastaEl) bdHastaEl.value=''; if(bdLoteEl) bdLoteEl.value=''; if(bdTipoEl) bdTipoEl.value='';
         ['TABLAS_BD_DESDE','TABLAS_BD_HASTA','TABLAS_BD_LOTE','TABLAS_BD_TIPO'].forEach(k=> localStorage.removeItem(k));
@@ -2250,6 +2382,128 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+        /* ================= PATRONES POR LOTE (% MUERTO) =================
+           Construir ranking de lotes con mayor y menor % de tiempo muerto
+           y detectar factores comunes: tipoMasa, hielo, amasadora, rango tempMasa.
+        */
+        (function calcularPatronesLote(){
+            const panel = document.getElementById('patrones-lote-panel');
+            const statusEl = document.getElementById('patrones-lote-status');
+            if(!panel) return; // si no existe sección, salir
+            let muestras=[]; // {lote, pctMuerto, tipo, hielo, ama, tempMasa}
+            _TABLAS_DATA_LAST.forEach(reg=>{
+                (reg.maquinas||[]).forEach(maq=>{
+                    const p1=maq.proceso1, p3=maq.proceso3; if(!(p1&&p1.startTime&&p3&&p3.endTime)) return;
+                    let sumaProc=0; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ sumaProc += (parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0); } }
+                    const real = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)); if(!real) return;
+                    const pctMuerto = Math.max(0, real - sumaProc) * 100 / real;
+                    muestras.push({
+                        lote: (maq.lote||'').toString().trim()||'_sin_',
+                        pctMuerto,
+                        tipo: (maq.tipoMasa||maq.tipoPan||'Sin tipo').trim(),
+                        hielo: (maq.hielo||'').trim()||'No?',
+                        ama: (maq.numeroAmasadora||maq.id||'?'),
+                        tempMasa: parseFloat(maq.tempMasa)
+                    });
+                });
+            });
+            if(!muestras.length){ panel.innerHTML='<div class="text-stone-500 text-xs">Sin datos suficientes.</div>'; if(statusEl) statusEl.textContent=''; return; }
+            // Agrupar por lote
+            const byLote={}; muestras.forEach(m=>{ (byLote[m.lote]=byLote[m.lote]||[]).push(m); });
+            const lotesArr = Object.entries(byLote).map(([lote, arr])=>{
+                const pctProm = arr.reduce((a,b)=>a+b.pctMuerto,0)/arr.length;
+                return { lote, n:arr.length, pctProm, arr };
+            }).filter(o=> o.n>=1);
+            if(lotesArr.length<2){ panel.innerHTML='<div class="text-stone-500 text-xs">Muy pocos lotes.</div>'; if(statusEl) statusEl.textContent=''; return; }
+            lotesArr.sort((a,b)=> b.pctProm - a.pctProm);
+            const topNInput=document.getElementById('patrones-lote-topN');
+            const minXLoteInput=document.getElementById('patrones-lote-minN');
+            let N = parseInt(topNInput?.value||'3'); if(isNaN(N)||N<2) N=3; if(N>10) N=10; if(topNInput && topNInput.value!=N) topNInput.value=N;
+            let minXLote = parseInt(minXLoteInput?.value||'1'); if(isNaN(minXLote)||minXLote<1) minXLote=1; if(minXLoteInput && minXLoteInput.value!=minXLote) minXLoteInput.value=minXLote;
+            const lotesValidos = lotesArr.filter(l=> l.n>=minXLote);
+            if(lotesValidos.length<2){ panel.innerHTML='<div class="text-stone-500 text-xs">No hay lotes que cumplan el mínimo.</div>'; if(statusEl) statusEl.textContent=''; return; }
+            const altos = lotesValidos.slice(0,N);
+            const bajos = lotesValidos.slice(-N).reverse();
+            function factoresComunes(grupo){
+                if(!grupo.length) return {};
+                // Flatten muestras
+                const all = grupo.flatMap(g=> g.arr);
+                function modo(campo){
+                    const map={}; all.forEach(m=>{ const v=m[campo]; map[v]=(map[v]||0)+1; });
+                    const entries=Object.entries(map).sort((a,b)=> b[1]-a[1]);
+                    const top=entries[0];
+                    return top? {valor:top[0], freq:top[1], pct: top[1]*100/all.length}: null;
+                }
+                function rangoTemp(){
+                    const temps = all.map(m=>m.tempMasa).filter(v=>Number.isFinite(v));
+                    if(temps.length<2) return null;
+                    temps.sort((a,b)=>a-b);
+                    const p=x=> temps[Math.floor(x*(temps.length-1))];
+                    return {min:temps[0], p25:p(0.25), med:p(0.5), p75:p(0.75), max:temps[temps.length-1]};
+                }
+                return {
+                    tipo: modo('tipo'),
+                    hielo: modo('hielo'),
+                    ama: modo('ama'),
+                    temp: rangoTemp()
+                };
+            }
+            const comunesAltos = factoresComunes(altos);
+            const comunesBajos = factoresComunes(bajos);
+            function badgeFactor(label, dat){
+                if(!dat) return `<span class='px-2 py-0.5 rounded bg-stone-200 text-stone-700'>${label}: n/d</span>`;
+                return `<span class='px-2 py-0.5 rounded bg-white border border-stone-300'>${label}: <strong>${dat.valor}</strong> <span class='text-[10px] text-stone-500'>${dat.freq}/${(dat.pct).toFixed(0)}%</span></span>`;
+            }
+            function bloque(title, lotes, comunes, color){
+                return `<div class='flex-1 min-w-[260px] border rounded-lg p-3 ${color}'>
+                    <div class='text-[11px] font-semibold mb-1 uppercase tracking-wide'>${title}</div>
+                    <div class='text-[11px] mb-2'>${lotes.map(l=>`<span class='inline-block mr-1 mb-1 px-2 py-0.5 rounded bg-stone-800 text-white'>Lote ${l.lote} · ${(l.pctProm).toFixed(1)}% (${l.n})</span>`).join('')||'<em>n/d</em>'}</div>
+                    <div class='flex flex-wrap gap-1 mb-2'>
+                        ${badgeFactor('Tipo', comunes.tipo)}
+                        ${badgeFactor('Hielo', comunes.hielo)}
+                        ${badgeFactor('Amas', comunes.ama)}
+                    </div>
+                    <div class='text-[10px] text-stone-600'>${comunes.temp?`Temp masa (°C) rango: ${comunes.temp.min.toFixed(1)}–${comunes.temp.max.toFixed(1)} (P50=${comunes.temp.med.toFixed(1)})`: 'Temp masa: n/d'}</div>
+                </div>`;
+            }
+            panel.innerHTML = `<div class='flex flex-wrap gap-4'>${
+                bloque('Más alto % muerto', altos, comunesAltos, 'bg-rose-50 border-rose-200') +
+                bloque('Más bajo % muerto', bajos, comunesBajos, 'bg-emerald-50 border-emerald-200')
+            }</div>`;
+            if(statusEl){
+                const promAltos = altos.reduce((a,b)=>a+b.pctProm,0)/altos.length;
+                const promBajos = bajos.reduce((a,b)=>a+b.pctProm,0)/bajos.length;
+                statusEl.textContent = `Δ promedio = ${(promAltos-promBajos).toFixed(1)} pts (% muerto)`;
+            }
+            // CSV export lotes extremos
+            function exportLotes(){
+                const rows=[['grupo','lote','n_maquinas','pct_muerto_prom','factor_tipo_dominante','factor_hielo_dominante','factor_ama_dominante']];
+                function dom(f){ return f && f.valor? f.valor: ''; }
+                altos.forEach(l=> rows.push(['ALTO', l.lote, l.n, l.pctProm.toFixed(2), dom(comunesAltos.tipo), dom(comunesAltos.hielo), dom(comunesAltos.ama)]));
+                bajos.forEach(l=> rows.push(['BAJO', l.lote, l.n, l.pctProm.toFixed(2), dom(comunesBajos.tipo), dom(comunesBajos.hielo), dom(comunesBajos.ama)]));
+                const csv=rows.map(r=> r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+                const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='patrones_lotes_extremos.csv'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },0);
+            }
+            // CSV export global (desde renderPatrones ya pintado)
+            function exportGlobal(){
+                try{
+                    const anal=analizarPatrones();
+                    const rows=[['factor','grupo','n','pct_muerto','prod','score','delta_pct_muerto_rel','delta_prod_rel']];
+                    (anal.factores||[]).forEach(f=>{
+                        (f.grupos||[]).forEach(g=>{
+                            rows.push([f.campo.replace('__b_',''), g.valor, g.n, g.pctAvg.toFixed(2), (g.ratioAvg*100).toFixed(2), g.score.toFixed(3), (g.mejoraMuerto*100).toFixed(2), (g.mejoraProd*100).toFixed(2)]);
+                        });
+                    });
+                    const csv=rows.map(r=> r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+                    const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='patrones_globales.csv'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },0);
+                }catch(e){ alert('Error exportando global: '+e); }
+            }
+            // Wire buttons
+            const btnAll=document.getElementById('patrones-recalc-todo');
+            if(btnAll && !btnAll.__wired){ btnAll.__wired=true; btnAll.addEventListener('click', ()=>{ renderPatrones(); calcularPatronesLote(); }); }
+            const btnCSVL=document.getElementById('patrones-export-lotes'); if(btnCSVL && !btnCSVL.__wired){ btnCSVL.__wired=true; btnCSVL.addEventListener('click', exportLotes); }
+            const btnCSVG=document.getElementById('patrones-export-global'); if(btnCSVG && !btnCSVG.__wired){ btnCSVG.__wired=true; btnCSVG.addEventListener('click', exportGlobal); }
+        })();
         // Resumen tabla
         const resumenHeaders=['Métrica','Valor'];
         const resumenRows=[];
@@ -2278,6 +2532,8 @@ document.addEventListener('DOMContentLoaded', () => {
             resumenRows.push(['OEE (%)', percent(globalProdSum, globalRealSum)]);
         }
         const tblResumen=document.getElementById('tabla-resumen'); if(tblResumen) tblResumen.innerHTML=tableFromRows(resumenHeaders,resumenRows);
+    // Recalcular panel experimental general de factores si existe (#patrones-panel)
+    if(typeof renderPatrones==='function'){ try { renderPatrones(); } catch(_){ } }
         // OEE indicador
         (function(){
             const el = document.getElementById('oee-indicador'); if(!el) return;
