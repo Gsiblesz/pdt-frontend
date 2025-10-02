@@ -605,17 +605,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <option value="__OTRO__" ${temp.tipoMasa==='__OTRO__'?'selected':''}>Otro...</option>
                         </select>
                         <input type="text" id="tipoMasaOtro-${machine.id}" placeholder="Especificar otro" class="mt-2 px-3 py-2 rounded-lg border border-dashed border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-masa-otro${temp.tipoMasa==='__OTRO__'?'':' hidden'}" value="${temp.tipoMasaOtro||''}" />
-                        <label for="tipoPan-${machine.id}" class="block mb-2 mt-6 text-base font-semibold text-stone-800">Tipo de pan:</label>
-                        <select id="tipoPan-${machine.id}" data-machine="${machine.id}" class="px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-pan-select ${temp.tipoMasa==='Tradicional'?'':'opacity-60'}" ${temp.tipoMasa==='Tradicional'?'':'disabled'}>
-                            <option value="">-- Seleccionar --</option>
-                            <option value="Hamburguesa" ${temp.tipoPan==='Hamburguesa'?'selected':''}>Hamburguesa</option>
-                            <option value="Perro" ${temp.tipoPan==='Perro'?'selected':''}>Perro</option>
-                            <option value="Lactal" ${temp.tipoPan==='Lactal'?'selected':''}>Lactal</option>
-                            <option value="Baguette" ${temp.tipoPan==='Baguette'?'selected':''}>Baguette</option>
-                            <option value="Integral" ${temp.tipoPan==='Integral'?'selected':''}>Integral</option>
-                            <option value="__OTRO__" ${temp.tipoPan==='__OTRO__'?'selected':''}>Otro...</option>
-                        </select>
-                        <input type="text" id="tipoPanOtro-${machine.id}" placeholder="Especificar otro pan" class="mt-2 px-3 py-2 rounded-lg border border-dashed border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-pan-otro${(temp.tipoMasa==='Tradicional' && temp.tipoPan==='__OTRO__')?'':' hidden'}" value="${temp.tipoPanOtro||''}" />
+                        <label for="tipoPan-${machine.id}" class="block mb-2 mt-6 text-base font-semibold text-stone-800">Tipo de pan (Libre):</label>
+                        <input type="text" id="tipoPan-${machine.id}" placeholder="Ej: Hamburguesa" class="mt-0 px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 ${temp.tipoMasa==='Tradicional'?'':'opacity-60'}" ${temp.tipoMasa==='Tradicional'?'':'disabled'} value="${temp.tipoPan||''}" />
                         <div class="flex items-center gap-4 mt-4 mb-2">
                             <span class="text-base font-semibold text-stone-800">Hielo:</span>
                             <label class="inline-flex items-center">
@@ -860,29 +851,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     else { otroInput.classList.add('hidden'); otroInput.value=''; }
                 }
                 // Control tipoPan según tipoMasa
-                const panSel2 = document.getElementById(`tipoPan-${machineId}`);
-                const panOtro2 = document.getElementById(`tipoPanOtro-${machineId}`);
-                if(panSel2){
+                const panInput = document.getElementById(`tipoPan-${machineId}`);
+                if(panInput){
                     if(masaSel.value === 'Tradicional'){
-                        panSel2.disabled=false; panSel2.classList.remove('opacity-60');
+                        panInput.disabled=false; panInput.classList.remove('opacity-60');
                     } else {
-                        panSel2.value=''; panSel2.disabled=true; panSel2.classList.add('opacity-60');
-                        if(panOtro2){ panOtro2.value=''; panOtro2.classList.add('hidden'); }
+                        panInput.value=''; panInput.disabled=true; panInput.classList.add('opacity-60');
                     }
                 }
             }
         }
-        const panSel = e.target.closest('select.tipo-pan-select');
-        if(panSel){
-            const machineId = panSel.getAttribute('data-machine');
-            if(machineId){
-                const otroPan = document.getElementById(`tipoPanOtro-${machineId}`);
-                if(otroPan){
-                    if(panSel.value === '__OTRO__') { otroPan.classList.remove('hidden'); otroPan.focus(); }
-                    else { otroPan.classList.add('hidden'); otroPan.value=''; }
-                }
-            }
-        }
+        // Ya no hay select de tipoPan (campo libre); se controla al cambiar tipoMasa
     });
 
     // Bloque eliminado: código huérfano de guardado general (sustituido por guardarResultadosPorMaquina)
@@ -891,7 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Guardar campos temporales al cambiar cualquier input relevante
     machineCardsContainer.addEventListener('input', function(e) {
         const target = e.target;
-        const idMatch = target.id && target.id.match(/^(lote|tipoMasa|tipoMasaOtro|tipoPan|tipoPanOtro|tempMasa|obs)-(\d)$/);
+    const idMatch = target.id && target.id.match(/^(lote|tipoMasa|tipoMasaOtro|tipoPan|tempMasa|obs)-(\d)$/);
         if (idMatch) {
             const field = idMatch[1];
             const machineId = idMatch[2];
@@ -900,7 +879,6 @@ document.addEventListener('DOMContentLoaded', () => {
             tempData[machineId] = tempData[machineId] || {};
             if(field==='obs') tempData[machineId].observaciones = target.value;
             else if(field==='tipoMasaOtro') tempData[machineId].tipoMasaOtro = target.value;
-            else if(field==='tipoPanOtro') tempData[machineId].tipoPanOtro = target.value;
             else tempData[machineId][field] = target.value;
             localStorage.setItem('tempAmasadoras', JSON.stringify(tempData));
         }
@@ -1074,12 +1052,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const otroVal = document.getElementById(`tipoMasaOtro-${machine.id}`)?.value.trim();
         tipoMasaFinal = otroVal || '';
     }
-    const tipoPanSel = document.getElementById(`tipoPan-${machine.id}`)?.value || '';
-    let tipoPanFinal = tipoPanSel;
-    if(tipoPanSel === '__OTRO__'){
-        const panOtroVal = document.getElementById(`tipoPanOtro-${machine.id}`)?.value.trim();
-        tipoPanFinal = panOtroVal || '';
-    }
+    const tipoPanFinal = document.getElementById(`tipoPan-${machine.id}`)?.value.trim() || '';
         // Obtener valor de hielo
         let hielo = '';
         if (document.getElementById(`hielo-si-${machine.id}`).checked) hielo = 'Si';
