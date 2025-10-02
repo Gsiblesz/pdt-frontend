@@ -326,7 +326,8 @@
                 <section>
                     <div class="flex items-start justify-between gap-4">
                         <div>
-                            <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Eventos fuera de control</h3>
+                            <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Eventos fuera de control / señales</h3>
+                            <div class="text-[11px] mb-2 text-stone-600 leading-tight">La línea verde es la media (CL) del segmento activo. <span class="text-emerald-700 font-semibold">Mantener puntos por debajo de la línea en % Muerto es una mejora</span>; las reglas priorizan alertas que indican desviaciones negativas o patrones estadísticos (run, tendencia, etc.). Cuando se observa una mejora sostenida puedes rebaselinar para fijar el nuevo estándar.</div>
                             <p class="chart-desc">Lista de señales detectadas (fuera de límites, run ≥7, 8 mismo lado, tendencia ≥6, 2 de 3 >2σ, 4 de 5 >1σ). Ayuda a priorizar investigación.</p>
                         </div>
                         <div class="shrink-0 mt-1">
@@ -836,20 +837,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Cambio de tipo de masa (select) para mostrar campo "Otro"
+    // Cambio de tipo de masa / pan para mostrar campo "Otro"
     document.addEventListener('change', function(e){
-        const sel = e.target.closest('select.tipo-masa-select');
-        if(!sel) return;
-        const machineId = sel.getAttribute('data-machine');
-        if(!machineId) return;
-        const otroInput = document.getElementById(`tipoMasaOtro-${machineId}`);
-        if(!otroInput) return;
-        if(sel.value === '__OTRO__'){
-            otroInput.classList.remove('hidden');
-            otroInput.focus();
-        } else {
-            otroInput.classList.add('hidden');
-            otroInput.value='';
+        const masaSel = e.target.closest('select.tipo-masa-select');
+        if(masaSel){
+            const machineId = masaSel.getAttribute('data-machine');
+            if(machineId){
+                const otroInput = document.getElementById(`tipoMasaOtro-${machineId}`);
+                if(otroInput){
+                    if(masaSel.value === '__OTRO__') { otroInput.classList.remove('hidden'); otroInput.focus(); }
+                    else { otroInput.classList.add('hidden'); otroInput.value=''; }
+                }
+            }
+        }
+        const panSel = e.target.closest('select.tipo-pan-select');
+        if(panSel){
+            const machineId = panSel.getAttribute('data-machine');
+            if(machineId){
+                const otroPan = document.getElementById(`tipoPanOtro-${machineId}`);
+                if(otroPan){
+                    if(panSel.value === '__OTRO__') { otroPan.classList.remove('hidden'); otroPan.focus(); }
+                    else { otroPan.classList.add('hidden'); otroPan.value=''; }
+                }
+            }
         }
     });
 
@@ -859,7 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Guardar campos temporales al cambiar cualquier input relevante
     machineCardsContainer.addEventListener('input', function(e) {
         const target = e.target;
-        const idMatch = target.id && target.id.match(/^(lote|tipoMasa|tipoMasaOtro|tempMasa|obs)-(\d)$/);
+        const idMatch = target.id && target.id.match(/^(lote|tipoMasa|tipoMasaOtro|tipoPan|tipoPanOtro|tempMasa|obs)-(\d)$/);
         if (idMatch) {
             const field = idMatch[1];
             const machineId = idMatch[2];
@@ -867,6 +877,8 @@ document.addEventListener('DOMContentLoaded', () => {
             try { tempData = JSON.parse(localStorage.getItem('tempAmasadoras')||'{}'); } catch(_){}
             tempData[machineId] = tempData[machineId] || {};
             if(field==='obs') tempData[machineId].observaciones = target.value;
+            else if(field==='tipoMasaOtro') tempData[machineId].tipoMasaOtro = target.value;
+            else if(field==='tipoPanOtro') tempData[machineId].tipoPanOtro = target.value;
             else tempData[machineId][field] = target.value;
             localStorage.setItem('tempAmasadoras', JSON.stringify(tempData));
         }
@@ -917,6 +929,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if(sumaProc<=0) return;
             const pctMuerto = Math.max(0,total - sumaProc)*100/total;
             const ratioProd = sumaProc/total;
+            // Calcular punto medio de personal si hay rango
+            let pMin = parseInt(m.personalMin||r.personalMin);
+            let pMax = parseInt(m.personalMax||r.personalMax);
+            if(Number.isNaN(pMin) && !Number.isNaN(pMax)) pMin=pMax;
+            if(Number.isNaN(pMax) && !Number.isNaN(pMin)) pMax=pMin;
+            const pMid = (!Number.isNaN(pMin) && !Number.isNaN(pMax))? (pMin+pMax)/2 : parseInt(m.personal||r.personal)||NaN;
             puntos.push({
                 pctMuerto,
                 ratioProd,
@@ -925,7 +943,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tempMasa: parseFloat(m.tempMasa),
                 tempAmbiente: parseFloat(m.tempAmbiente||r.tempAmbiente),
                 humedad: parseFloat(m.humedad||r.humedad),
-                personal: parseInt(m.personal||m.personalMin||m.personalMax)||NaN
+                personal: pMid
             });
         }));
         if(!puntos.length) return { resumen:'Sin datos suficientes', factores:[] };
@@ -1033,6 +1051,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const otroVal = document.getElementById(`tipoMasaOtro-${machine.id}`)?.value.trim();
         tipoMasaFinal = otroVal || '';
     }
+    const tipoPanSel = document.getElementById(`tipoPan-${machine.id}`)?.value || '';
+    let tipoPanFinal = tipoPanSel;
+    if(tipoPanSel === '__OTRO__'){
+        const panOtroVal = document.getElementById(`tipoPanOtro-${machine.id}`)?.value.trim();
+        tipoPanFinal = panOtroVal || '';
+    }
         // Obtener valor de hielo
         let hielo = '';
         if (document.getElementById(`hielo-si-${machine.id}`).checked) hielo = 'Si';
@@ -1053,6 +1077,7 @@ document.addEventListener('DOMContentLoaded', () => {
             numeroAmasadora: machine.id,
             lote,
             tipoMasa: tipoMasaFinal,
+            tipoPan: tipoPanFinal,
             hielo,
             personalMin,
             personalMax,
@@ -2309,6 +2334,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 datos = (arrFiltrado||[]).map(it=>({
                     fecha: it.data?.fecha || it.fecha,
+                    personalMin: parseInt(it.data?.personalMin ?? it.data?.personal_min ?? it.data?.personal?.min) || undefined,
+                    personalMax: parseInt(it.data?.personalMax ?? it.data?.personal_max ?? it.data?.personal?.max) || undefined,
                     maquinas: Array.isArray(it.data?.amasadoras)? it.data.amasadoras.map(normalizeMaq) : []
                 }));
                 const filtrosAct = [fDesde?`Desde ${fDesde}`:'', fHasta?`Hasta ${fHasta}`:'', fLote?`Lote ${fLote}`:'', fTipo?`Tipo ${fTipo}`:''].filter(Boolean).join(' · ');
@@ -2421,13 +2448,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     let sumaProc=0; for(let i=1;i<=3;i++){ const p=maq['proceso'+i]; if(p){ sumaProc += (parseInt(p.minutos)||0)*60 + (parseInt(p.segundos)||0); } }
                     const real = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)); if(!real) return;
                     const pctMuerto = Math.max(0, real - sumaProc) * 100 / real;
+                    // Personal bucket
+                    const pers = (parseInt(maq.personal)||parseInt(maq.personalMax)||parseInt(maq.personalMin)||parseInt(reg.personalMax)||parseInt(reg.personalMin))||NaN;
+                    let personalBucket=null; if(Number.isFinite(pers)){ if(pers<=4) personalBucket='≤4'; else if(pers<=6) personalBucket='5–6'; else personalBucket='≥7'; }
                     muestras.push({
                         lote: (maq.lote||'').toString().trim()||'_sin_',
                         pctMuerto,
                         tipo: (maq.tipoMasa||maq.tipoPan||'Sin tipo').trim(),
                         hielo: (maq.hielo||'').trim()||'No?',
                         ama: (maq.numeroAmasadora||maq.id||'?'),
-                        tempMasa: parseFloat(maq.tempMasa)
+                        tempMasa: parseFloat(maq.tempMasa),
+                        personalBucket
                     });
                 });
             });
@@ -2469,6 +2500,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tipo: modo('tipo'),
                     hielo: modo('hielo'),
                     ama: modo('ama'),
+                    personal: modo('personalBucket'),
                     temp: rangoTemp()
                 };
             }
@@ -2486,6 +2518,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${badgeFactor('Tipo', comunes.tipo)}
                         ${badgeFactor('Hielo', comunes.hielo)}
                         ${badgeFactor('Amas', comunes.ama)}
+                        ${badgeFactor('Personal', comunes.personal)}
                     </div>
                     <div class='text-[10px] text-stone-600'>${comunes.temp?`Temp masa (°C) rango: ${comunes.temp.min.toFixed(1)}–${comunes.temp.max.toFixed(1)} (P50=${comunes.temp.med.toFixed(1)})`: 'Temp masa: n/d'}</div>
                 </div>`;
@@ -2501,10 +2534,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             // CSV export lotes extremos
             function exportLotes(){
-                const rows=[['grupo','lote','n_maquinas','pct_muerto_prom','factor_tipo_dominante','factor_hielo_dominante','factor_ama_dominante']];
+                const rows=[["grupo","lote","n_maquinas","pct_muerto_prom","factor_tipo_dominante","factor_hielo_dominante","factor_ama_dominante","factor_personal_dominante"]];
                 function dom(f){ return f && f.valor? f.valor: ''; }
-                altos.forEach(l=> rows.push(['ALTO', l.lote, l.n, l.pctProm.toFixed(2), dom(comunesAltos.tipo), dom(comunesAltos.hielo), dom(comunesAltos.ama)]));
-                bajos.forEach(l=> rows.push(['BAJO', l.lote, l.n, l.pctProm.toFixed(2), dom(comunesBajos.tipo), dom(comunesBajos.hielo), dom(comunesBajos.ama)]));
+                altos.forEach(l=> rows.push(['ALTO', l.lote, l.n, l.pctProm.toFixed(2), dom(comunesAltos.tipo), dom(comunesAltos.hielo), dom(comunesAltos.ama), dom(comunesAltos.personal)]));
+                bajos.forEach(l=> rows.push(['BAJO', l.lote, l.n, l.pctProm.toFixed(2), dom(comunesBajos.tipo), dom(comunesBajos.hielo), dom(comunesBajos.ama), dom(comunesBajos.personal)]));
                 const csv=rows.map(r=> r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
                 const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='patrones_lotes_extremos.csv'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },0);
             }
@@ -2561,7 +2594,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Recalcular panel experimental general de factores si existe (#patrones-panel)
     if(typeof renderPatrones==='function'){ try { renderPatrones(); } catch(_){ } }
         // ================== PATRÓN AUTOMÁTICO SIMPLE ==================
-        (function patronAutomatico(){
+    (function patronAutomatico(){
             const cont = document.getElementById('patron-simple'); if(!cont) return;
             try{
                 // Construir dataset por máquina con tiempo real y atributos clave
@@ -2569,12 +2602,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 _TABLAS_DATA_LAST.forEach(r=> (r.maquinas||[]).forEach(m=>{
                     const p1=m.proceso1, p3=m.proceso3; if(!(p1&&p1.startTime&&p3&&p3.endTime)) return;
                     const real = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)); if(real<=0) return;
+                    // Determinar personal usando punto medio del rango si existe
+                    let pmn = parseInt(m.personalMin||r.personalMin);
+                    let pmx = parseInt(m.personalMax||r.personalMax);
+                    if(Number.isNaN(pmn) && !Number.isNaN(pmx)) pmn=pmx;
+                    if(Number.isNaN(pmx) && !Number.isNaN(pmn)) pmx=pmn;
+                    const pers = (!Number.isNaN(pmn) && !Number.isNaN(pmx))? (pmn+pmx)/2 : parseInt(m.personal||r.personal)||NaN;
                     maquinas.push({
                         lote:(m.lote||'').toString().trim()||'_sin_',
                         tipo:(m.tipoMasa||m.tipoPan||'Sin tipo').trim(),
                         hielo:(m.hielo||'').trim()||'No',
                         ama:(m.numeroAmasadora||m.id||'?'),
                         tempMasa: parseFloat(m.tempMasa),
+                        personal: pers,
                         real
                     });
                 }));
@@ -2594,7 +2634,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const topLotes = lotesArr.slice(0, topCount);
                 // Recopilar valores dominantes (moda) en esos top lotes para cada variable categórica
                 function moda(values){ const map={}; values.forEach(v=> map[v]=(map[v]||0)+1); const arr=Object.entries(map).sort((a,b)=> b[1]-a[1]); if(!arr.length) return null; const [valor, freq]=arr[0]; return {valor,freq, pct:freq*100/values.length}; }
-                const catVars=['tipo','hielo','ama'];
+                // Bucketizar personal (si existe) en rangos
+                maquinas.forEach(m=>{ if(Number.isFinite(m.personal)){ if(m.personal<=4) m.personalBucket='≤4'; else if(m.personal<=6) m.personalBucket='5–6'; else m.personalBucket='≥7'; } });
+                const catVars=['tipo','hielo','ama','personalBucket']; // 'tipo' ya representa tipoMasa/tipoPan consolidado
                 const resumenCat = catVars.map(v=>{
                     const vals = topLotes.flatMap(l=> l.arr.map(m=> m[v]));
                     const m = moda(vals); return {var:v, moda:m};
@@ -2605,14 +2647,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(temps.length>=3){ temps.sort((a,b)=>a-b); const p=qq=> temps[Math.floor((temps.length-1)*qq)]; const min=temps[0], max=temps[temps.length-1]; const p50=p(0.5); const iqr=p(0.75)-p(0.25); tempInfo = `${min.toFixed(1)}–${max.toFixed(1)} (P50=${p50.toFixed(1)})${iqr?` · IQR=${iqr.toFixed(1)}`:''}`; }
                 // Elegir variable “más común”: mayor porcentaje de moda sobre su universo
                 let mejor = resumenCat.filter(r=> r.moda).sort((a,b)=> b.moda.pct - a.moda.pct)[0] || null;
+                // Si personalBucket existe y su frecuencia relativa es >= 60% y mayor que la siguiente, forzarla como principal
+                const pb = resumenCat.find(r=> r.var==='personalBucket' && r.moda);
+                if(pb && pb.moda.pct>=60){ mejor = pb; }
                 // Frase resultado principal
                 const gap = topLotes[0].realProm - lotesArr[lotesArr.length-1].realProm;
                 let html = `<div class='mb-1'><strong>${topCount}</strong> lotes más lentos (promedio real = <strong>${Math.round(topLotes.reduce((a,b)=>a+b.realProm,0)/topLotes.length)}s</strong>) · Δ respecto al más rápido aprox <strong>${Math.round(gap)}s</strong></div>`;
                 if(mejor){
                     html += `<div class='mb-1'>Variable común destacada: <span class='font-semibold uppercase'>${mejor.var}</span> → <strong>${mejor.moda.valor}</strong> (${mejor.moda.freq}/${Math.round(mejor.moda.pct)}%)</div>`;
                 }
+                const labelsMap={tipo:'tipo', hielo:'hielo', ama:'amas', personalBucket:'personal'};
                 html += `<div class='mb-1 flex flex-wrap gap-2'>` +
-                    resumenCat.map(r=> r.moda? `<span class='px-2 py-0.5 rounded bg-stone-100 border border-stone-300'>${r.var}: ${r.moda.valor} (${Math.round(r.moda.pct)}%)</span>`:'' ).join('') + `</div>`;
+                    resumenCat.filter(r=> r.moda).map(r=> `<span class='px-2 py-0.5 rounded bg-stone-100 border border-stone-300'>${labelsMap[r.var]||r.var}: ${r.moda.valor} (${Math.round(r.moda.pct)}%)</span>` ).join('') + `</div>`;
                 html += `<div class='text-[11px] text-stone-500'>Temp masa rango (lotes lentos): ${tempInfo}</div>`;
                 cont.innerHTML = html;
             }catch(e){ cont.textContent='Error cálculo patrón: '+e; }
