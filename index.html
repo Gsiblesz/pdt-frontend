@@ -221,6 +221,12 @@
                     <p class="chart-desc">Cuantifica ineficiencia: mayor porcentaje de tiempo muerto = oportunidad directa de optimización.</p>
                     <canvas id="chart-stacked-muertos" height="140"></canvas>
                 </section>
+                <!-- PATRÓN AUTOMÁTICO SIMPLE -->
+                <section id="patron-simple-section">
+                    <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Patrón automático (lotes más lentos) <span class="info-hint text-blue-600 cursor-help align-middle" title="Detecta la(s) variable(s) comunes entre los lotes con mayor tiempo real promedio.">ℹ️</span></h3>
+                    <p class="chart-desc">Muestra directamente qué valor(es) se repiten con fuerza en los lotes más lentos (basado en tiempo real promedio por lote). Sin controles: se calcula solo.</p>
+                    <div id="patron-simple" class="text-xs p-3 border border-stone-300 rounded bg-white text-stone-600">Calculando patrón...</div>
+                </section>
                 <!-- PANEL COMBINADO: Patrones Globales vs Lotes -->
                 <section>
                     <h3 class="chart-title text-xl font-bold mb-1 text-stone-800">Patrones (Globales vs Lotes) <span class="info-hint text-blue-600 cursor-help align-middle" title="Ranking global de factores y comparación de lotes extremos (% muerto).">ℹ️</span></h3>
@@ -2554,6 +2560,63 @@ document.addEventListener('DOMContentLoaded', () => {
         const tblResumen=document.getElementById('tabla-resumen'); if(tblResumen) tblResumen.innerHTML=tableFromRows(resumenHeaders,resumenRows);
     // Recalcular panel experimental general de factores si existe (#patrones-panel)
     if(typeof renderPatrones==='function'){ try { renderPatrones(); } catch(_){ } }
+        // ================== PATRÓN AUTOMÁTICO SIMPLE ==================
+        (function patronAutomatico(){
+            const cont = document.getElementById('patron-simple'); if(!cont) return;
+            try{
+                // Construir dataset por máquina con tiempo real y atributos clave
+                const maquinas=[];
+                _TABLAS_DATA_LAST.forEach(r=> (r.maquinas||[]).forEach(m=>{
+                    const p1=m.proceso1, p3=m.proceso3; if(!(p1&&p1.startTime&&p3&&p3.endTime)) return;
+                    const real = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)); if(real<=0) return;
+                    maquinas.push({
+                        lote:(m.lote||'').toString().trim()||'_sin_',
+                        tipo:(m.tipoMasa||m.tipoPan||'Sin tipo').trim(),
+                        hielo:(m.hielo||'').trim()||'No',
+                        ama:(m.numeroAmasadora||m.id||'?'),
+                        tempMasa: parseFloat(m.tempMasa),
+                        real
+                    });
+                }));
+                if(!maquinas.length){ cont.textContent='Sin datos suficientes.'; return; }
+                // Agrupar por lote y promedio real
+                const byLote={}; maquinas.forEach(m=>{ (byLote[m.lote]=byLote[m.lote]||[]).push(m); });
+                let lotesArr = Object.entries(byLote).map(([lote, arr])=>({
+                    lote,
+                    n:arr.length,
+                    realProm: arr.reduce((a,b)=>a+b.real,0)/arr.length,
+                    arr
+                }));
+                if(lotesArr.length<2){ cont.textContent='Muy pocos lotes para analizar.'; return; }
+                // Tomar top 20% (al menos 2) de lotes más lentos por realProm
+                lotesArr.sort((a,b)=> b.realProm - a.realProm);
+                const topCount = Math.max(2, Math.round(lotesArr.length*0.2));
+                const topLotes = lotesArr.slice(0, topCount);
+                // Recopilar valores dominantes (moda) en esos top lotes para cada variable categórica
+                function moda(values){ const map={}; values.forEach(v=> map[v]=(map[v]||0)+1); const arr=Object.entries(map).sort((a,b)=> b[1]-a[1]); if(!arr.length) return null; const [valor, freq]=arr[0]; return {valor,freq, pct:freq*100/values.length}; }
+                const catVars=['tipo','hielo','ama'];
+                const resumenCat = catVars.map(v=>{
+                    const vals = topLotes.flatMap(l=> l.arr.map(m=> m[v]));
+                    const m = moda(vals); return {var:v, moda:m};
+                });
+                // Temp de masa: rango y si está concentrada
+                const temps = topLotes.flatMap(l=> l.arr.map(m=> m.tempMasa).filter(x=>Number.isFinite(x)));
+                let tempInfo='n/d';
+                if(temps.length>=3){ temps.sort((a,b)=>a-b); const p=qq=> temps[Math.floor((temps.length-1)*qq)]; const min=temps[0], max=temps[temps.length-1]; const p50=p(0.5); const iqr=p(0.75)-p(0.25); tempInfo = `${min.toFixed(1)}–${max.toFixed(1)} (P50=${p50.toFixed(1)})${iqr?` · IQR=${iqr.toFixed(1)}`:''}`; }
+                // Elegir variable “más común”: mayor porcentaje de moda sobre su universo
+                let mejor = resumenCat.filter(r=> r.moda).sort((a,b)=> b.moda.pct - a.moda.pct)[0] || null;
+                // Frase resultado principal
+                const gap = topLotes[0].realProm - lotesArr[lotesArr.length-1].realProm;
+                let html = `<div class='mb-1'><strong>${topCount}</strong> lotes más lentos (promedio real = <strong>${Math.round(topLotes.reduce((a,b)=>a+b.realProm,0)/topLotes.length)}s</strong>) · Δ respecto al más rápido aprox <strong>${Math.round(gap)}s</strong></div>`;
+                if(mejor){
+                    html += `<div class='mb-1'>Variable común destacada: <span class='font-semibold uppercase'>${mejor.var}</span> → <strong>${mejor.moda.valor}</strong> (${mejor.moda.freq}/${Math.round(mejor.moda.pct)}%)</div>`;
+                }
+                html += `<div class='mb-1 flex flex-wrap gap-2'>` +
+                    resumenCat.map(r=> r.moda? `<span class='px-2 py-0.5 rounded bg-stone-100 border border-stone-300'>${r.var}: ${r.moda.valor} (${Math.round(r.moda.pct)}%)</span>`:'' ).join('') + `</div>`;
+                html += `<div class='text-[11px] text-stone-500'>Temp masa rango (lotes lentos): ${tempInfo}</div>`;
+                cont.innerHTML = html;
+            }catch(e){ cont.textContent='Error cálculo patrón: '+e; }
+        })();
         // OEE indicador
         (function(){
             const el = document.getElementById('oee-indicador'); if(!el) return;
