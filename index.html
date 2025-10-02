@@ -606,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </select>
                         <input type="text" id="tipoMasaOtro-${machine.id}" placeholder="Especificar otro" class="mt-2 px-3 py-2 rounded-lg border border-dashed border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-masa-otro${temp.tipoMasa==='__OTRO__'?'':' hidden'}" value="${temp.tipoMasaOtro||''}" />
                         <label for="tipoPan-${machine.id}" class="block mb-2 mt-6 text-base font-semibold text-stone-800">Tipo de pan:</label>
-                        <select id="tipoPan-${machine.id}" data-machine="${machine.id}" class="px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-pan-select">
+                        <select id="tipoPan-${machine.id}" data-machine="${machine.id}" class="px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-pan-select ${temp.tipoMasa==='Tradicional'?'':'opacity-60'}" ${temp.tipoMasa==='Tradicional'?'':'disabled'}>
                             <option value="">-- Seleccionar --</option>
                             <option value="Hamburguesa" ${temp.tipoPan==='Hamburguesa'?'selected':''}>Hamburguesa</option>
                             <option value="Perro" ${temp.tipoPan==='Perro'?'selected':''}>Perro</option>
@@ -615,7 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <option value="Integral" ${temp.tipoPan==='Integral'?'selected':''}>Integral</option>
                             <option value="__OTRO__" ${temp.tipoPan==='__OTRO__'?'selected':''}>Otro...</option>
                         </select>
-                        <input type="text" id="tipoPanOtro-${machine.id}" placeholder="Especificar otro pan" class="mt-2 px-3 py-2 rounded-lg border border-dashed border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-pan-otro${temp.tipoPan==='__OTRO__'?'':' hidden'}" value="${temp.tipoPanOtro||''}" />
+                        <input type="text" id="tipoPanOtro-${machine.id}" placeholder="Especificar otro pan" class="mt-2 px-3 py-2 rounded-lg border border-dashed border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-pan-otro${(temp.tipoMasa==='Tradicional' && temp.tipoPan==='__OTRO__')?'':' hidden'}" value="${temp.tipoPanOtro||''}" />
                         <div class="flex items-center gap-4 mt-4 mb-2">
                             <span class="text-base font-semibold text-stone-800">Hielo:</span>
                             <label class="inline-flex items-center">
@@ -859,6 +859,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(masaSel.value === '__OTRO__') { otroInput.classList.remove('hidden'); otroInput.focus(); }
                     else { otroInput.classList.add('hidden'); otroInput.value=''; }
                 }
+                // Control tipoPan según tipoMasa
+                const panSel2 = document.getElementById(`tipoPan-${machineId}`);
+                const panOtro2 = document.getElementById(`tipoPanOtro-${machineId}`);
+                if(panSel2){
+                    if(masaSel.value === 'Tradicional'){
+                        panSel2.disabled=false; panSel2.classList.remove('opacity-60');
+                    } else {
+                        panSel2.value=''; panSel2.disabled=true; panSel2.classList.add('opacity-60');
+                        if(panOtro2){ panOtro2.value=''; panOtro2.classList.add('hidden'); }
+                    }
+                }
             }
         }
         const panSel = e.target.closest('select.tipo-pan-select');
@@ -949,7 +960,8 @@ document.addEventListener('DOMContentLoaded', () => {
             puntos.push({
                 pctMuerto,
                 ratioProd,
-                tipoMasa:(m.tipoMasa||m.tipoPan||'').trim()||'_vacío_',
+                tipoMasa:(m.tipoMasa||'').trim()||'_vacío_',
+                tipoPan:(m.tipoPan||'').trim()||'_vacío_',
                 hielo:(m.hielo||'').trim()||'_vacío_',
                 tempMasa: parseFloat(m.tempMasa),
                 tempAmbiente: parseFloat(m.tempAmbiente||r.tempAmbiente),
@@ -1000,7 +1012,7 @@ document.addEventListener('DOMContentLoaded', () => {
             baseSet.forEach(p=>{ if(Number.isFinite(p[campo])) p['__b_'+campo]=bucket(p[campo]); });
             return scoreCategorico('__b_'+campo);
         }
-        const catCampos=['tipoMasa','hielo'];
+    const catCampos=['tipoMasa','tipoPan','hielo'];
         const numCampos=['tempMasa','tempAmbiente','humedad','personal'];
         const resultados=[];
         catCampos.forEach(c=>{ const r=scoreCategorico(c); if(r?.top) resultados.push(r); });
