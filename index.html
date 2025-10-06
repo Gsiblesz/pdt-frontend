@@ -113,7 +113,8 @@
     <!-- Amasadoras section (existing app) -->
     <div id="section-amasadoras" class="hidden">
         <div class="flex flex-wrap justify-center gap-3 mb-6">
-            <button id="tab-medicion" class="tab-btn tab-btn-active">Medición</button>
+            <button id="tab-medicion" class="tab-btn tab-btn-active">Amasadoras</button>
+            <button id="tab-mesa" class="tab-btn">Mesa</button>
             <button id="tab-resultados" class="tab-btn">Resultados</button>
             <button id="tab-tablas" class="tab-btn">Tablas</button>
         </div>
@@ -346,7 +347,7 @@
                 </section>
             </div>
         </div>
-        <div id="view-medicion" class="hidden">
+    <div id="view-medicion" class="hidden">
                 <div class="mb-8">
                     <h1 class="text-3xl font-extrabold text-stone-900 tracking-tight mb-2">Cálculo de Amasadoras</h1>
                     <p class="text-stone-600 text-sm md:text-base">Cómo operar el programa: registra primero las variables generales (fecha, TA, H, personal). Luego en cada tarjeta de amasadora define el tipo de masa y controla los tres procesos secuencialmente. Guarda cada máquina al terminar para formar un conjunto que luego podrás analizar y exportar.</p>
@@ -414,6 +415,72 @@
             <main id="machine-cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-7 mb-10"></main>
             <div id="msg-guardar" class="mt-2 text-center text-sm"></div>
         </div>
+        <!-- Vista Mesa (nuevo proceso posterior a amasado) -->
+        <div id="view-mesa" class="hidden">
+            <div class="mb-8">
+                <h1 class="text-3xl font-extrabold text-stone-900 tracking-tight mb-2">Proceso en Mesa (Lote)</h1>
+                <p class="text-stone-600 text-sm md:text-base">Cronometra el tiempo desde que la masa sale de las amasadoras, se pesa / porciona, pasa por la sobadora (si aplica) y se coloca en bandejas hasta montarse en el carrito (fin del lote antes de fermentación).</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5 mb-6">
+                <div>
+                    <label class="block mb-1 text-sm font-semibold text-stone-700">Fecha</label>
+                    <input type="date" id="mesa-fecha" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                </div>
+                <div>
+                    <label class="block mb-1 text-sm font-semibold text-stone-700">Lote</label>
+                    <input type="text" id="mesa-lote" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Ej: 12" />
+                </div>
+                <div>
+                    <label class="block mb-1 text-sm font-semibold text-stone-700">Tipo de masa</label>
+                    <select id="mesa-tipo-masa" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="">--</option>
+                        <option value="Tradicional">Tradicional</option>
+                        <option value="Brioche">Brioche</option>
+                        <option value="Mant.">Mant.</option>
+                        <option value="__OTRO__">Otro...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-1 text-sm font-semibold text-stone-700">Tipo de pan (Libre)</label>
+                    <input list="lista-tipo-pan" type="text" id="mesa-tipo-pan" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Ej: PDJ" disabled />
+                </div>
+                <div>
+                    <label class="block mb-1 text-sm font-semibold text-stone-700">Personal (mín)</label>
+                    <input type="number" min="0" id="mesa-per-min" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                </div>
+                <div>
+                    <label class="block mb-1 text-sm font-semibold text-stone-700">Personal (máx)</label>
+                    <input type="number" min="0" id="mesa-per-max" class="w-full px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="p-5 rounded-2xl bg-white border border-stone-200 shadow-sm">
+                    <h3 class="font-semibold text-stone-800 mb-2">Cronómetro del lote</h3>
+                    <div class="text-4xl font-mono font-bold text-stone-900 mb-4" id="mesa-tiempo-display">00:00:00</div>
+                    <div class="flex flex-wrap gap-3 mb-4">
+                        <button id="mesa-start" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded font-semibold">Iniciar</button>
+                        <button id="mesa-stop" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold" disabled>Detener</button>
+                        <button id="mesa-reset" class="bg-stone-500 hover:bg-stone-600 text-white px-4 py-2 rounded font-semibold" disabled>Reset</button>
+                    </div>
+                    <p class="text-xs text-stone-600 leading-snug">Inicia cuando la masa sale de la amasadora. Detén al terminar de bandejear y montar el carrito para fermentación.</p>
+                </div>
+                <div class="md:col-span-2 p-5 rounded-2xl bg-white border border-stone-200 shadow-sm flex flex-col">
+                    <label class="font-semibold text-stone-800 mb-2">Observaciones</label>
+                    <textarea id="mesa-obs" rows="5" class="w-full flex-1 px-3 py-2 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y" placeholder="Variaciones, retrasos, ajustes..."></textarea>
+                    <div class="mt-4 flex gap-3">
+                        <button id="mesa-guardar" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded font-semibold grow">Guardar lote</button>
+                        <button id="mesa-limpiar" class="bg-stone-400 hover:bg-stone-500 text-white px-5 py-2 rounded font-semibold">Limpiar</button>
+                    </div>
+                    <div id="mesa-msg" class="mt-2 text-sm"></div>
+                </div>
+            </div>
+            <div class="mb-4 flex flex-wrap gap-3 justify-end">
+                <button id="mesa-export" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded font-semibold text-sm">Exportar (CSV)</button>
+                <button id="mesa-borrar-todo" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold text-sm">Borrar todo</button>
+            </div>
+            <div id="mesa-lista" class="space-y-3"></div>
+        </div>
+
         <!-- Vista de resultados (única) -->
         <div id="view-resultados" class="hidden">
                 <div class="mb-4 flex flex-wrap gap-3 justify-end">
@@ -2246,6 +2313,65 @@ document.addEventListener('DOMContentLoaded', () => {
         tabMainHornos?.addEventListener('click', ()=> activateMainTab('horn'));
         // Force start on Menu to avoid Amasadoras content appearing under Menu
         activateMainTab('menu');
+        // ================= Subpestaña Mesa (procesado de bandejas) =================
+        const tabMesa = document.getElementById('tab-mesa');
+        const viewMesa = document.getElementById('view-mesa');
+        function showMesa(){
+            viewMedicion?.classList.add('hidden');
+            viewResultados?.classList.add('hidden');
+            viewTablas?.classList.add('hidden');
+            viewMesa?.classList.remove('hidden');
+            tabMedicion?.classList.remove('tab-btn-active');
+            tabMesa?.classList.add('tab-btn-active');
+            tabResultados?.classList.remove('tab-btn-active');
+            tabTablas?.classList.remove('tab-btn-active');
+            mesaRenderLista();
+        }
+        tabMesa?.addEventListener('click', showMesa);
+        tabMedicion?.addEventListener('click', ()=>{ showMedicionDefault(); viewMesa?.classList.add('hidden'); tabMesa?.classList.remove('tab-btn-active'); });
+        tabResultados?.addEventListener('click', ()=>{ viewMesa?.classList.add('hidden'); });
+        tabTablas?.addEventListener('click', ()=>{ viewMesa?.classList.add('hidden'); });
+
+        // Cronómetro Mesa
+        let mesaTimer=null, mesaStart=null, mesaAccum=0;
+        const mesaDisp=document.getElementById('mesa-tiempo-display');
+        const mesaBtnStart=document.getElementById('mesa-start');
+        const mesaBtnStop=document.getElementById('mesa-stop');
+        const mesaBtnReset=document.getElementById('mesa-reset');
+        function mesaFmt(s){ const h=Math.floor(s/3600).toString().padStart(2,'0'); const m=Math.floor((s%3600)/60).toString().padStart(2,'0'); const sec=Math.floor(s%60).toString().padStart(2,'0'); return `${h}:${m}:${sec}`; }
+        function mesaTick(){ if(!mesaStart) return; const diff=mesaAccum + Math.floor((Date.now()-mesaStart)/1000); if(mesaDisp) mesaDisp.textContent=mesaFmt(diff); }
+        mesaBtnStart?.addEventListener('click', ()=>{ if(mesaStart) return; mesaStart=Date.now(); mesaTimer=setInterval(mesaTick,1000); mesaBtnStart.disabled=true; mesaBtnStop.disabled=false; mesaBtnReset.disabled=false; });
+        mesaBtnStop?.addEventListener('click', ()=>{ if(!mesaStart) return; mesaAccum += Math.floor((Date.now()-mesaStart)/1000); clearInterval(mesaTimer); mesaTimer=null; mesaStart=null; mesaTick(); mesaBtnStart.disabled=false; mesaBtnStop.disabled=true; });
+        mesaBtnReset?.addEventListener('click', ()=>{ if(mesaTimer) clearInterval(mesaTimer); mesaTimer=null; mesaStart=null; mesaAccum=0; if(mesaDisp) mesaDisp.textContent='00:00:00'; mesaBtnStart.disabled=false; mesaBtnStop.disabled=true; mesaBtnReset.disabled=true; });
+
+        // Habilitar tipoPan solo para Tradicional
+        const mesaTipoMasa = document.getElementById('mesa-tipo-masa');
+        const mesaTipoPan = document.getElementById('mesa-tipo-pan');
+        mesaTipoMasa?.addEventListener('change', ()=>{
+            if(mesaTipoMasa.value==='Tradicional'){ mesaTipoPan.disabled=false; mesaTipoPan.classList.remove('opacity-50'); } else { mesaTipoPan.disabled=true; mesaTipoPan.value=''; mesaTipoPan.classList.add('opacity-50'); }
+        });
+
+        function mesaGet(){ try { return JSON.parse(localStorage.getItem('mesaRegistros')||'[]')||[]; } catch(_){ return []; } }
+        function mesaSave(arr){ localStorage.setItem('mesaRegistros', JSON.stringify(arr)); }
+        function mesaRenderLista(){ const cont=document.getElementById('mesa-lista'); if(!cont) return; const data=mesaGet(); if(!data.length){ cont.innerHTML='<div class="text-sm text-stone-500">Sin lotes registrados.</div>'; return;} data.sort((a,b)=> (a.fecha+a.lote).localeCompare(b.fecha+b.lote)); cont.innerHTML=data.map((r,i)=>{ const perMid=(r.perMin!=null&&r.perMax!=null)?((r.perMin+r.perMax)/2).toFixed(2):''; return `<div class='border border-stone-200 rounded-lg p-3 bg-white text-xs flex flex-col gap-1'><div class='flex flex-wrap gap-3 items-center'><span class='font-semibold'>#${i+1}</span><span class='font-mono'>${r.fecha}</span><span>Lote:<strong>${r.lote}</strong></span><span>${r.tipoMasa}${r.tipoPan? ' / '+r.tipoPan:''}</span><span>Dur:<strong>${mesaFmt(r.duracionSeg||0)}</strong></span><span>PerMid:${perMid}</span></div><div class='text-stone-600 break-words'>${(r.obs||'').replace(/</g,'&lt;')}</div></div>`; }).join(''); }
+
+        document.getElementById('mesa-guardar')?.addEventListener('click', ()=>{
+            const msg=document.getElementById('mesa-msg'); if(msg) msg.textContent='';
+            const fecha=(document.getElementById('mesa-fecha')?.value||'').trim();
+            const lote=(document.getElementById('mesa-lote')?.value||'').trim();
+            const tipoMasa=(mesaTipoMasa?.value||'').trim();
+            const tipoPanVal=(mesaTipoPan?.value||'').trim();
+            const perMinStr=document.getElementById('mesa-per-min')?.value; const perMaxStr=document.getElementById('mesa-per-max')?.value; const perMin=perMinStr?parseInt(perMinStr):null; const perMax=perMaxStr?parseInt(perMaxStr):null;
+            const obs=(document.getElementById('mesa-obs')?.value||'').trim();
+            let dur=mesaAccum; if(mesaStart) dur += Math.floor((Date.now()-mesaStart)/1000);
+            if(!fecha||!lote||!tipoMasa||dur<=0){ if(msg){ msg.className='text-sm text-red-600'; msg.textContent='Faltan campos o duración 0.';} return; }
+            const reg={fecha,lote,tipoMasa,tipoPan:(tipoMasa==='Tradicional'?tipoPanVal:''),perMin,perMax,obs,duracionSeg:dur};
+            const data=mesaGet(); data.push(reg); mesaSave(data); mesaRenderLista(); mesaBtnReset?.click(); document.getElementById('mesa-obs').value=''; document.getElementById('mesa-lote').value=''; if(msg){ msg.className='text-sm text-emerald-700'; msg.textContent='Lote guardado.'; }
+        });
+        document.getElementById('mesa-limpiar')?.addEventListener('click', ()=>{ mesaBtnReset?.click(); document.getElementById('mesa-obs').value=''; });
+        document.getElementById('mesa-export')?.addEventListener('click', ()=>{ const data=mesaGet(); if(!data.length){ mostrarToast('Sin datos'); return; } const rows=data.map(r=>({Fecha:r.fecha,Lote:r.lote,TipoMasa:r.tipoMasa,TipoPan:r.tipoPan||'',Duracion_s:r.duracionSeg,PersonalMin:r.perMin??'',PersonalMax:r.perMax??'',PersonalMid:(r.perMin!=null&&r.perMax!=null?((r.perMin+r.perMax)/2).toFixed(2):''),Obs:r.obs||''})); const csv=Papa.unparse(rows); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); saveAs(blob,'mesa_lotes.csv'); });
+        document.getElementById('mesa-borrar-todo')?.addEventListener('click', ()=>{ if(!confirm('¿Eliminar todos los lotes de Mesa?')) return; localStorage.removeItem('mesaRegistros'); mesaRenderLista(); });
+        // =================================================================
         // Settings bindings
         const settingsApiUrl = document.getElementById('settings-api-url');
         const settingsSaveApi = document.getElementById('settings-save-api');
