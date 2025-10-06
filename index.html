@@ -53,6 +53,7 @@
         <button id="tab-main-amasadoras" class="tab-btn main-tab">Amasadoras</button>
         <button id="tab-main-fermentadora" class="tab-btn main-tab">Fermentadora</button>
         <button id="tab-main-hornos" class="tab-btn main-tab">Hornos</button>
+    <button id="tab-main-armado" class="tab-btn main-tab">Armado PDJ</button>
     </div>
     <!-- Menú view (about + ajustes) -->
     <div id="view-main-menu" class="block">
@@ -108,6 +109,68 @@
     <div id="section-hornos" class="hidden">
         <div class="bg-white border border-stone-200 rounded-xl p-8 shadow-sm text-center text-stone-600 max-w-3xl mx-auto">
             Próximamente: módulo de Hornos.
+        </div>
+    </div>
+    <!-- Armado PDJ (Pan de Jamón) - Fase 1 (aislado) -->
+    <div id="section-armado" class="hidden">
+        <div class="mb-8 text-center max-w-4xl mx-auto">
+            <h2 class="text-3xl font-extrabold text-stone-900 mb-2 tracking-tight">Armado PDJ (Módulo Piloto)</h2>
+            <p class="text-stone-600 text-sm md:text-base">Registro simplificado para medir productividad del armado de Pan de Jamón (PDJ). Datos separados: no afectan métricas de amasadoras.</p>
+            <details class="mt-3 inline-block text-left">
+                <summary class="cursor-pointer text-xs text-stone-600">Alcance y separación de datos</summary>
+                <div class="mt-2 text-[11px] leading-relaxed text-stone-600 space-y-1">
+                    <p>Datos guardados en <code>localStorage.armadosPDJ</code> (se migra automáticamente desde <code>armadosPJ</code> si existía). No se mezclan con <code>resultadosMezclado</code>. Export independiente.</p>
+                    <p>Métricas: duración (s), cantidad de panes, panes/hora, panes/persona/hora y % espera (opcional futuro).</p>
+                </div>
+            </details>
+        </div>
+        <div class="bg-white border border-stone-200 rounded-xl p-6 shadow-sm max-w-5xl mx-auto mb-10" id="armado-form-wrapper">
+            <h3 class="text-xl font-bold mb-4 text-stone-800">Nuevo armado</h3>
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-5 items-end">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Fecha</label>
+                    <input type="date" id="armado-fecha" class="w-full border rounded px-3 py-2" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Inicio</label>
+                    <input type="time" id="armado-inicio" class="w-full border rounded px-3 py-2" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Fin</label>
+                    <input type="time" id="armado-fin" class="w-full border rounded px-3 py-2" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Cantidad panes</label>
+                    <input type="number" min="0" id="armado-cantidad" class="w-full border rounded px-3 py-2" placeholder="Ej: 120" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Personal (mín)</label>
+                    <input type="number" min="0" id="armado-per-min" class="w-full border rounded px-3 py-2" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Personal (máx)</label>
+                    <input type="number" min="0" id="armado-per-max" class="w-full border rounded px-3 py-2" />
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold mb-1">Observaciones</label>
+                    <textarea id="armado-obs" rows="2" class="w-full border rounded px-3 py-2"></textarea>
+                </div>
+                <div class="flex items-end">
+                    <button id="armado-guardar" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded w-full">Guardar armado</button>
+                </div>
+            </div>
+            <div id="armado-msg" class="text-sm mt-3"></div>
+        </div>
+        <div class="max-w-6xl mx-auto mb-8 flex flex-wrap gap-3 justify-end">
+            <button id="armado-export" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded text-sm">Exportar (CSV)</button>
+            <button id="armado-clear" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded text-sm">Borrar todo</button>
+        </div>
+        <div class="max-w-6xl mx-auto">
+            <h3 class="text-xl font-bold mb-3 text-stone-800">Resumen de armados</h3>
+            <div id="armado-resumen" class="text-sm text-stone-600 mb-3"></div>
+            <div id="armado-tabla" class="overflow-x-auto text-xs"></div>
         </div>
     </div>
     <!-- Amasadoras section (existing app) -->
@@ -527,6 +590,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ];
 
+    // Migración puntual: renombrar tipoMasa 'Bs.' a 'Mant.' en datos previos almacenados
+    (function setupTipoMasaMigration(){
+        function normalizeTipoMasaRegistro(reg){
+            if(!reg) return;
+            if(reg.tipoMasa === 'Bs.') reg.tipoMasa = 'Mant.';
+        }
+        function normalizeConjunto(conj){
+            if(conj && Array.isArray(conj.maquinas)) conj.maquinas.forEach(normalizeTipoMasaRegistro);
+        }
+        // LocalStorage: resultadosMezclado
+        try {
+            let changed=false;
+            const raw = localStorage.getItem('resultadosMezclado');
+            if(raw){
+                const arr = JSON.parse(raw);
+                if(Array.isArray(arr)){
+                    arr.forEach(c=>{const prev=JSON.stringify(c.maquinas); normalizeConjunto(c); if(JSON.stringify(c.maquinas)!==prev) changed=true;});
+                    if(changed) localStorage.setItem('resultadosMezclado', JSON.stringify(arr));
+                }
+            }
+        } catch(_){ }
+        // LocalStorage: tempAmasadoras
+        try {
+            let changed=false;
+            const rawTemp = localStorage.getItem('tempAmasadoras');
+            if(rawTemp){
+                const obj = JSON.parse(rawTemp);
+                if(obj && typeof obj==='object'){
+                    Object.keys(obj).forEach(k=>{const r=obj[k]; const before=r&&r.tipoMasa; normalizeTipoMasaRegistro(r); if(before!==r.tipoMasa) changed=true;});
+                    if(changed) localStorage.setItem('tempAmasadoras', JSON.stringify(obj));
+                }
+            }
+        } catch(_){ }
+        // Exponer para reutilizar en datos remotos
+        window.__normalizeTipoMasaMant = function(dataset){
+            if(Array.isArray(dataset)) dataset.forEach(normalizeConjunto);
+            return dataset;
+        };
+    })();
+
     const machineCardsContainer = document.getElementById('machine-cards');
     let timers = {};
     let machineTotals = {};
@@ -605,7 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <option value="">-- Seleccionar --</option>
                             <option value="Tradicional" ${temp.tipoMasa==='Tradicional'?'selected':''}>Tradicional</option>
                             <option value="Brioche" ${temp.tipoMasa==='Brioche'?'selected':''}>Brioche</option>
-                            <option value="Bs." ${temp.tipoMasa==='Bs.'?'selected':''}>Bs.</option>
+                            <option value="Mant." ${temp.tipoMasa==='Mant.'?'selected':''}>Mant.</option>
                             <option value="__OTRO__" ${temp.tipoMasa==='__OTRO__'?'selected':''}>Otro...</option>
                         </select>
                         <input type="text" id="tipoMasaOtro-${machine.id}" placeholder="Especificar otro" class="mt-2 px-3 py-2 rounded-lg border border-dashed border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-masa-otro${temp.tipoMasa==='__OTRO__'?'':' hidden'}" value="${temp.tipoMasaOtro||''}" />
@@ -2190,10 +2293,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function activateMainTab(which){
             // Reset classes
-            [tabMainMenu, tabMainAmas, tabMainFerm, tabMainHornos].forEach(b=> b?.classList.remove('tab-btn-active'));
+            [tabMainMenu, tabMainAmas, tabMainFerm, tabMainHornos, tabMainArmado].forEach(b=> b?.classList.remove('tab-btn-active'));
             // Hide all main sections by default
             viewMain?.classList.add('hidden');
             sectionAmas?.classList.add('hidden');
+            sectionArmado?.classList.add('hidden');
             // Siempre ocultar sub-vistas de Amasadoras cuando cambiamos de módulo
             hideAmasadorasSubviews();
             // Ocultar placeholders
@@ -2213,14 +2317,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if(which==='ferm'){
                 tabMainFerm?.classList.add('tab-btn-active');
-                // Mostrar sólo la sección de Fermentadora (top-level)
                 sectionFerm?.classList.remove('hidden');
                 return;
             }
             if(which==='horn'){
                 tabMainHornos?.classList.add('tab-btn-active');
-                // Mostrar sólo la sección de Hornos (top-level)
                 sectionHornos?.classList.remove('hidden');
+                return;
+            }
+            if(which==='armado'){
+                tabMainArmado?.classList.add('tab-btn-active');
+                sectionArmado?.classList.remove('hidden');
+                renderArmadosTabla();
                 return;
             }
         }
@@ -2228,10 +2336,142 @@ document.addEventListener('DOMContentLoaded', () => {
         tabMainAmas?.addEventListener('click', ()=> activateMainTab('amas'));
         tabMainFerm?.addEventListener('click', ()=> activateMainTab('ferm'));
         tabMainHornos?.addEventListener('click', ()=> activateMainTab('horn'));
+    tabMainArmado?.addEventListener('click', ()=> activateMainTab('armado'));
         // Force start on Menu to avoid Amasadoras content appearing under Menu
         activateMainTab('menu');
 
         // Settings bindings
+        // ================= Armado PDJ (Pan de Jamón) Fase 1 =================
+        // Migración de clave antigua armadosPJ -> armadosPDJ
+        try {
+            if(localStorage.getItem('armadosPDJ')==null && localStorage.getItem('armadosPJ')){
+                localStorage.setItem('armadosPDJ', localStorage.getItem('armadosPJ'));
+                localStorage.removeItem('armadosPJ');
+            }
+        } catch(_){ }
+        function getArmados(){
+            try { return JSON.parse(localStorage.getItem('armadosPDJ')||'[]')||[]; } catch(_){ return []; }
+        }
+        function saveArmados(arr){ localStorage.setItem('armadosPDJ', JSON.stringify(arr)); }
+        function calcularIndicadoresArmado(a){
+            // duración en segundos; panesHora; panesPersonaHora; personalMid
+            let dur = a.duracionSeg;
+            const horas = dur>0? (dur/3600):0;
+            const panesHora = (a.cantidad>0 && horas>0)? a.cantidad/horas : 0;
+            const perMid = (a.perMin!=null && a.perMax!=null)? (a.perMin + a.perMax)/2 : null;
+            const panesPerHora = (perMid && perMid>0 && horas>0)? a.cantidad/(horas*perMid):0;
+            return { panesHora, panesPerHora, perMid };
+        }
+        function renderArmadosTabla(){
+            const contTabla = document.getElementById('armado-tabla');
+            const contResumen = document.getElementById('armado-resumen');
+            if(!contTabla||!contResumen) return;
+            let datos = getArmados();
+            if(!datos.length){
+                contTabla.innerHTML = '<div class="p-4 border border-dashed rounded text-stone-500">Sin registros todavía.</div>';
+                contResumen.textContent='';
+                return;
+            }
+            // Orden por fecha+inicio
+            datos.sort((a,b)=> (a.fecha+a.horaInicio).localeCompare(b.fecha+b.horaInicio));
+            let totalPanes=0,totalDur=0,totalPanesHora=0,totalPanesPerHora=0,cValidPH=0,cValidPPH=0;
+            const rows = datos.map((d,i)=>{
+                const ind = calcularIndicadoresArmado(d);
+                if(d.cantidad>0) totalPanes+=d.cantidad;
+                if(d.duracionSeg>0) totalDur+=d.duracionSeg;
+                if(ind.panesHora>0){ totalPanesHora+=ind.panesHora; cValidPH++; }
+                if(ind.panesPerHora>0){ totalPanesPerHora+=ind.panesPerHora; cValidPPH++; }
+                return `<tr class="border-b last:border-0">
+                    <td class="px-2 py-1 whitespace-nowrap text-stone-700">${i+1}</td>
+                    <td class="px-2 py-1 whitespace-nowrap font-mono">${d.fecha}</td>
+                    <td class="px-2 py-1 whitespace-nowrap font-mono">${d.horaInicio}</td>
+                    <td class="px-2 py-1 whitespace-nowrap font-mono">${d.horaFin}</td>
+                    <td class="px-2 py-1 text-right">${d.duracionSeg}</td>
+                    <td class="px-2 py-1 text-right">${d.cantidad||''}</td>
+                    <td class="px-2 py-1 text-right">${ind.perMid? ind.perMid.toFixed(2):''}</td>
+                    <td class="px-2 py-1 text-right">${ind.panesHora? ind.panesHora.toFixed(2):''}</td>
+                    <td class="px-2 py-1 text-right">${ind.panesPerHora? ind.panesPerHora.toFixed(2):''}</td>
+                    <td class="px-2 py-1">${(d.obs||'').replace(/</g,'&lt;')}</td>
+                </tr>`;
+            }).join('');
+            const promPH = cValidPH? (totalPanesHora/cValidPH):0;
+            const promPPH = cValidPPH? (totalPanesPerHora/cValidPPH):0;
+            const promDur = datos.length? (totalDur/datos.length):0;
+            contResumen.innerHTML = `Registros: <strong>${datos.length}</strong> · Panes totales: <strong>${totalPanes}</strong> · Prom. duración (s): <strong>${promDur.toFixed(1)}</strong> · Prom. Panes/hora: <strong>${promPH.toFixed(2)}</strong> · Prom. Panes/persona/hora: <strong>${promPPH.toFixed(2)}</strong>`;
+            contTabla.innerHTML = `<table class="min-w-full border border-stone-300 rounded">
+                <thead class="bg-stone-100 text-[11px] uppercase tracking-wide text-stone-600">
+                    <tr>
+                        <th class="px-2 py-1 text-left">#</th>
+                        <th class="px-2 py-1 text-left">Fecha</th>
+                        <th class="px-2 py-1 text-left">Inicio</th>
+                        <th class="px-2 py-1 text-left">Fin</th>
+                        <th class="px-2 py-1 text-right">Dur (s)</th>
+                        <th class="px-2 py-1 text-right">Panes</th>
+                        <th class="px-2 py-1 text-right">Per. Mid</th>
+                        <th class="px-2 py-1 text-right">Panes/h</th>
+                        <th class="px-2 py-1 text-right">Panes/per/h</th>
+                        <th class="px-2 py-1 text-left">Obs</th>
+                    </tr>
+                </thead>
+                <tbody class="text-[12px]">${rows}</tbody>
+            </table>`;
+        }
+        const armadoGuardar = document.getElementById('armado-guardar');
+        armadoGuardar?.addEventListener('click', ()=>{
+            const msg = document.getElementById('armado-msg');
+            if(msg) msg.textContent='';
+            const fecha = (document.getElementById('armado-fecha')?.value||'').trim();
+            const hIni = (document.getElementById('armado-inicio')?.value||'').trim();
+            const hFin = (document.getElementById('armado-fin')?.value||'').trim();
+            const cant = parseInt(document.getElementById('armado-cantidad')?.value||'');
+            const perMin = document.getElementById('armado-per-min')?.value;
+            const perMax = document.getElementById('armado-per-max')?.value;
+            const obs = (document.getElementById('armado-obs')?.value||'').trim();
+            if(!fecha || !hIni || !hFin){ if(msg){ msg.className='text-sm text-red-600'; msg.textContent='Faltan fecha y horas.'; } return; }
+            // Calcular duración en segundos
+            const parseHM = h=>{ const [H,M]=h.split(':').map(Number); return H*3600+M*60; };
+            let dur = parseHM(hFin) - parseHM(hIni); if(dur<=0) dur = 0;
+            const registro = { fecha, horaInicio:hIni, horaFin:hFin, duracionSeg:dur, cantidad: isNaN(cant)? null: cant, perMin: perMin? parseInt(perMin): null, perMax: perMax? parseInt(perMax): null, obs };
+            let arr = getArmados();
+            arr.push(registro);
+            saveArmados(arr);
+            if(msg){ msg.className='text-sm text-emerald-700'; msg.textContent='Armado guardado.'; }
+            // Limpiar algunos campos
+            document.getElementById('armado-inicio').value='';
+            document.getElementById('armado-fin').value='';
+            document.getElementById('armado-cantidad').value='';
+            document.getElementById('armado-obs').value='';
+            renderArmadosTabla();
+        });
+        document.getElementById('armado-export')?.addEventListener('click', ()=>{
+            const datos = getArmados();
+            if(!datos.length){ mostrarToast('Sin datos para exportar'); return; }
+            const rows = datos.map(d=>{
+                const ind = calcularIndicadoresArmado(d);
+                return {
+                    Fecha: d.fecha,
+                    Inicio: d.horaInicio,
+                    Fin: d.horaFin,
+                    Duracion_s: d.duracionSeg,
+                    CantidadPanes: d.cantidad ?? '',
+                    PersonalMin: d.perMin ?? '',
+                    PersonalMax: d.perMax ?? '',
+                    PersonalMid: ind.perMid? ind.perMid.toFixed(2):'',
+                    PanesHora: ind.panesHora? ind.panesHora.toFixed(3):'',
+                    PanesPersonaHora: ind.panesPerHora? ind.panesPerHora.toFixed(3):'',
+                    Observaciones: d.obs||''
+                };
+            });
+            const csv = Papa.unparse(rows);
+            const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+            saveAs(blob,'armados_pdj.csv');
+        });
+        document.getElementById('armado-clear')?.addEventListener('click', ()=>{
+            if(!confirm('¿Borrar todos los armados? Esta acción no se puede deshacer.')) return;
+            localStorage.removeItem('armadosPDJ');
+            renderArmadosTabla();
+        });
+        // ================================================================
         const settingsApiUrl = document.getElementById('settings-api-url');
         const settingsSaveApi = document.getElementById('settings-save-api');
     const settingsApiKey = document.getElementById('settings-api-key');
@@ -2369,6 +2609,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(fHasta){ arrFiltrado = arrFiltrado.filter(it=> (it.data?.fecha||it.fecha||'') <= fHasta); }
                 if(fLote){ arrFiltrado = arrFiltrado.filter(it=> (it.data?.amasadoras||[]).some(m=> (m.lote||'').toString().includes(fLote))); }
                 if(fTipo){ const fx=fTipo.toLowerCase(); arrFiltrado = arrFiltrado.filter(it=> (it.data?.amasadoras||[]).some(m=> ((m.tipoMasa||m.tipoPan||'').toLowerCase().includes(fx)))); }
+                // Normalizar 'Bs.' -> 'Mant.' también en datos remotos (si la API aún tiene registros antiguos)
+                try { if(window.__normalizeTipoMasaMant) window.__normalizeTipoMasaMant(arrFiltrado.map(r=> r.data ? r.data : r)); } catch(_){ }
                 // Normalizar cada amasadora: si viene como 'procesos'[] mapear a proceso1..3
                 function normalizeMaq(m){
                     if(!m) return m;
