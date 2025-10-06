@@ -113,9 +113,10 @@
     <!-- Amasadoras section (existing app) -->
     <div id="section-amasadoras" class="hidden">
                 <!-- Nueva estructura: layout con sidebar (Amasadoras) -->
-                <div class="grid grid-cols-12 gap-6 mb-6">
-                    <aside class="col-span-12 md:col-span-2">
-                        <nav id="amas-sidebar" class="flex md:flex-col flex-wrap md:space-y-2 gap-2">
+                <div class="grid grid-cols-12 gap-4 mb-6">
+                    <aside class="col-span-12 md:col-span-2 md:w-44">
+                        <div class="hidden md:block mb-2"><button id="amas-sidebar-collapse" class="text-xs text-stone-600 hover:text-stone-900 underline">Ocultar menú</button></div>
+                        <nav id="amas-sidebar" class="flex md:flex-col flex-wrap md:space-y-2 gap-2 transition-all">
                             <button data-amas-sub="captura" class="tab-btn w-full tab-btn-active">Amasadoras</button>
                             <button data-amas-sub="resultados" class="tab-btn w-full">Resultados</button>
                             <button data-amas-sub="tablas" class="tab-btn w-full">Tablas</button>
@@ -124,7 +125,40 @@
                     </aside>
                     <div class="col-span-12 md:col-span-10" id="amas-content-wrapper">
                         <div id="amas-sub-captura" class="amas-subview">
-                <div id="view-tablas" class="hidden">
+                            <!-- Contenido de Medición (captura) reubicado dentro de la subvista captura -->
+                            <div id="view-medicion" class="">
+                                <div class="mb-8">
+                                    <h1 class="text-3xl font-extrabold text-stone-900 tracking-tight mb-2">Cálculo de Amasadoras</h1>
+                                    <p class="text-stone-600 text-sm md:text-base">Cómo operar el programa: registra primero las variables generales (fecha, TA, H, personal). Luego en cada tarjeta de amasadora define el tipo de masa y controla los tres procesos secuencialmente. Guarda cada máquina al terminar para formar un conjunto que luego podrás analizar y exportar.</p>
+                                </div>
+                                <div id="instrucciones-medicion" class="mb-8">
+                                    <details open class="bg-white border border-stone-300 rounded-xl p-4 shadow-sm">
+                                        <summary class="cursor-pointer select-none font-semibold text-stone-800 text-lg flex items-center gap-2">
+                                            <span>Instrucciones (crear conjunto, analizar y exportar)</span>
+                                        </summary>
+                                        <div class="mt-3 space-y-3 text-sm leading-relaxed text-stone-700">
+                                            <p><span class="font-semibold">¿Qué es un conjunto?</span> Es un registro de una <strong>fecha</strong> con una o varias <strong>amasadoras</strong> y sus 3 procesos: <strong>Esponja</strong>, <strong>Masa</strong> y <strong>Mantequilla</strong> (tiempos reales, inicios, fines), más variables: <strong>Lote</strong>, <strong>Tipo de masa</strong>, <strong>Hielo</strong>, <strong>TM/TA/H</strong>, <strong>Personal</strong> y <strong>Observaciones</strong>.</p>
+                                            <ol class="list-decimal ml-5 space-y-1">
+                                                <li>Completa <strong>Fecha</strong>, <strong>TA</strong>, <strong>H</strong> y <strong>Personal (mín–máx)</strong>.</li>
+                                                <li>En cada amasadora define <strong>Tipo de masa</strong>, marca <strong>Hielo</strong> si aplica y al finalizar registra <strong>Temp. de masa</strong> y <strong>Observaciones</strong>.</li>
+                                                <li>Ejecuta los procesos en orden (Iniciar / Detener). Sólo puede estar activo uno por máquina; iniciar otro detiene el previo.</li>
+                                                <li>Se guardan inicio, fin y duración. El <strong>Total máquina</strong> va desde el inicio del primer proceso al fin del tercero. <strong>TM1 / TM2</strong> son los huecos entre procesos.</li>
+                                                <li>Pulsa <strong>Guardar resultados</strong> al terminar los 3 procesos de la máquina. Repite para otras.</li>
+                                                <li>Pasa a la pestaña <strong>Resultados</strong> para ver, filtrar y revisar. Desde <strong>Base de datos</strong> puedes: <em>Refrescar</em>, <em>Ver JSON</em> (abre un modal con Copiar), <em>Borrar</em> y ver <em>Detalles</em> por amasadora (TM1/TM2/Total real/Total procesos/Obs y tiempos por proceso).</li>
+                                                <li>En <strong>Resultados → Locales</strong> puedes enviar una tarjeta con <em>Enviar a BD</em> o toda la fecha con <em>Enviar todo a la BD</em>. Evitamos clics múltiples para no duplicar.</li>
+                                                <li>En <strong>Tablas</strong> elige la <em>Fuente</em>: <strong>Locales</strong> o <strong>Base de datos</strong> (con filtro por <em>Fecha</em>). Las tablas y gráficas se adaptan al origen.</li>
+                                                <li><strong>Borrar todo</strong> elimina definitivamente todos los registros guardados.</li>
+                                                <li><strong>Exportar PDF</strong>: reporte visual de la vista de resultados (sin botones).</li>
+                                                <li><strong>Exportar CSV</strong>: filas compactadas (una por proceso) con factores diarios y de máquina sólo en la primera fila de cada máquina. Incluye TM1, TM2, TM.Total y Total(s).</li>
+                                            </ol>
+                                            <p><span class="font-semibold">Privacidad:</span> La clave (si la guardas) queda sólo en este navegador (localStorage).</p>
+                                        </div>
+                                    </details>
+                                </div>
+                                <!-- Variables generales y tarjetas (contenido original de captura permanece debajo) -->
+                            </div>
+                            <!-- Fin view-medicion reubicado -->
+                <!-- (El contenido dinámico de captura existente continúa abajo sin cambios) -->
             <div class="mb-6 text-center">
                 <h2 class="text-3xl font-extrabold mb-2 text-stone-900 tracking-tight">Tablas y Gráficas</h2>
                 <p class="text-stone-600 max-w-2xl mx-auto">Promedios, desviaciones y distribución visual por tipo de masa, amasadora y procesos.</p>
@@ -875,7 +909,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
             `;
             machineCardsContainer.innerHTML += cardHtml;
-        });
+    });
     }
     // Actualizar dinámicamente los tiempos muertos y total al detener procesos
     function updateMuertosYTotal(machineId) {
@@ -1188,22 +1222,55 @@ document.addEventListener('DOMContentLoaded', () => {
         guardarResultadosPorMaquina(machineId, btn);
     });
 
-    function guardarResultadosPorMaquina(machineId, btn) {
-        const fecha = document.getElementById('fecha').value;
-        if (!fecha) {
-        // Fin de la función pasarFechaABD
-            mostrarMsgMaquina(machineId, 'Selecciona una fecha para guardar.', false);
-
-    /*********************
-     * DETECCIÓN DE PATRONES (EXPERIMENTAL)
-     * Analiza todos los registros locales y busca qué variables (lote, tipoMasa, hielo, tempMasa, personal, humedad, tempAmbiente)
-     * se correlacionan más con: (a) menor % muerto, (b) mayor productividad (tiempoProcesos / tiempoReal).
-     * Resultado: ranking simple de factores con score heurístico.
-     *********************/
+    function guardarResultadosPorMaquina(machineId, btn){
+        const fecha = document.getElementById('fecha')?.value || '';
+        if(!fecha){ mostrarMsgMaquina(machineId,'Selecciona una fecha para guardar.',false); return; }
+        const machine = machineData.find(m=> m.id===machineId); if(!machine){ mostrarMsgMaquina(machineId,'Máquina no encontrada.', false); return; }
+        const procesos = {};
+        machine.processes.forEach(p=>{
+            const timerId = `m${machine.id}-p${p.id}`;
+            const run = timers[timerId];
+            let tiempo=0, startTime=null, endTime=null;
+            if(run && run.startTime){
+                startTime = completedProcessTimes[timerId]?.firstStartTime || run.startTime;
+                const base = run.baseElapsed||0;
+                const current = Math.max(0, Math.floor((Date.now()-run.startTime)/1000));
+                tiempo = base + current;
+            } else {
+                const comp = completedProcessTimes[timerId] || { time:0, startTime:null, endTime:null };
+                tiempo = comp.time||0; startTime = comp.firstStartTime||comp.startTime||null; endTime = comp.endTime||null;
+            }
+            const minutos = Math.floor(tiempo/60), segundos = tiempo%60;
+            procesos['proceso'+p.id] = { minutos, segundos, startTime, endTime };
+        });
+        // Variables adicionales
+        let tipoMasa = document.getElementById(`tipoMasa-${machine.id}`)?.value || '';
+        if(tipoMasa==='__OTRO__'){
+            const otro = document.getElementById(`tipoMasaOtro-${machine.id}`)?.value.trim(); if(otro) tipoMasa = otro;
+        }
+        const tipoPan = document.getElementById(`tipoPan-${machine.id}`)?.value || '';
+        const hielo = document.querySelector(`input[name="hielo-${machine.id}"]:checked`)?.value || 'No';
+        const personalMin = document.getElementById('personal-min')?.value || '';
+        const personalMax = document.getElementById('personal-max')?.value || '';
+        const observaciones = document.getElementById(`obs-${machine.id}`)?.value || '';
+        const tempAmbiente = document.getElementById('ta')?.value || '';
+        const humedad = document.getElementById('h')?.value || '';
+        const tempMasa = document.getElementById(`tempMasa-${machine.id}`)?.value || '';
+        const lote = document.getElementById(`lote-${machine.id}`)?.value || '';
+        const maquinaObj = { id:machine.id, nombre:machine.name, numeroAmasadora:machine.id, lote, tipoMasa, tipoPan, hielo, personalMin, personalMax, tempAmbiente, humedad, tempMasa, observaciones, ...procesos };
+        // Validación procesos completos
+        const incompletos = machine.processes.filter(p=>{ const o=maquinaObj['proceso'+p.id]; const totalSeg=((o?.minutos||0)*60)+(o?.segundos||0); return !(o && totalSeg>0 && o.startTime && o.endTime); }).map(p=>p.name);
+        if(incompletos.length){ mostrarMsgMaquina(machineId,'Completa procesos: '+incompletos.join(', '), false); return; }
+        const arr = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
+        arr.push({ fecha, maquinas:[maquinaObj] });
+        localStorage.setItem('resultadosMezclado', JSON.stringify(arr));
+        mostrarMsgMaquina(machineId,'¡Resultados guardados correctamente!', true);
+    }
+    // Analítica de patrones (versión activa – se eliminan stubs duplicados)
     function analizarPatrones(){
         let data = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
         const puntos=[]; // { pctMuerto, ratioProd, tipoMasa, hielo, tempMasa, tempAmbiente, humedad, personal }
-        data.forEach(r=> (r.maquinas||[]).forEach(m=>{
+    data.forEach(r=> (r.maquinas||[]).forEach(m=>{
             const p1=m.proceso1, p3=m.proceso3; if(!(p1&&p1.startTime&&p3&&p3.endTime)) return;
             const total = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000));
             if(total<=0) return;
@@ -1217,69 +1284,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if(Number.isNaN(pMin) && !Number.isNaN(pMax)) pMin=pMax;
             if(Number.isNaN(pMax) && !Number.isNaN(pMin)) pMax=pMin;
             const pMid = (!Number.isNaN(pMin) && !Number.isNaN(pMax))? (pMin+pMax)/2 : parseInt(m.personal||r.personal)||NaN;
-            puntos.push({
-                pctMuerto,
-                ratioProd,
-                tipoMasa:(m.tipoMasa||'').trim()||'_vacío_',
-                tipoPan:(m.tipoPan||'').trim()||'_vacío_',
-                hielo:(m.hielo||'').trim()||'_vacío_',
-                tempMasa: parseFloat(m.tempMasa),
-                tempAmbiente: parseFloat(m.tempAmbiente||r.tempAmbiente),
-                humedad: parseFloat(m.humedad||r.humedad),
-                personal: pMid
-            });
-        }));
-        if(!puntos.length) return { resumen:'Sin datos suficientes', factores:[] };
-        const avg = arr=> arr.reduce((a,b)=>a+b,0)/arr.length;
-        // Filtrado robusto de outliers sobre pctMuerto (IQR)
-        const sortedPct = puntos.map(p=>p.pctMuerto).sort((a,b)=>a-b);
-        const q = qn=> sortedPct[Math.min(sortedPct.length-1, Math.max(0, Math.floor(qn*(sortedPct.length-1))))];
-        const q1=q(0.25), q3=q(0.75); const iqr=q3-q1; const lowFence=q1-1.5*iqr; const highFence=q3+1.5*iqr;
-        const filtrados = puntos.filter(p=> p.pctMuerto>=lowFence && p.pctMuerto<=highFence);
-        const baseSet = filtrados.length>=5? filtrados: puntos;
-        const basePct = avg(baseSet.map(p=>p.pctMuerto));
-        const baseRatio = avg(baseSet.map(p=>p.ratioProd));
-        // Desv estándar para t-score aproximado
-        function sd(arr){ if(arr.length<2) return 0; const m=avg(arr); return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/(arr.length-1)); }
-        const sdPct = sd(baseSet.map(p=>p.pctMuerto));
-        const sdRatio = sd(baseSet.map(p=>p.ratioProd));
-        const minGrupo = parseInt(document.getElementById('patrones-min-grupo')?.value||'3') || 3;
+            puntos.push({ pctMuerto, ratioProd, tipoMasa:m.tipoMasa||'', tipoPan:m.tipoPan||'', hielo:m.hielo||'No', tempMasa:parseFloat(m.tempMasa)||NaN, tempAmbiente:parseFloat(r.ta)||NaN, humedad:parseFloat(r.h)||NaN, personal:pMid });
+    }));
+        const baseSet = puntos.slice();
+        const basePct = baseSet.reduce((s,p)=>s+p.pctMuerto,0)/baseSet.length;
+        const baseRatio = baseSet.reduce((s,p)=>s+p.ratioProd,0)/baseSet.length;
+        const minGrupo=3;
         function scoreCategorico(campo){
-            const grupos={}; baseSet.forEach(p=>{ const k=p[campo]; (grupos[k]=grupos[k]||[]).push(p); });
-            const res=[]; Object.entries(grupos).forEach(([k, arr])=>{
-                if(arr.length<minGrupo) return;
-                const pctAvg = avg(arr.map(x=>x.pctMuerto));
-                const ratioAvg = avg(arr.map(x=>x.ratioProd));
-                const mejoraMuerto = (basePct - pctAvg);
-                const mejoraProd = (ratioAvg - baseRatio);
-                // t-like score (normalizado) evitando div/0
-                const tMuerto = sdPct? mejoraMuerto / sdPct : 0;
-                const tProd = sdRatio? mejoraProd / sdRatio : 0;
-                const score = (tProd - tMuerto) + Math.log(arr.length+1)*0.25 + (mejoraProd/baseRatio + (mejoraMuerto/basePct))*0.5;
-                res.push({ valor:k, n:arr.length, pctAvg, ratioAvg, mejoraMuerto:mejoraMuerto/basePct, mejoraProd:mejoraProd/baseRatio, score });
-            });
-            res.sort((a,b)=> b.score - a.score);
-            const top = res[0];
-            return { campo, grupos:res, top };
-        }
-        function scoreNumerico(campo){
-            const vals = baseSet.map(p=> p[campo]).filter(v=> Number.isFinite(v));
-            if(vals.length< (minGrupo*2)) return null;
-            const sorted = vals.slice().sort((a,b)=>a-b);
-            const q1 = sorted[Math.floor(sorted.length/3)];
-            const q2 = sorted[Math.floor(2*sorted.length/3)];
-            function bucket(v){ if(v<=q1) return 'Bajo'; if(v<=q2) return 'Medio'; return 'Alto'; }
-            baseSet.forEach(p=>{ if(Number.isFinite(p[campo])) p['__b_'+campo]=bucket(p[campo]); });
-            return scoreCategorico('__b_'+campo);
-        }
-    const catCampos=['tipoMasa','tipoPan','hielo'];
-        const numCampos=['tempMasa','tempAmbiente','humedad','personal'];
-        const resultados=[];
-        catCampos.forEach(c=>{ const r=scoreCategorico(c); if(r?.top) resultados.push(r); });
-        numCampos.forEach(c=>{ const r=scoreNumerico(c); if(r?.top) resultados.push({...r, campo:c}); });
-        resultados.sort((a,b)=>(b.top?.score||0)-(a.top?.score||0));
-        const topLimit = parseInt(document.getElementById('patrones-top-fact')?.value||'5')||5;
-        return { resumen:`Muestras: ${puntos.length} (usadas ${baseSet.length}) · Base %Muerto=${basePct.toFixed(1)} · Base Prod=${(baseRatio*100).toFixed(1)}%`, factores:resultados.slice(0, topLimit) };
+            const grupos={}; baseSet.forEach(p=>{ const v=p[campo]||'__'; (grupos[v]=grupos[v]||[]).push(p); });
+            const res=[]; Object.entries(grupos).forEach(([k,arr])=>{ if(arr.length<minGrupo) return; const pctAvg=arr.reduce((s,x)=>s+x.pctMuerto,0)/arr.length; const ratioAvg=arr.reduce((s,x)=>s+x.ratioProd,0)/arr.length; const mejoraMuerto=(basePct-pctAvg)/basePct; const mejoraProd=(ratioAvg-baseRatio)/baseRatio; const score= (mejoraProd - mejoraMuerto); res.push({valor:k,n:arr.length,pctAvg,ratioAvg,mejoraMuerto,mejoraProd,score}); }); res.sort((a,b)=>b.score-a.score); if(!res.length) return null; return {campo, grupos:res, top:res[0]}; }
+        function scoreNumerico(campo){ const vals=baseSet.map(p=>p[campo]).filter(v=>Number.isFinite(v)); if(vals.length<minGrupo*2) return null; const s=vals.slice().sort((a,b)=>a-b); const q1=s[Math.floor(s.length/3)], q2=s[Math.floor(2*s.length/3)]; const bucket=v=> v<=q1?'Bajo': (v<=q2?'Medio':'Alto'); baseSet.forEach(p=>{ if(Number.isFinite(p[campo])) p['__b_'+campo]=bucket(p[campo]); }); return scoreCategorico('__b_'+campo); }
+        const catCampos=['tipoMasa','tipoPan','hielo']; const numCampos=['tempMasa','tempAmbiente','humedad','personal']; const resultados=[]; catCampos.forEach(c=>{ const r=scoreCategorico(c); if(r?.top) resultados.push(r); }); numCampos.forEach(c=>{ const r=scoreNumerico(c); if(r?.top) resultados.push({...r,campo:c}); }); resultados.sort((a,b)=>(b.top?.score||0)-(a.top?.score||0)); const topLimit=parseInt(document.getElementById('patrones-top-fact')?.value||'5')||5; return { resumen:`Muestras: ${puntos.length} · Base %Muerto=${basePct.toFixed(1)} · Base Prod=${(baseRatio*100).toFixed(1)}%`, factores: resultados.slice(0,topLimit) };
     }
 
     // Render sencillo en un panel si existe contenedor #patrones-panel
@@ -1302,94 +1317,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Intentar render al cargar vistas de tablas
     try { renderPatrones(); } catch(_){ }
 
-            return;
-        }
-        const machine = machineData.find(m => m.id === machineId);
-        if (!machine) return;
-        const procesos = {};
-        machine.processes.forEach(process => {
-            const timerId = `m${machine.id}-p${process.id}`;
-            // Si está corriendo, tomar su startTime actual y tiempo transcurrido; si no, usar el completado
-            let tiempo = 0, startTime = null, endTime = null;
-            const tRun = timers[timerId];
-            if (tRun && tRun.startTime) {
-                startTime = completedProcessTimes[timerId]?.firstStartTime || tRun.startTime;
-                const base = tRun.baseElapsed || 0;
-                const current = Math.max(0, Math.floor((Date.now() - tRun.startTime) / 1000));
-                tiempo = base + current;
-                endTime = null; // aún en curso
-            } else {
-                const comp = completedProcessTimes[timerId] || { time: 0, startTime: null, endTime: null };
-                tiempo = comp.time || 0;
-                startTime = comp.firstStartTime || comp.startTime || null;
-                endTime = comp.endTime || null;
-            }
-            const minutos = Math.floor((tiempo||0) / 60);
-            const segundos = (tiempo||0) % 60;
-            procesos[`proceso${process.id}`] = { minutos, segundos, startTime, endTime };
-        });
-    const tipoMasa = document.getElementById(`tipoMasa-${machine.id}`)?.value || '';
-    let tipoMasaFinal = tipoMasa;
-    if(tipoMasa === '__OTRO__'){
-        const otroVal = document.getElementById(`tipoMasaOtro-${machine.id}`)?.value.trim();
-        tipoMasaFinal = otroVal || '';
-    }
-    const tipoPanFinal = document.getElementById(`tipoPan-${machine.id}`)?.value.trim() || '';
-        // Obtener valor de hielo
-        let hielo = '';
-        if (document.getElementById(`hielo-si-${machine.id}`).checked) hielo = 'Si';
-        else if (document.getElementById(`hielo-no-${machine.id}`).checked) hielo = 'No';
-        // Obtener número de personal
-    const personalMin = document.getElementById('personal-min')?.value || '';
-    const personalMax = document.getElementById('personal-max')?.value || '';
-        // Obtener observaciones
-        const observaciones = document.getElementById(`obs-${machine.id}`).value || '';
-        // Obtener variables nuevas
-        const tempAmbiente = document.getElementById('ta').value || '';
-        const humedad = document.getElementById('h').value || '';
-        const tempMasa = document.getElementById(`tempMasa-${machine.id}`).value || '';
-        const lote = document.getElementById(`lote-${machine.id}`)?.value || '';
-        const maquinaObj = {
-            id: machine.id,
-            nombre: machine.name,
-            numeroAmasadora: machine.id,
-            lote,
-            tipoMasa: tipoMasaFinal,
-            tipoPan: tipoPanFinal,
-            hielo,
-            personalMin,
-            personalMax,
-            tempAmbiente,
-            humedad,
-            tempMasa,
-            observaciones,
-            ...procesos
-        };
-        // Validación: procesos completos (tiempo > 0 y con start & end)
-        const incompletos = [];
-        machine.processes.forEach(p=>{
-            const o = maquinaObj['proceso'+p.id];
-            const totalSeg = ((o?.minutos||0)*60) + (o?.segundos||0);
-            if(!o || totalSeg===0 || !o.startTime || !o.endTime){ incompletos.push(p.name); }
-        });
-        if(incompletos.length){
-            mostrarMsgMaquina(machineId, 'Completa procesos: '+incompletos.join(', '), false);
-            return;
-        }
-    let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
-    resultados.push({ fecha, maquinas: [maquinaObj] });
-    localStorage.setItem('resultadosMezclado', JSON.stringify(resultados));
-    mostrarMsgMaquina(machineId, '¡Resultados guardados correctamente!', true);
-    }
-
-    function mostrarMsgMaquina(machineId, msg, ok) {
-        const msgDiv = document.getElementById('msg-guardar-' + machineId);
-        if (msgDiv) {
-            msgDiv.textContent = msg;
-            msgDiv.className = 'mt-2 text-center ' + (ok ? 'text-green-700 bg-green-100 border border-green-300 rounded p-2' : 'text-red-700 bg-red-100 border border-red-300 rounded p-2');
-            setTimeout(() => { msgDiv.textContent = ''; }, 3000);
-        }
-    }
+    // mostrarMsgMaquina ya definido más abajo
 
     function cargarResultados() {
     // Botón Clear para borrar todos los resultados
@@ -2449,6 +2377,7 @@ document.addEventListener('DOMContentLoaded', () => {
             amasSidebar?.querySelectorAll('button[data-amas-sub]')?.forEach(btn=>{
                 if(btn.getAttribute('data-amas-sub')===which) btn.classList.add('tab-btn-active'); else btn.classList.remove('tab-btn-active');
             });
+            localStorage.setItem('AMAS_LAST_SUB', which||'captura');
         }
         amasSidebar?.addEventListener('click', e=>{
             const b=e.target.closest('button[data-amas-sub]'); if(!b) return; setAmasSubview(b.getAttribute('data-amas-sub'));
@@ -2467,11 +2396,41 @@ document.addEventListener('DOMContentLoaded', () => {
             mesaSidebar?.querySelectorAll('button[data-mesa-sub]')?.forEach(btn=>{
                 if(btn.getAttribute('data-mesa-sub')===which) btn.classList.add('tab-btn-active'); else btn.classList.remove('tab-btn-active');
             });
+            localStorage.setItem('MESA_LAST_SUB', which||'captura');
         }
         mesaSidebar?.addEventListener('click', e=>{ const b=e.target.closest('button[data-mesa-sub]'); if(!b) return; setMesaSubview(b.getAttribute('data-mesa-sub')); });
         document.getElementById('switch-to-amas')?.addEventListener('click', ()=>{ activateMainTab('amas'); setAmasSubview('captura'); });
         // Set defaults
         setAmasSubview('captura');
+        // Restaurar última subpestaña si existe
+        const lastAmas = localStorage.getItem('AMAS_LAST_SUB'); if(lastAmas) setAmasSubview(lastAmas);
+        const lastMesa = localStorage.getItem('MESA_LAST_SUB'); if(lastMesa) setMesaSubview(lastMesa);
+
+        // Colapsar / expandir sidebars
+        function setupCollapsibleSidebar(sidebarId, collapseBtnId, storageKey){
+            const btn = document.getElementById(collapseBtnId);
+            const sidebar = document.getElementById(sidebarId);
+            if(!sidebar||!btn) return;
+            function apply(state){
+                if(state==='collapsed'){
+                    sidebar.classList.add('opacity-0','pointer-events-none');
+                    sidebar.style.maxHeight='0px';
+                    btn.textContent='Mostrar menú';
+                } else {
+                    sidebar.classList.remove('opacity-0','pointer-events-none');
+                    sidebar.style.maxHeight='';
+                    btn.textContent='Ocultar menú';
+                }
+            }
+            let current = localStorage.getItem(storageKey)||'expanded';
+            apply(current);
+            btn.addEventListener('click', ()=>{
+                current = (current==='expanded')?'collapsed':'expanded';
+                localStorage.setItem(storageKey, current);
+                apply(current);
+            });
+        }
+        setupCollapsibleSidebar('amas-sidebar','amas-sidebar-collapse','AMAS_SIDEBAR_STATE');
         // ================= Subpestaña Mesa (procesado de bandejas) =================
         const tabMesa = document.getElementById('tab-mesa');
         const viewMesa = document.getElementById('view-mesa');
