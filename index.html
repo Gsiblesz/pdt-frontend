@@ -786,7 +786,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initMachineCardsIfNeeded(){
         if(!machineCardsContainer){ machineCardsContainer = document.getElementById('machine-cards'); }
         if(machineCardsContainer && !machineCardsContainer.getAttribute('data-rendered')){
-            try { createMachineCards(); machineCardsContainer.setAttribute('data-rendered','1'); } catch(_){ }
+            try { createMachineCards(); } catch(_){ }
         }
     }
     let timers = {};
@@ -802,6 +802,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createMachineCards() {
+    // Guardar: si ya se renderizaron y el contenedor tiene contenido, evitar recrear (preserva timers)
+    if(machineCardsContainer && machineCardsContainer.getAttribute('data-rendered')==='1' && machineCardsContainer.children.length>0){
+        return; // idempotencia
+    }
     // Restaurar datos temporales si existen
     let tempData = {};
     try { tempData = JSON.parse(localStorage.getItem('tempAmasadoras')||'{}'); } catch(_){}
@@ -914,8 +918,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
             `;
-            machineCardsContainer.innerHTML += cardHtml;
+        machineCardsContainer.innerHTML += cardHtml;
     });
+    try { machineCardsContainer.setAttribute('data-rendered','1'); } catch(_){ }
     }
     // Actualizar dinámicamente los tiempos muertos y total al detener procesos
     function updateMuertosYTotal(machineId) {
@@ -2350,7 +2355,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const cont = document.getElementById('machine-cards');
                 if(cont && (!cont.children.length || cont.getAttribute('data-needs-render')==='1')){
-                    if(typeof createMachineCards==='function') createMachineCards();
+                    if(typeof initMachineCardsIfNeeded==='function') initMachineCardsIfNeeded();
                     cont.removeAttribute('data-needs-render');
                 }
             } catch(_){ }
@@ -2673,7 +2678,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleBtn.textContent = isPwd ? 'Ocultar' : 'Mostrar';
             });
         }
-        if (typeof createMachineCards === 'function') createMachineCards();
+    if (typeof initMachineCardsIfNeeded === 'function') initMachineCardsIfNeeded();
 
         // Listeners de pestañas seguros
         if (tabMedicion) tabMedicion.addEventListener('click', () => {
@@ -2686,7 +2691,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tabResultados.classList.remove('tab-btn-active');
             tabTablas.classList.remove('tab-btn-active');
             try{ document.getElementById('section-amasadoras')?.scrollIntoView({behavior:'smooth', block:'start'});}catch(_){ }
-            if (typeof createMachineCards === 'function') createMachineCards();
+            if (typeof initMachineCardsIfNeeded === 'function') initMachineCardsIfNeeded();
         });
         if (tabResultados) tabResultados.addEventListener('click', () => {
             sectionAmas?.classList.remove('hidden');
