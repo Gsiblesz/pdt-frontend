@@ -509,10 +509,87 @@
             <div id="mesa-lista" class="space-y-3"></div>
                 </div> <!-- end mesa-sub-captura -->
                 <div id="mesa-sub-resultados" class="mesa-subview hidden">
-                    <div class="text-sm text-stone-500">(Pendiente) Resultados derivados para Mesa (ej: promedio duración, distribución por tipoPan).</div>
+                    <div id="mesa-resultados-wrapper" class="space-y-6">
+                        <div class="mb-2 flex flex-wrap justify-center gap-3">
+                            <button id="mesa-res-sub-local" class="tab-btn tab-btn-active">Locales</button>
+                            <button id="mesa-res-sub-bd" class="tab-btn">Base de datos</button>
+                        </div>
+                        <div id="mesa-local-controls" class="flex flex-wrap gap-3 justify-center items-end text-xs md:text-sm">
+                            <input id="mesa-filtro-fecha" type="date" class="border rounded px-2 py-1" />
+                            <input id="mesa-filtro-tipo" placeholder="Tipo masa" class="border rounded px-2 py-1 w-32" />
+                            <input id="mesa-filtro-pan" placeholder="Tipo pan" class="border rounded px-2 py-1 w-32" />
+                            <button id="mesa-enviar-todo-bd" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1.5 rounded">Enviar fecha a BD</button>
+                            <button id="mesa-borrar-locales" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1.5 rounded">Borrar locales</button>
+                            <button id="mesa-export-local-csv" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 py-1.5 rounded">Exportar CSV</button>
+                        </div>
+                        <div id="mesa-bd-controls" class="hidden flex flex-wrap gap-3 justify-center items-end text-xs md:text-sm">
+                            <input id="mesa-bd-desde" type="date" class="border rounded px-2 py-1" />
+                            <input id="mesa-bd-hasta" type="date" class="border rounded px-2 py-1" />
+                            <input id="mesa-bd-fecha" type="date" class="border rounded px-2 py-1" />
+                            <input id="mesa-bd-tipo" placeholder="Tipo masa" class="border rounded px-2 py-1 w-32" />
+                            <input id="mesa-bd-pan" placeholder="Tipo pan" class="border rounded px-2 py-1 w-32" />
+                            <button id="mesa-bd-refresh" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded">Refrescar</button>
+                            <button id="mesa-bd-clear-filtros" class="text-stone-600 underline">Limpiar filtros</button>
+                            <button id="mesa-bd-export-csv" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 py-1.5 rounded">Exportar CSV</button>
+                        </div>
+                        <div id="mesa-status" class="text-center text-xs text-stone-600"></div>
+                        <div id="mesa-promedios" class="text-center text-sm text-stone-700"></div>
+                        <div id="mesa-resultados-lista" class="space-y-4"></div>
+                    </div>
                 </div>
                 <div id="mesa-sub-tablas" class="mesa-subview hidden">
-                    <div class="text-sm text-stone-500">(Pendiente) Tablas analíticas de Mesa.</div>
+                    <div id="mesa-tablas-wrapper" class="space-y-10 pb-10">
+                        <div class="flex flex-wrap gap-3 justify-center mb-4 text-xs md:text-sm">
+                            <label class="flex items-center gap-1">Fuente:
+                                <select id="mesa-tablas-fuente" class="border rounded px-2 py-1 text-xs">
+                                    <option value="local">Locales</option>
+                                    <option value="bd">Base de datos</option>
+                                </select>
+                            </label>
+                            <div id="mesa-tablas-filtros-bd" class="hidden flex flex-wrap gap-2 items-center">
+                                <label class="text-xs">Desde:<input id="mesa-tablas-desde" type="date" class="border rounded px-1 py-0.5 ml-1" /></label>
+                                <label class="text-xs">Hasta:<input id="mesa-tablas-hasta" type="date" class="border rounded px-1 py-0.5 ml-1" /></label>
+                                <input id="mesa-tablas-tipo" placeholder="Tipo masa" class="border rounded px-2 py-0.5 text-xs w-28" />
+                                <input id="mesa-tablas-pan" placeholder="Tipo pan" class="border rounded px-2 py-0.5 text-xs w-28" />
+                                <button id="mesa-tablas-refresh" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1 rounded text-xs">Refrescar</button>
+                                <button id="mesa-tablas-clear" class="text-xs text-stone-600 underline">Limpiar</button>
+                            </div>
+                            <span class="mx-1 text-stone-300">|</span>
+                            <button id="mesa-tablas-export-csv" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 py-1 rounded text-xs">Exportar CSV</button>
+                        </div>
+                        <div id="mesa-tablas-status" class="text-center text-xs text-stone-600"></div>
+                        <section>
+                            <h3 class="text-lg font-bold text-stone-800 mb-1">Resumen</h3>
+                            <div id="mesa-tabla-resumen" class="overflow-x-auto text-xs"></div>
+                        </section>
+                        <section>
+                            <h3 class="text-lg font-bold text-stone-800 mb-1">Promedios por tipo de masa</h3>
+                            <div id="mesa-tabla-tipo-masa" class="overflow-x-auto text-xs"></div>
+                            <canvas id="mesa-chart-tipo-masa" height="130"></canvas>
+                        </section>
+                        <section>
+                            <h3 class="text-lg font-bold text-stone-800 mb-1">Promedios por tipo de pan (Tradicional)</h3>
+                            <div id="mesa-tabla-tipo-pan" class="overflow-x-auto text-xs"></div>
+                            <canvas id="mesa-chart-tipo-pan" height="130"></canvas>
+                        </section>
+                        <section>
+                            <h3 class="text-lg font-bold text-stone-800 mb-1">Boxplot por tipo de masa</h3>
+                            <canvas id="mesa-chart-boxplot" height="220"></canvas>
+                            <div id="mesa-boxplot-stats" class="overflow-x-auto text-xs mt-2"></div>
+                        </section>
+                        <section>
+                            <h3 class="text-lg font-bold text-stone-800 mb-1">Histograma de duración (s)</h3>
+                            <canvas id="mesa-chart-hist" height="160"></canvas>
+                        </section>
+                        <section>
+                            <h3 class="text-lg font-bold text-stone-800 mb-1">Tendencia semanal (promedio duración)</h3>
+                            <canvas id="mesa-chart-semanal" height="140"></canvas>
+                        </section>
+                        <section>
+                            <h3 class="text-lg font-bold text-stone-800 mb-1">Personal midpoint vs duración</h3>
+                            <canvas id="mesa-chart-scatter-personal" height="160"></canvas>
+                        </section>
+                    </div>
                 </div>
               </div>
             </div>
@@ -2324,6 +2401,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function showMedicionDefault(){
             // Mostrar Medición como subpestaña por defecto
+            // Asegurar que la vista Mesa quede oculta al entrar a Amasadoras
+            viewMesa?.classList.add('hidden');
             viewMedicion?.classList.remove('hidden');
             viewResultados?.classList.add('hidden');
             viewTablas?.classList.add('hidden');
@@ -2362,6 +2441,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if(originalTablasView && amasSubTablas){ amasSubTablas.querySelector('#amas-sub-tablas-wrapper')?.appendChild(originalTablasView); originalTablasView.classList.remove('hidden'); }
         function setAmasSubview(which){
             [amasSubCaptura, amasSubResultados, amasSubTablas].forEach(v=> v?.classList.add('hidden'));
+            // Ocultar Mesa siempre que se navega dentro de Amasadoras
+            viewMesa?.classList.add('hidden');
             if(which==='captura') amasSubCaptura?.classList.remove('hidden');
             if(which==='resultados') amasSubResultados?.classList.remove('hidden');
             if(which==='tablas') amasSubTablas?.classList.remove('hidden');
@@ -2449,6 +2530,137 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('mesa-limpiar')?.addEventListener('click', ()=>{ mesaBtnReset?.click(); document.getElementById('mesa-obs').value=''; });
         document.getElementById('mesa-export')?.addEventListener('click', ()=>{ const data=mesaGet(); if(!data.length){ mostrarToast('Sin datos'); return; } const rows=data.map(r=>({Fecha:r.fecha,Lote:r.lote,TipoMasa:r.tipoMasa,TipoPan:r.tipoPan||'',Duracion_s:r.duracionSeg,PersonalMin:r.perMin??'',PersonalMax:r.perMax??'',PersonalMid:(r.perMin!=null&&r.perMax!=null?((r.perMin+r.perMax)/2).toFixed(2):''),Obs:r.obs||''})); const csv=Papa.unparse(rows); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); saveAs(blob,'mesa_lotes.csv'); });
         document.getElementById('mesa-borrar-todo')?.addEventListener('click', ()=>{ if(!confirm('¿Eliminar todos los lotes de Mesa?')) return; localStorage.removeItem('mesaRegistros'); mesaRenderLista(); });
+        // ======================= Resultados Mesa =======================
+        const mesaResLocalBtn = document.getElementById('mesa-res-sub-local');
+        const mesaResBdBtn = document.getElementById('mesa-res-sub-bd');
+        const mesaLocalCtrls = document.getElementById('mesa-local-controls');
+        const mesaBdCtrls = document.getElementById('mesa-bd-controls');
+        function setMesaResultadosFuente(src){
+            if(src==='bd'){
+                mesaLocalCtrls?.classList.add('hidden');
+                mesaBdCtrls?.classList.remove('hidden');
+                mesaResBdBtn?.classList.add('tab-btn-active');
+                mesaResLocalBtn?.classList.remove('tab-btn-active');
+                loadMesaBD();
+            } else {
+                mesaBdCtrls?.classList.add('hidden');
+                mesaLocalCtrls?.classList.remove('hidden');
+                mesaResLocalBtn?.classList.add('tab-btn-active');
+                mesaResBdBtn?.classList.remove('tab-btn-active');
+                renderMesaResultadosLocales();
+            }
+            localStorage.setItem('MESA_RES_SOURCE', src);
+        }
+        mesaResLocalBtn?.addEventListener('click', ()=> setMesaResultadosFuente('local'));
+        mesaResBdBtn?.addEventListener('click', ()=> setMesaResultadosFuente('bd'));
+        setMesaResultadosFuente(localStorage.getItem('MESA_RES_SOURCE')||'local');
+        function mesaCalculosBasicos(dataset){
+            const out={n:dataset.length, totalSeg:0, arr:[], porTipo:{}, porPan:{}, perMid:[], fechas:{}};
+            dataset.forEach(r=>{ out.totalSeg += r.duracionSeg||0; out.arr.push(r.duracionSeg||0); if(r.tipoMasa){ (out.porTipo[r.tipoMasa]=out.porTipo[r.tipoMasa]||[]).push(r.duracionSeg||0);} if(r.tipoPan){ (out.porPan[r.tipoPan]=out.porPan[r.tipoPan]||[]).push(r.duracionSeg||0);} if(r.perMin!=null && r.perMax!=null){ out.perMid.push((r.perMin+r.perMax)/2); } if(r.fecha){ out.fechas[r.fecha]=(out.fechas[r.fecha]||[]); out.fechas[r.fecha].push(r.duracionSeg||0);} });
+            function prom(arr){ return arr.length? arr.reduce((a,b)=>a+b,0)/arr.length:0; }
+            function std(arr){ if(arr.length<2) return 0; const m=prom(arr); return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length);} 
+            return { ...out, prom: prom(out.arr), std: std(out.arr), promTipos:Object.fromEntries(Object.entries(out.porTipo).map(([k,v])=>[k,prom(v)])), promPanes:Object.fromEntries(Object.entries(out.porPan).map(([k,v])=>[k,prom(v)])) };
+        }
+        function renderMesaResultadosLocales(){
+            const lista=document.getElementById('mesa-resultados-lista'); const status=document.getElementById('mesa-status'); const promDiv=document.getElementById('mesa-promedios'); if(!lista) return;
+            const all=mesaGet(); const fFecha=document.getElementById('mesa-filtro-fecha')?.value||''; const fTipo=(document.getElementById('mesa-filtro-tipo')?.value||'').toLowerCase(); const fPan=(document.getElementById('mesa-filtro-pan')?.value||'').toLowerCase();
+            const filtrados=all.filter(r=> (!fFecha||r.fecha===fFecha) && (!fTipo|| (r.tipoMasa||'').toLowerCase().includes(fTipo)) && (!fPan|| (r.tipoPan||'').toLowerCase().includes(fPan)) );
+            if(status) status.textContent=`Locales: ${filtrados.length} lote(s)`;
+            const calc=mesaCalculosBasicos(filtrados);
+            if(promDiv){ promDiv.innerHTML = calc.n? `Promedio: <strong>${formatTime(Math.round(calc.prom))}</strong> (±${formatTime(Math.round(calc.std))}) · Tipos: ${Object.keys(calc.promTipos).length}`:'Sin datos'; }
+            if(!filtrados.length){ lista.innerHTML='<div class="text-xs text-stone-500">Sin datos.</div>'; return; }
+            lista.innerHTML = filtrados.map((r,i)=>{
+                const perMid=(r.perMin!=null&&r.perMax!=null)?((r.perMin+r.perMax)/2).toFixed(1):'';
+                return `<div class='border border-stone-200 rounded-lg p-3 bg-white text-xs flex flex-col gap-1'>
+                    <div class='flex flex-wrap gap-3 items-center'><span class='font-semibold'>${i+1}</span><span class='font-mono'>${r.fecha}</span><span>Lote:<strong>${r.lote}</strong></span><span>${r.tipoMasa}${r.tipoPan? ' / '+r.tipoPan:''}</span><span>Dur:<strong>${formatTime(r.duracionSeg||0)}</strong></span><span>PerMid:${perMid}</span></div>
+                    <div class='text-stone-600 break-words'>${(r.obs||'').replace(/</g,'&lt;')}</div>
+                    <div class='flex justify-end gap-2 mt-1'>
+                        <button class='mesa-enviar-bd bg-amber-600 text-white px-2 py-0.5 rounded text-[11px]' data-index='${all.indexOf(r)}'>Enviar BD</button>
+                        <button class='mesa-borrar bg-red-600 text-white px-2 py-0.5 rounded text-[11px]' data-index='${all.indexOf(r)}'>Borrar</button>
+                    </div>
+                </div>`; }).join('');
+        }
+        document.getElementById('mesa-filtro-fecha')?.addEventListener('input', renderMesaResultadosLocales);
+        document.getElementById('mesa-filtro-tipo')?.addEventListener('input', renderMesaResultadosLocales);
+        document.getElementById('mesa-filtro-pan')?.addEventListener('input', renderMesaResultadosLocales);
+        document.getElementById('mesa-borrar-locales')?.addEventListener('click', ()=>{ if(!confirm('¿Borrar todos los lotes locales de Mesa?')) return; localStorage.removeItem('mesaRegistros'); renderMesaResultadosLocales(); mesaRenderLista(); });
+        document.getElementById('mesa-export-local-csv')?.addEventListener('click', ()=>{
+            const data=mesaGet(); if(!data.length){ mostrarToast('Sin datos'); return; } const rows=data.map(r=>({Fecha:r.fecha,Lote:r.lote,TipoMasa:r.tipoMasa,TipoPan:r.tipoPan||'',Duracion_s:r.duracionSeg,Duracion_fmt:formatTime(r.duracionSeg||0),PerMin:r.perMin??'',PerMax:r.perMax??'',PerMid:(r.perMin!=null&&r.perMax!=null?((r.perMin+r.perMax)/2).toFixed(2):''),Obs:r.obs||''})); const csv=Papa.unparse(rows); const blob=new Blob([csv],{type:'text/csv'}); saveAs(blob,'mesa_local.csv');
+        });
+        document.getElementById('mesa-resultados-lista')?.addEventListener('click', async (e)=>{
+            const del=e.target.closest('.mesa-borrar'); if(del){ const idx=parseInt(del.getAttribute('data-index')); let arr=mesaGet(); if(idx>=0){ arr.splice(idx,1); mesaSave(arr); renderMesaResultadosLocales(); mesaRenderLista(); } return; }
+            const send=e.target.closest('.mesa-enviar-bd'); if(send){ const idx=parseInt(send.getAttribute('data-index')); const arr=mesaGet(); const reg=arr[idx]; if(!reg){ return; } try{ const payload={ fecha:reg.fecha, tipo:'mesa_lote', mesa:[reg] }; const base=resolveApiBase(); const r=await fetch(base+'/registros',{method:'POST', headers:apiHeaders(true), body:JSON.stringify(payload)}); if(!r.ok) throw new Error('HTTP '+r.status); mostrarToast('Enviado'); }catch(err){ mostrarToast('Error enviando','err'); } }
+        });
+        document.getElementById('mesa-enviar-todo-bd')?.addEventListener('click', async ()=>{
+            const fecha=document.getElementById('mesa-filtro-fecha')?.value || document.getElementById('mesa-fecha')?.value; const status=document.getElementById('mesa-status'); if(!fecha){ status.textContent='Selecciona/filtra una fecha.'; status.className='text-xs text-red-600 text-center'; return; }
+            const all=mesaGet().filter(r=> r.fecha===fecha); if(!all.length){ status.textContent='Sin lotes para esa fecha.'; status.className='text-xs text-stone-600 text-center'; return; }
+            try{ const payload={ fecha, tipo:'mesa_lotes', mesa:all }; const base=resolveApiBase(); const r=await fetch(base+'/registros',{method:'POST', headers:apiHeaders(true), body:JSON.stringify(payload)}); if(!r.ok) throw new Error('HTTP '+r.status); status.textContent='Enviados '+all.length+' lotes'; status.className='text-xs text-green-600 text-center'; mostrarToast('Mesa fecha enviada'); }catch(e){ status.textContent='Error enviando: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
+        });
+        // ---- BD Mesa ----
+        let MESA_BD_CACHE=[];
+        async function loadMesaBD(){ const status=document.getElementById('mesa-status'); if(status) status.textContent='Cargando BD...'; try{ const base=resolveApiBase(); const params=[]; const d=document.getElementById('mesa-bd-desde')?.value; const h=document.getElementById('mesa-bd-hasta')?.value; if(d) params.push('desde='+encodeURIComponent(d)); if(h) params.push('hasta='+encodeURIComponent(h)); const url=base+'/registros'+(params.length?('?'+params.join('&')):''); const r=await fetch(url,{headers:apiHeaders(false)}); if(!r.ok) throw new Error('HTTP '+r.status); const arr=await r.json(); // Filtrar solo registros con campo mesa
+                MESA_BD_CACHE = arr.filter(x=> Array.isArray(x.data?.mesa) && x.data.mesa.length);
+                renderMesaResultadosBD(); }catch(e){ if(status) status.textContent='Error BD: '+(e.message||e); }
+        }
+        document.getElementById('mesa-bd-refresh')?.addEventListener('click', loadMesaBD);
+        document.getElementById('mesa-bd-clear-filtros')?.addEventListener('click', ()=>{ ['mesa-bd-desde','mesa-bd-hasta','mesa-bd-fecha','mesa-bd-tipo','mesa-bd-pan'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); loadMesaBD(); });
+        ['mesa-bd-fecha','mesa-bd-tipo','mesa-bd-pan'].forEach(id=> document.getElementById(id)?.addEventListener('input', renderMesaResultadosBD));
+        function renderMesaResultadosBD(){ const lista=document.getElementById('mesa-resultados-lista'); const status=document.getElementById('mesa-status'); const promDiv=document.getElementById('mesa-promedios'); if(!lista) return; const fFecha=document.getElementById('mesa-bd-fecha')?.value||''; const fTipo=(document.getElementById('mesa-bd-tipo')?.value||'').toLowerCase(); const fPan=(document.getElementById('mesa-bd-pan')?.value||'').toLowerCase(); let lotes=[]; MESA_BD_CACHE.forEach(r=> (r.data?.mesa||[]).forEach(m=> lotes.push({...m,fecha:r.data?.fecha||r.fecha||''}))); const filtrados=lotes.filter(r=> (!fFecha||r.fecha===fFecha) && (!fTipo||(r.tipoMasa||'').toLowerCase().includes(fTipo)) && (!fPan||(r.tipoPan||'').toLowerCase().includes(fPan)) ); if(status) status.textContent=`BD: ${filtrados.length} lote(s)`; const calc=mesaCalculosBasicos(filtrados); if(promDiv){ promDiv.innerHTML=calc.n?`Promedio: <strong>${formatTime(Math.round(calc.prom))}</strong> (±${formatTime(Math.round(calc.std))})`:'Sin datos'; } if(!filtrados.length){ lista.innerHTML='<div class="text-xs text-stone-500">Sin datos.</div>'; return;} lista.innerHTML=filtrados.map((r,i)=> `<div class='border border-stone-200 rounded-lg p-3 bg-white text-xs flex flex-col gap-1'><div class='flex flex-wrap gap-3 items-center'><span class='font-semibold'>${i+1}</span><span class='font-mono'>${r.fecha}</span><span>Lote:<strong>${r.lote}</strong></span><span>${r.tipoMasa}${r.tipoPan?' / '+r.tipoPan:''}</span><span>Dur:<strong>${formatTime(r.duracionSeg||0)}</strong></span></div><div class='text-stone-600 break-words'>${(r.obs||'').replace(/</g,'&lt;')}</div></div>`).join(''); }
+        // ======================= Tablas Mesa =======================
+        const mesaTablasFuenteSel=document.getElementById('mesa-tablas-fuente');
+        mesaTablasFuenteSel?.addEventListener('change', ()=>{ localStorage.setItem('MESA_TABLAS_FUENTE', mesaTablasFuenteSel.value); buildMesaTablas(); });
+        function mesaTable(headers, rows){ return `<table class='min-w-full border border-stone-300 text-[11px] bg-white rounded overflow-hidden'><thead class='bg-stone-100'><tr>${headers.map(h=>`<th class='px-2 py-1 border-b border-stone-300 text-left font-semibold'>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r,i)=>`<tr class='${i%2?'bg-stone-50':''}'>${r.map(c=>`<td class='px-2 py-1 border-b border-stone-200 font-mono'>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`; }
+        let _MESA_TABLAS_DATA=[]; function mesaTablasData(){ return _MESA_TABLAS_DATA; }
+        document.getElementById('mesa-tablas-refresh')?.addEventListener('click', buildMesaTablas);
+        document.getElementById('mesa-tablas-clear')?.addEventListener('click', ()=>{ ['mesa-tablas-desde','mesa-tablas-hasta','mesa-tablas-tipo','mesa-tablas-pan'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); buildMesaTablas(); });
+        ['mesa-tablas-desde','mesa-tablas-hasta','mesa-tablas-tipo','mesa-tablas-pan'].forEach(id=> document.getElementById(id)?.addEventListener('change', buildMesaTablas));
+        function buildMesaTablas(){ const status=document.getElementById('mesa-tablas-status'); const fuente=(mesaTablasFuenteSel?.value)||localStorage.getItem('MESA_TABLAS_FUENTE')||'local'; if(mesaTablasFuenteSel && mesaTablasFuenteSel.value!==fuente) mesaTablasFuenteSel.value=fuente; const filtrosBD=document.getElementById('mesa-tablas-filtros-bd'); filtrosBD?.classList.toggle('hidden', fuente!=='bd'); let datos=[]; if(fuente==='local'){ datos=mesaGet(); if(status) status.textContent=`Fuente: Locales (${datos.length})`; } else { (async()=>{ try{ const base=resolveApiBase(); const d=document.getElementById('mesa-tablas-desde')?.value; const h=document.getElementById('mesa-tablas-hasta')?.value; const params=[]; if(d) params.push('desde='+encodeURIComponent(d)); if(h) params.push('hasta='+encodeURIComponent(h)); const url=base+'/registros'+(params.length?('?'+params.join('&')):''); const r=await fetch(url,{headers:apiHeaders(false)}); if(!r.ok) throw new Error('HTTP '+r.status); const arr=await r.json(); datos=[]; arr.forEach(x=> (x.data?.mesa||[]).forEach(m=> datos.push({...m, fecha:x.data?.fecha||x.fecha||''}))); if(status) status.textContent=`Fuente: BD (${datos.length})`; _MESA_TABLAS_DATA=aplicarFiltrosMesaTablas(datos); renderMesaTablas(); }catch(e){ if(status) status.textContent='Error BD: '+(e.message||e); } })(); return; } _MESA_TABLAS_DATA=aplicarFiltrosMesaTablas(datos); renderMesaTablas(); }
+        function aplicarFiltrosMesaTablas(datos){ const fTipo=(document.getElementById('mesa-tablas-tipo')?.value||'').toLowerCase(); const fPan=(document.getElementById('mesa-tablas-pan')?.value||'').toLowerCase(); return datos.filter(r=> (!fTipo||(r.tipoMasa||'').toLowerCase().includes(fTipo)) && (!fPan||(r.tipoPan||'').toLowerCase().includes(fPan)) ); }
+        function renderMesaTablas(){ const datos=mesaTablasData(); const resumenEl=document.getElementById('mesa-tabla-resumen'); if(!resumenEl) return; if(!datos.length){ resumenEl.innerHTML='<div class="text-xs text-stone-500">Sin datos</div>'; ['mesa-tabla-tipo-masa','mesa-tabla-tipo-pan','mesa-boxplot-stats'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=''; }); return; } function prom(a){ return a.length?a.reduce((x,y)=>x+y,0)/a.length:0;} function std(a){ if(a.length<2) return 0; const m=prom(a); return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/a.length); } const arr=datos.map(d=>d.duracionSeg||0); const promG=prom(arr); const stdG=std(arr); const resumenRows=[['Registros',datos.length],['Promedio (s)',Math.round(promG)],['Desv (s)',Math.round(stdG)],['%Desv', (stdG/promG*100).toFixed(1)+'%']]; resumenEl.innerHTML=mesaTable(['Métrica','Valor'],resumenRows); // por tipo masa
+            const porTipo={}; const porPan={}; const porSemana={}; datos.forEach(d=>{ (porTipo[d.tipoMasa]=porTipo[d.tipoMasa]||[]).push(d.duracionSeg||0); if(d.tipoPan) (porPan[d.tipoPan]=porPan[d.tipoPan]||[]).push(d.duracionSeg||0); if(d.fecha){ const [Y,M,D]=d.fecha.split('-').map(Number); const dt=new Date(Y,M-1,D); const dow=dt.getDay()||7; dt.setDate(dt.getDate()+4-dow); const yearStart=new Date(dt.getFullYear(),0,1); const wk=Math.ceil((((dt - yearStart)/86400000)+1)/7); const key=dt.getFullYear()+'-W'+String(wk).padStart(2,'0'); (porSemana[key]=porSemana[key]||[]).push(d.duracionSeg||0);} });
+            const tipoRows=Object.entries(porTipo).map(([k,v])=>[k,v.length,Math.round(prom(v)),Math.round(std(v)), ((std(v)/prom(v))*100).toFixed(1)+'%']); document.getElementById('mesa-tabla-tipo-masa').innerHTML=mesaTable(['Tipo masa','N','Prom (s)','Desv (s)','%Desv'],tipoRows);
+            const panRows=Object.entries(porPan).map(([k,v])=>[k,v.length,Math.round(prom(v)),Math.round(std(v)), ((std(v)/prom(v))*100).toFixed(1)+'%']); document.getElementById('mesa-tabla-tipo-pan').innerHTML=panRows.length? mesaTable(['Tipo pan','N','Prom (s)','Desv (s)','%Desv'],panRows):'<div class="text-xs text-stone-500">Sin datos (solo Tradicional)</div>';
+            // Charts básicos
+            try{ if(window.Chart){ const palette=['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0d9488','#d946ef']; const ctx1=document.getElementById('mesa-chart-tipo-masa'); if(ctx1){ new Chart(ctx1,{type:'bar',data:{labels:tipoRows.map(r=>r[0]),datasets:[{label:'Prom (s)',data:tipoRows.map(r=>r[2]),backgroundColor:palette}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}}); } const ctx2=document.getElementById('mesa-chart-tipo-pan'); if(ctx2 && panRows.length){ new Chart(ctx2,{type:'bar',data:{labels:panRows.map(r=>r[0]),datasets:[{label:'Prom (s)',data:panRows.map(r=>r[2]),backgroundColor:palette}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}}); }
+                // Boxplot simple (custom)
+                const boxCanvas=document.getElementById('mesa-chart-boxplot'); const boxStatsDiv=document.getElementById('mesa-boxplot-stats'); if(boxCanvas){ const stats=Object.entries(porTipo).map(([k,vals])=>{ const s=vals.slice().sort((a,b)=>a-b); const q=p=>{ const pos=(s.length-1)*p; const b=Math.floor(pos); const r=pos-b; return r? s[b]+(s[b+1]-s[b])*r: s[b]; }; return {tipo:k,n:s.length,min:s[0],q1:q(0.25),med:q(0.5),q3:q(0.75),max:s[s.length-1]}; }); if(boxStatsDiv){ boxStatsDiv.innerHTML=mesaTable(['Tipo','n','min','Q1','Med','Q3','max'], stats.map(o=>[o.tipo,o.n,o.min,o.q1.toFixed(0),o.med.toFixed(0),o.q3.toFixed(0),o.max])); } new Chart(boxCanvas,{type:'scatter',data:{labels:stats.map(s=>s.tipo),datasets:[{label:'med',data:stats.map((s,i)=>({x:i,y:s.med})),pointRadius:0}]},options:{plugins:{legend:{display:false}},scales:{x:{type:'category',labels:stats.map(s=>s.tipo)},y:{beginAtZero:true}}},plugins:[{id:'mesaBox',afterDraw(c){ const {ctx,scales:{x,y}}=c; stats.forEach((s,i)=>{ const center=x.getPixelForValue(i); const next=x.getPixelForValue(i+1); const prev=x.getPixelForValue(i-1); const gap=(next?next-center: (prev? center-prev:60)); const boxW=Math.min(70,Math.max(40,gap*1.1)); const yMin=y.getPixelForValue(s.min), yQ1=y.getPixelForValue(s.q1), yMed=y.getPixelForValue(s.med), yQ3=y.getPixelForValue(s.q3), yMax=y.getPixelForValue(s.max); ctx.save(); ctx.strokeStyle='#475569'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(center,yMin); ctx.lineTo(center,yQ1); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center,yQ3); ctx.lineTo(center,yMax); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center-10,yMin); ctx.lineTo(center+10,yMin); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center-10,yMax); ctx.lineTo(center+10,yMax); ctx.stroke(); ctx.fillStyle='rgba(59,130,246,0.16)'; ctx.strokeStyle='#2563eb'; ctx.beginPath(); ctx.rect(center-boxW/2,yQ3,boxW,yQ1-yQ3); ctx.fill(); ctx.stroke(); ctx.strokeStyle='#dc2626'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(center-boxW/2,yMed); ctx.lineTo(center+boxW/2,yMed); ctx.stroke(); ctx.restore(); }); }}]}); }
+                // Histograma
+                const histCanvas=document.getElementById('mesa-chart-hist'); if(histCanvas){ const max=Math.max(...arr); const bins=Math.min(15, Math.max(5, Math.round(Math.sqrt(arr.length)))); const binSize=Math.max(1, Math.ceil(max/bins)); const counts=new Array(bins).fill(0); arr.forEach(v=>{ const idx=Math.min(bins-1, Math.floor(v/binSize)); counts[idx]++; }); const labels=counts.map((_,i)=> `${i*binSize}-${(i+1)*binSize-1}`); new Chart(histCanvas,{type:'bar',data:{labels,datasets:[{label:'Frecuencia',data:counts,backgroundColor:'#94a3b8'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}}); }
+                // Tendencia semanal
+                const semCanvas=document.getElementById('mesa-chart-semanal'); if(semCanvas){ const semKeys=Object.keys(porSemana).sort(); const semProm=semKeys.map(k=> prom(porSemana[k])); new Chart(semCanvas,{type:'line',data:{labels:semKeys,datasets:[{label:'Prom (s)',data:semProm,fill:false,borderColor:'#2563eb',tension:0.15}]},options:{responsive:true,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}}); }
+                // Scatter personal midpoint vs duración
+                const perCanvas = document.getElementById('mesa-chart-scatter-personal');
+                if (perCanvas) {
+                    const tienePersonal = datos.some(d => d.perMin != null && d.perMax != null);
+                    if (tienePersonal) {
+                        const points = datos
+                            .filter(d => d.perMin != null && d.perMax != null)
+                            .map(d => ({ x: (d.perMin + d.perMax) / 2, y: d.duracionSeg || 0 }));
+                        new Chart(perCanvas, {
+                            type: 'scatter',
+                            data: {
+                                datasets: [{
+                                    label: 'Mid vs Dur',
+                                    data: points,
+                                    backgroundColor: '#16a34a'
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                scales: {
+                                    x: { title: { display: true, text: 'Personal midpoint' } },
+                                    y: { title: { display: true, text: 'Duración (s)' }, beginAtZero: true }
+                                },
+                                plugins: { legend: { position: 'bottom' } }
+                            }
+                        });
+                    }
+                }
+            } }catch(_){ /* ignore chart errors */ }
+        }
+        document.getElementById('mesa-tablas-export-csv')?.addEventListener('click', ()=>{ const datos=mesaTablasData(); if(!datos.length){ alert('Sin datos'); return; } const rows=[['Fecha','Lote','TipoMasa','TipoPan','Duracion(s)','PerMin','PerMax','Obs']]; datos.forEach(d=> rows.push([d.fecha||'',d.lote||'',d.tipoMasa||'',d.tipoPan||'',d.duracionSeg||'',d.perMin??'',d.perMax??'',(d.obs||'').replace(/\n/g,' ') ])); const csv=rows.map(r=> r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='mesa_tablas.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),500); });
+        // Auto build inicial
+        buildMesaTablas();
         // =================================================================
         // Settings bindings
         const settingsApiUrl = document.getElementById('settings-api-url');
