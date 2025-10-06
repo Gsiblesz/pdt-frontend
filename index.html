@@ -112,13 +112,19 @@
     </div>
     <!-- Amasadoras section (existing app) -->
     <div id="section-amasadoras" class="hidden">
-        <div class="flex flex-wrap justify-center gap-3 mb-6">
-            <button id="tab-medicion" class="tab-btn tab-btn-active">Amasadoras</button>
-            <button id="tab-mesa" class="tab-btn">Mesa</button>
-            <button id="tab-resultados" class="tab-btn">Resultados</button>
-            <button id="tab-tablas" class="tab-btn">Tablas</button>
-        </div>
-        <div id="view-tablas" class="hidden">
+                <!-- Nueva estructura: layout con sidebar (Amasadoras) -->
+                <div class="grid grid-cols-12 gap-6 mb-6">
+                    <aside class="col-span-12 md:col-span-2">
+                        <nav id="amas-sidebar" class="flex md:flex-col flex-wrap md:space-y-2 gap-2">
+                            <button data-amas-sub="captura" class="tab-btn w-full tab-btn-active">Amasadoras</button>
+                            <button data-amas-sub="resultados" class="tab-btn w-full">Resultados</button>
+                            <button data-amas-sub="tablas" class="tab-btn w-full">Tablas</button>
+                            <button id="switch-to-mesa" class="mt-2 tab-btn w-full bg-stone-100">→ Mesa</button>
+                        </nav>
+                    </aside>
+                    <div class="col-span-12 md:col-span-10" id="amas-content-wrapper">
+                        <div id="amas-sub-captura" class="amas-subview">
+                <div id="view-tablas" class="hidden">
             <div class="mb-6 text-center">
                 <h2 class="text-3xl font-extrabold mb-2 text-stone-900 tracking-tight">Tablas y Gráficas</h2>
                 <p class="text-stone-600 max-w-2xl mx-auto">Promedios, desviaciones y distribución visual por tipo de masa, amasadora y procesos.</p>
@@ -415,8 +421,30 @@
             <main id="machine-cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-7 mb-10"></main>
             <div id="msg-guardar" class="mt-2 text-center text-sm"></div>
         </div>
-        <!-- Vista Mesa (nuevo proceso posterior a amasado) -->
-        <div id="view-mesa" class="hidden">
+                <!-- Cierre subview captura amasadoras -->
+                        </div> <!-- end amas-sub-captura -->
+                        <div id="amas-sub-resultados" class="amas-subview hidden">
+                                <!-- Re-uso de vista resultados existente -->
+                                <div id="amas-sub-resultados-wrapper"></div>
+                        </div>
+                        <div id="amas-sub-tablas" class="amas-subview hidden">
+                                <div id="amas-sub-tablas-wrapper"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Vista Mesa (nuevo proceso posterior a amasado) ahora con sidebar propio -->
+                <div id="view-mesa" class="hidden">
+                        <div class="grid grid-cols-12 gap-6 mb-6">
+                            <aside class="col-span-12 md:col-span-2">
+                                <nav id="mesa-sidebar" class="flex md:flex-col flex-wrap md:space-y-2 gap-2">
+                                    <button data-mesa-sub="captura" class="tab-btn w-full tab-btn-active">Mesa</button>
+                                    <button data-mesa-sub="resultados" class="tab-btn w-full">Resultados</button>
+                                    <button data-mesa-sub="tablas" class="tab-btn w-full">Tablas</button>
+                                    <button id="switch-to-amas" class="mt-2 tab-btn w-full bg-stone-100">← Amasadoras</button>
+                                </nav>
+                            </aside>
+                            <div class="col-span-12 md:col-span-10" id="mesa-content-wrapper">
+                                <div id="mesa-sub-captura" class="mesa-subview">
             <div class="mb-8">
                 <h1 class="text-3xl font-extrabold text-stone-900 tracking-tight mb-2">Proceso en Mesa (Lote)</h1>
                 <p class="text-stone-600 text-sm md:text-base">Cronometra el tiempo desde que la masa sale de las amasadoras, se pesa / porciona, pasa por la sobadora (si aplica) y se coloca en bandejas hasta montarse en el carrito (fin del lote antes de fermentación).</p>
@@ -479,6 +507,15 @@
                 <button id="mesa-borrar-todo" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold text-sm">Borrar todo</button>
             </div>
             <div id="mesa-lista" class="space-y-3"></div>
+                </div> <!-- end mesa-sub-captura -->
+                <div id="mesa-sub-resultados" class="mesa-subview hidden">
+                    <div class="text-sm text-stone-500">(Pendiente) Resultados derivados para Mesa (ej: promedio duración, distribución por tipoPan).</div>
+                </div>
+                <div id="mesa-sub-tablas" class="mesa-subview hidden">
+                    <div class="text-sm text-stone-500">(Pendiente) Tablas analíticas de Mesa.</div>
+                </div>
+              </div>
+            </div>
         </div>
 
         <!-- Vista de resultados (única) -->
@@ -2313,6 +2350,47 @@ document.addEventListener('DOMContentLoaded', () => {
         tabMainHornos?.addEventListener('click', ()=> activateMainTab('horn'));
         // Force start on Menu to avoid Amasadoras content appearing under Menu
         activateMainTab('menu');
+        // ========= Sidebar subviews (Amasadoras & Mesa) =========
+        const amasSidebar = document.getElementById('amas-sidebar');
+        const amasSubCaptura = document.getElementById('amas-sub-captura');
+        const amasSubResultados = document.getElementById('amas-sub-resultados');
+        const amasSubTablas = document.getElementById('amas-sub-tablas');
+        const originalResultadosView = document.getElementById('view-resultados');
+        const originalTablasView = document.getElementById('view-tablas');
+        // Reubicar contenido existente dentro de wrappers si existen
+        if(originalResultadosView && amasSubResultados){ amasSubResultados.querySelector('#amas-sub-resultados-wrapper')?.appendChild(originalResultadosView); originalResultadosView.classList.remove('hidden'); }
+        if(originalTablasView && amasSubTablas){ amasSubTablas.querySelector('#amas-sub-tablas-wrapper')?.appendChild(originalTablasView); originalTablasView.classList.remove('hidden'); }
+        function setAmasSubview(which){
+            [amasSubCaptura, amasSubResultados, amasSubTablas].forEach(v=> v?.classList.add('hidden'));
+            if(which==='captura') amasSubCaptura?.classList.remove('hidden');
+            if(which==='resultados') amasSubResultados?.classList.remove('hidden');
+            if(which==='tablas') amasSubTablas?.classList.remove('hidden');
+            amasSidebar?.querySelectorAll('button[data-amas-sub]')?.forEach(btn=>{
+                if(btn.getAttribute('data-amas-sub')===which) btn.classList.add('tab-btn-active'); else btn.classList.remove('tab-btn-active');
+            });
+        }
+        amasSidebar?.addEventListener('click', e=>{
+            const b=e.target.closest('button[data-amas-sub]'); if(!b) return; setAmasSubview(b.getAttribute('data-amas-sub'));
+        });
+        document.getElementById('switch-to-mesa')?.addEventListener('click', ()=>{ activateMainTab('amas'); showMesa(); });
+        // Mesa sidebar subviews (ya existe showMesa / mesaRenderLista etc.)
+        const mesaSidebar=document.getElementById('mesa-sidebar');
+        const mesaSubCaptura=document.getElementById('mesa-sub-captura');
+        const mesaSubResultados=document.getElementById('mesa-sub-resultados');
+        const mesaSubTablas=document.getElementById('mesa-sub-tablas');
+        function setMesaSubview(which){
+            [mesaSubCaptura, mesaSubResultados, mesaSubTablas].forEach(v=> v?.classList.add('hidden'));
+            if(which==='captura') mesaSubCaptura?.classList.remove('hidden');
+            if(which==='resultados') mesaSubResultados?.classList.remove('hidden');
+            if(which==='tablas') mesaSubTablas?.classList.remove('hidden');
+            mesaSidebar?.querySelectorAll('button[data-mesa-sub]')?.forEach(btn=>{
+                if(btn.getAttribute('data-mesa-sub')===which) btn.classList.add('tab-btn-active'); else btn.classList.remove('tab-btn-active');
+            });
+        }
+        mesaSidebar?.addEventListener('click', e=>{ const b=e.target.closest('button[data-mesa-sub]'); if(!b) return; setMesaSubview(b.getAttribute('data-mesa-sub')); });
+        document.getElementById('switch-to-amas')?.addEventListener('click', ()=>{ activateMainTab('amas'); setAmasSubview('captura'); });
+        // Set defaults
+        setAmasSubview('captura');
         // ================= Subpestaña Mesa (procesado de bandejas) =================
         const tabMesa = document.getElementById('tab-mesa');
         const viewMesa = document.getElementById('view-mesa');
