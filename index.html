@@ -2337,6 +2337,14 @@ document.addEventListener('DOMContentLoaded', () => {
             tabMedicion?.classList.add('tab-btn-active');
             tabResultados?.classList.remove('tab-btn-active');
             tabTablas?.classList.remove('tab-btn-active');
+            // Renderizar tarjetas de máquinas si aún no se han creado (o si quedaron vacías)
+            try {
+                const cont = document.getElementById('machine-cards');
+                if(cont && (!cont.children.length || cont.getAttribute('data-needs-render')==='1')){
+                    if(typeof createMachineCards==='function') createMachineCards();
+                    cont.removeAttribute('data-needs-render');
+                }
+            } catch(_){ }
         }
 
         function activateMainTab(which){
