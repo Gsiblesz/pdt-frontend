@@ -782,7 +782,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     })();
 
-    const machineCardsContainer = document.getElementById('machine-cards');
+    let machineCardsContainer = document.getElementById('machine-cards');
+    function initMachineCardsIfNeeded(){
+        if(!machineCardsContainer){ machineCardsContainer = document.getElementById('machine-cards'); }
+        if(machineCardsContainer && !machineCardsContainer.getAttribute('data-rendered')){
+            try { createMachineCards(); machineCardsContainer.setAttribute('data-rendered','1'); } catch(_){ }
+        }
+    }
     let timers = {};
     let machineTotals = {};
     let completedProcessTimes = {};
@@ -930,7 +936,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Evento para botón Clear de cada amasadora
-    machineCardsContainer.addEventListener('click', function(e) {
+    if(machineCardsContainer) machineCardsContainer.addEventListener('click', function(e) {
         const btn = e.target.closest('.clear-maquina');
         if (!btn) return;
         const machineId = btn.getAttribute('data-machine-id');
@@ -1184,7 +1190,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Guardar resultados por máquina
     // Guardar campos temporales al cambiar cualquier input relevante
-    machineCardsContainer.addEventListener('input', function(e) {
+    if(machineCardsContainer) machineCardsContainer.addEventListener('input', function(e) {
         const target = e.target;
     const idMatch = target.id && target.id.match(/^(lote|tipoMasa|tipoMasaOtro|tipoPan|tempMasa|obs)-(\d)$/);
         if (idMatch) {
@@ -1209,7 +1215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     // Limpiar datos temporales al guardar resultados
-    machineCardsContainer.addEventListener('click', function(e) {
+    if(machineCardsContainer) machineCardsContainer.addEventListener('click', function(e) {
         const btn = e.target.closest('.guardar-maquina');
         if (!btn) return;
         const machineId = btn.getAttribute('data-machine-id');
@@ -1266,6 +1272,9 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('resultadosMezclado', JSON.stringify(arr));
         mostrarMsgMaquina(machineId,'¡Resultados guardados correctamente!', true);
     }
+
+    // Fallback: cuando el DOM termine de cargar, intentar render si no se hizo
+    document.addEventListener('DOMContentLoaded', ()=>{ initMachineCardsIfNeeded(); });
     // Analítica de patrones (versión activa – se eliminan stubs duplicados)
     function analizarPatrones(){
         let data = JSON.parse(localStorage.getItem('resultadosMezclado')||'[]');
