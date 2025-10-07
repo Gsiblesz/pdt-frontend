@@ -713,80 +713,33 @@ document.addEventListener('DOMContentLoaded', () => {
 // ======================= GLOBAL VARIABLES AND DATA =======================
     // Datos de amasadoras
     const machineData = [
-        {
-            id: '3',
-            name: 'Amasadora 3',
-            processes: [
-                { id: '1', name: 'Esponja' },
-                { id: '2', name: 'Masa' },
-                { id: '3', name: 'Mantequilla' }
-            ]
-        },
-        {
-            id: '1',
-            name: 'Amasadora 1',
-            processes: [
-                { id: '1', name: 'Esponja' },
-                { id: '2', name: 'Masa' },
-                { id: '3', name: 'Mantequilla' }
-            ]
-        },
-        {
-            id: '2',
-            name: 'Amasadora 2',
-            processes: [
-                { id: '1', name: 'Esponja' },
-                { id: '2', name: 'Masa' },
-                { id: '3', name: 'Mantequilla' }
-            ]
-        }
+        { id:'3', name:'Amasadora 3', processes:[ {id:'1', name:'Esponja'}, {id:'2', name:'Masa'}, {id:'3', name:'Mantequilla'} ] },
+        { id:'1', name:'Amasadora 1', processes:[ {id:'1', name:'Esponja'}, {id:'2', name:'Masa'}, {id:'3', name:'Mantequilla'} ] },
+        { id:'2', name:'Amasadora 2', processes:[ {id:'1', name:'Esponja'}, {id:'2', name:'Masa'}, {id:'3', name:'Mantequilla'} ] }
     ];
 
     // Migración puntual: renombrar tipoMasa 'Bs.' a 'Mant.' en datos previos almacenados
     (function setupTipoMasaMigration(){
-        function normalizeTipoMasaRegistro(reg){
-            if(!reg) return;
-            if(reg.tipoMasa === 'Bs.') reg.tipoMasa = 'Mant.';
-        }
-        function normalizeConjunto(conj){
-            if(conj && Array.isArray(conj.maquinas)) conj.maquinas.forEach(normalizeTipoMasaRegistro);
-        }
-        // LocalStorage: resultadosMezclado
+        function normalizeTipoMasaRegistro(reg){ if(!reg) return; if(reg.tipoMasa === 'Bs.') reg.tipoMasa = 'Mant.'; }
+        function normalizeConjunto(conj){ if(conj && Array.isArray(conj.maquinas)) conj.maquinas.forEach(normalizeTipoMasaRegistro); }
         try {
             let changed=false;
             const raw = localStorage.getItem('resultadosMezclado');
-            if(raw){
-                const arr = JSON.parse(raw);
-                if(Array.isArray(arr)){
-                    arr.forEach(c=>{const prev=JSON.stringify(c.maquinas); normalizeConjunto(c); if(JSON.stringify(c.maquinas)!==prev) changed=true;});
-                    if(changed) localStorage.setItem('resultadosMezclado', JSON.stringify(arr));
-                }
-            }
+            if(raw){ const arr=JSON.parse(raw); if(Array.isArray(arr)){ arr.forEach(c=>{const prev=JSON.stringify(c.maquinas); normalizeConjunto(c); if(JSON.stringify(c.maquinas)!==prev) changed=true;}); if(changed) localStorage.setItem('resultadosMezclado', JSON.stringify(arr)); } }
         } catch(_){ }
-        // LocalStorage: tempAmasadoras
         try {
             let changed=false;
             const rawTemp = localStorage.getItem('tempAmasadoras');
-            if(rawTemp){
-                const obj = JSON.parse(rawTemp);
-                if(obj && typeof obj==='object'){
-                    Object.keys(obj).forEach(k=>{const r=obj[k]; const before=r&&r.tipoMasa; normalizeTipoMasaRegistro(r); if(before!==r.tipoMasa) changed=true;});
-                    if(changed) localStorage.setItem('tempAmasadoras', JSON.stringify(obj));
-                }
-            }
+            if(rawTemp){ const obj=JSON.parse(rawTemp); if(obj && typeof obj==='object'){ Object.keys(obj).forEach(k=>{const r=obj[k]; const before=r&&r.tipoMasa; normalizeTipoMasaRegistro(r); if(before!==r.tipoMasa) changed=true;}); if(changed) localStorage.setItem('tempAmasadoras', JSON.stringify(obj)); } }
         } catch(_){ }
-        // Exponer para reutilizar en datos remotos
-        window.__normalizeTipoMasaMant = function(dataset){
-            if(Array.isArray(dataset)) dataset.forEach(normalizeConjunto);
-            return dataset;
-        };
+        window.__normalizeTipoMasaMant = function(dataset){ if(Array.isArray(dataset)) dataset.forEach(normalizeConjunto); return dataset; };
     })();
 
     let machineCardsContainer = document.getElementById('machine-cards');
     function initMachineCardsIfNeeded(){
         if(!machineCardsContainer){ machineCardsContainer = document.getElementById('machine-cards'); }
         if(machineCardsContainer && !machineCardsContainer.getAttribute('data-rendered')){
-            try { createMachineCards(); } catch(_){ }
+            try { createMachineCards(); machineCardsContainer.setAttribute('data-rendered','1'); } catch(_){ }
         }
     }
     let timers = {};
@@ -802,10 +755,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createMachineCards() {
-    // Guardar: si ya se renderizaron y el contenedor tiene contenido, evitar recrear (preserva timers)
-    if(machineCardsContainer && machineCardsContainer.getAttribute('data-rendered')==='1' && machineCardsContainer.children.length>0){
-        return; // idempotencia
-    }
     // Restaurar datos temporales si existen
     let tempData = {};
     try { tempData = JSON.parse(localStorage.getItem('tempAmasadoras')||'{}'); } catch(_){}
@@ -918,129 +867,165 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
             `;
-        machineCardsContainer.innerHTML += cardHtml;
+            machineCardsContainer.innerHTML += cardHtml;
     });
-    try { machineCardsContainer.setAttribute('data-rendered','1'); } catch(_){ }
     }
     // Actualizar dinámicamente los tiempos muertos y total al detener procesos
     function updateMuertosYTotal(machineId) {
-        let t1End = completedProcessTimes[`m${machineId}-p1`]?.endTime || null;
-        let t2Start = completedProcessTimes[`m${machineId}-p2`]?.startTime || null;
-        let t2End = completedProcessTimes[`m${machineId}-p2`]?.endTime || null;
-        let t3Start = completedProcessTimes[`m${machineId}-p3`]?.startTime || null;
-        let primerStart = completedProcessTimes[`m${machineId}-p1`]?.startTime || null;
-        let ultimoEnd = completedProcessTimes[`m${machineId}-p3`]?.endTime || null;
-        let tiempoMuerto1 = (t1End && t2Start) ? Math.max(0, Math.floor((t2Start - t1End)/1000)) : null;
-        let tiempoMuerto2 = (t2End && t3Start) ? Math.max(0, Math.floor((t3Start - t2End)/1000)) : null;
-        let sumaMuertos = (tiempoMuerto1 || 0) + (tiempoMuerto2 || 0);
-        let totalTime = (primerStart && ultimoEnd) ? Math.max(0, Math.floor((ultimoEnd - primerStart)/1000)) : null;
-        if(document.getElementById(`tm1-${machineId}`)) document.getElementById(`tm1-${machineId}`).textContent = tiempoMuerto1 !== null ? formatTime(tiempoMuerto1) : '--:--:--';
-        if(document.getElementById(`tm2-${machineId}`)) document.getElementById(`tm2-${machineId}`).textContent = tiempoMuerto2 !== null ? formatTime(tiempoMuerto2) : '--:--:--';
-        if(document.getElementById(`tmT-${machineId}`)) document.getElementById(`tmT-${machineId}`).textContent = (tiempoMuerto1 !== null || tiempoMuerto2 !== null) ? formatTime(sumaMuertos) : '--:--:--';
-        if(document.getElementById(`ttot-${machineId}`)) document.getElementById(`ttot-${machineId}`).textContent = totalTime !== null ? formatTime(totalTime) : '--:--:--';
-    }
+        if(!machineCardsContainer){ machineCardsContainer = document.getElementById('machine-cards'); }
+        if(!machineCardsContainer) return;
+        // Evitar recrear si ya se renderizó (preserva timers visibles)
+        if(machineCardsContainer.getAttribute('data-rendered')==='1' && machineCardsContainer.children.length) return;
 
-    // Evento para botón Clear de cada amasadora
-    if(machineCardsContainer) machineCardsContainer.addEventListener('click', function(e) {
-        const btn = e.target.closest('.clear-maquina');
-        if (!btn) return;
-        const machineId = btn.getAttribute('data-machine-id');
-        if (!machineId) return;
-        // Limpiar campos de la tarjeta
-    const tipoMasaSelect = document.getElementById(`tipoMasa-${machineId}`); if(tipoMasaSelect) tipoMasaSelect.value = '';
-    const tipoMasaOtro = document.getElementById(`tipoMasaOtro-${machineId}`); if(tipoMasaOtro){ tipoMasaOtro.value=''; tipoMasaOtro.classList.add('hidden'); }
-        document.getElementById(`tempMasa-${machineId}`).value = '';
-        document.getElementById(`obs-${machineId}`).value = '';
-        if (document.getElementById(`hielo-si-${machineId}`)) document.getElementById(`hielo-si-${machineId}`).checked = false;
-        if (document.getElementById(`hielo-no-${machineId}`)) document.getElementById(`hielo-no-${machineId}`).checked = false;
-        // Limpiar tiempos de procesos
-        for (let i = 1; i <= 3; i++) {
-            const timerId = `m${machineId}-p${i}`;
-            if (timers[timerId] && timers[timerId].interval) {
-                clearInterval(timers[timerId].interval);
-                delete timers[timerId];
-            }
-            delete completedProcessTimes[timerId];
-            document.getElementById(`start-${timerId}`).textContent = '--:--:--';
-            document.getElementById(`end-${timerId}`).textContent = '--:--:--';
-            document.getElementById(`real-${timerId}`).textContent = '00:00:00';
-            document.querySelector(`button[data-action="start"][data-timer-id="${timerId}"]`).disabled = false;
-            document.querySelector(`button[data-action="stop"][data-timer-id="${timerId}"]`).disabled = true;
-    }
-        // Resetear total
-        const totalSpan = document.getElementById(`total-m${machineId}`);
-        if (totalSpan) {
-            totalSpan.textContent = '00:00:00';
-            totalSpan.classList.remove('text-red-600');
-            totalSpan.classList.add('text-stone-800');
+        // Restaurar datos temporales si existen
+        let tempData = {};
+        try { tempData = JSON.parse(localStorage.getItem('tempAmasadoras')||'{}'); } catch(_){ }
+
+        // Asegurar datalist de tipo de pan
+        if(!document.getElementById('lista-tipo-pan')){
+            const dl=document.createElement('datalist'); dl.id='lista-tipo-pan'; document.body.appendChild(dl);
         }
-    });
 
-    function updateTimerDisplay(timerId) {
-        const realTimeEl = document.getElementById(`real-${timerId}`);
-        if (timers[timerId] && timers[timerId].interval) {
-            const elapsedCurrent = Math.floor((Date.now() - timers[timerId].startTime) / 1000);
-            const baseElapsed = timers[timerId].baseElapsed || 0;
-            realTimeEl.textContent = formatTime(baseElapsed + elapsedCurrent);
-        }
+        machineCardsContainer.innerHTML='';
+
+        const sortedMachines = [...machineData].sort((a,b)=> ['3','1','2'].indexOf(a.id) - ['3','1','2'].indexOf(b.id));
+        sortedMachines.forEach(machine=>{
+            const temp = tempData[machine.id] || {};
+
+            // Calcular total real (inicio p1 a fin p3) y tiempos muertos
+            const p1 = completedProcessTimes[`m${machine.id}-p1`];
+            const p2 = completedProcessTimes[`m${machine.id}-p2`];
+            const p3 = completedProcessTimes[`m${machine.id}-p3`];
+            let totalReal=null;
+            if(p1?.startTime && p3?.endTime){ totalReal = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)); }
+            let tm1 = (p1?.endTime && p2?.startTime)? Math.max(0, Math.floor((p2.startTime - p1.endTime)/1000)) : null;
+            let tm2 = (p2?.endTime && p3?.startTime)? Math.max(0, Math.floor((p3.startTime - p2.endTime)/1000)) : null;
+            const tmTot = (tm1||0)+(tm2||0);
+            const over = totalReal!=null && totalReal>2700;
+
+            // Procesos
+            const procesosHtml = machine.processes.map(proc=>{
+                const timerId = `m${machine.id}-p${proc.id}`;
+                const info = completedProcessTimes[timerId] || { time:0, startTime:null, endTime:null };
+                const startTxt = info.firstStartTime || info.startTime ? new Date(info.firstStartTime||info.startTime).toLocaleTimeString() : '--:--:--';
+                const endTxt = info.endTime ? new Date(info.endTime).toLocaleTimeString() : '--:--:--';
+                return `
+                <div class="p-4 bg-stone-50 rounded-lg border border-stone-200 flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-sm tracking-tight text-stone-700">${proc.name}</span>
+                        <div class="flex gap-2">
+                            <button data-action="start" data-timer-id="${timerId}" class="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow">Start</button>
+                            <button data-action="stop" data-timer-id="${timerId}" class="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow" disabled>Stop</button>
+                            <button data-action="reset" data-timer-id="${timerId}" class="px-2 py-1 rounded bg-stone-400 hover:bg-stone-500 text-white text-xs font-semibold shadow">Reset</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 text-[11px] font-mono text-stone-600">
+                        <div class="flex flex-col"><span class="text-[10px] uppercase tracking-wide text-stone-500">Inicio</span><span id="start-${timerId}" class="text-stone-900">${startTxt}</span></div>
+                        <div class="flex flex-col"><span class="text-[10px] uppercase tracking-wide text-stone-500">Fin</span><span id="end-${timerId}" class="text-stone-900">${endTxt}</span></div>
+                        <div class="flex flex-col"><span class="text-[10px] uppercase tracking-wide text-stone-500">Real</span><span id="real-${timerId}" class="text-blue-700">${formatTime(info.time||0)}</span></div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            const card = document.createElement('div');
+            card.className = 'relative bg-white p-6 rounded-2xl shadow-sm border border-stone-200 flex flex-col gap-4 hover:shadow-md transition-shadow';
+            card.innerHTML = `
+                <h3 class="text-lg font-bold text-stone-900 tracking-tight mb-1">${machine.name}</h3>
+                <div class="grid grid-cols-2 gap-3 text-[11px] mb-1">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Lote</label>
+                        <input id="lote-${machine.id}" value="${temp.lote||''}" class="px-2 py-1 rounded border border-stone-300 text-[12px]" placeholder="#" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Temp masa (°C)</label>
+                        <input id="tempMasa-${machine.id}" value="${temp.tempMasa||''}" class="px-2 py-1 rounded border border-stone-300 text-[12px]" placeholder="" />
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-[11px] mb-1">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Tipo masa</label>
+                        <select id="tipoMasa-${machine.id}" data-machine="${machine.id}" class="tipo-masa-select px-2 py-1 rounded border border-stone-300 text-[12px]">
+                            <option value="" ${!temp.tipoMasa?'selected':''}>--</option>
+                            <option value="Tradicional" ${temp.tipoMasa==='Tradicional'?'selected':''}>Tradicional</option>
+                            <option value="Mant." ${temp.tipoMasa==='Mant.'?'selected':''}>Mant.</option>
+                            <option value="Molde" ${temp.tipoMasa==='Molde'?'selected':''}>Molde</option>
+                            <option value="__OTRO__">Otro...</option>
+                        </select>
+                        <input id="tipoMasaOtro-${machine.id}" value="${temp.tipoMasaOtro||''}" class="mt-1 px-2 py-1 rounded border border-amber-400 text-[12px] hidden" placeholder="Especificar" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Tipo pan</label>
+                        <input list="lista-tipo-pan" id="tipoPan-${machine.id}" value="${temp.tipoPan||''}" class="tipo-pan-input px-2 py-1 rounded border border-stone-300 text-[12px] ${ (temp.tipoMasa && temp.tipoMasa!=='Tradicional')?'opacity-60':''}" ${(temp.tipoMasa && temp.tipoMasa!=='Tradicional')?'disabled':''} placeholder="Variedad" />
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 text-[11px]">
+                    <span class="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Hielo</span>
+                    <label class="inline-flex items-center gap-1"><input type="radio" name="hielo-${machine.id}" value="Si" id="hielo-si-${machine.id}" ${temp.hielo==='Si'?'checked':''}/> <span>Si</span></label>
+                    <label class="inline-flex items-center gap-1"><input type="radio" name="hielo-${machine.id}" value="No" id="hielo-no-${machine.id}" ${(temp.hielo||'No')==='No'?'checked':''}/> <span>No</span></label>
+                </div>
+                <div class="space-y-3">${procesosHtml}</div>
+                <div class="grid grid-cols-4 gap-2 text-center text-[10px] font-mono">
+                    <div class="flex flex-col"><span class="uppercase tracking-wide text-stone-500">TM1</span><span id="tm1-${machine.id}" class="text-stone-700">${tm1!=null?formatTime(tm1):'--:--:--'}</span></div>
+                    <div class="flex flex-col"><span class="uppercase tracking-wide text-stone-500">TM2</span><span id="tm2-${machine.id}" class="text-stone-700">${tm2!=null?formatTime(tm2):'--:--:--'}</span></div>
+                    <div class="flex flex-col"><span class="uppercase tracking-wide text-stone-500">Muertos</span><span id="tmT-${machine.id}" class="text-stone-700">${(tm1!=null||tm2!=null)?formatTime(tmTot):'--:--:--'}</span></div>
+                    <div class="flex flex-col"><span class="uppercase tracking-wide text-stone-500">Total</span><span id="total-m${machine.id}" class="font-semibold ${over?'text-red-600':'text-stone-800'}">${totalReal!=null?formatTime(totalReal):'--:--:--'}</span></div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Observaciones</label>
+                    <textarea id="obs-${machine.id}" rows="2" class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y text-[12px]">${temp.observaciones||''}</textarea>
+                </div>
+                <div class="flex gap-3 mt-2 justify-center">
+                    <button class="guardar-maquina bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow" data-machine-id="${machine.id}">Guardar</button>
+                    <button class="clear-maquina bg-stone-500 hover:bg-stone-600 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow" data-machine-id="${machine.id}">Limpiar</button>
+                </div>
+            `;
+            machineCardsContainer.appendChild(card);
+        });
+
+        machineCardsContainer.setAttribute('data-rendered','1');
     }
 
-    function stopProcess(timerId, skipTotalUpdate = false) {
-        if (!timers[timerId] || !timers[timerId].interval) return;
+    function updateTimerDisplay(timerId){
+        const el = document.getElementById(`real-${timerId}`);
+        if(!el) return;
+        const t = timers[timerId];
+        if(!t) return;
+        const elapsedCurrent = Math.floor((Date.now() - t.startTime)/1000);
+        const baseElapsed = t.baseElapsed || 0;
+        el.textContent = formatTime(baseElapsed + elapsedCurrent);
+    }
 
-        clearInterval(timers[timerId].interval);
-
-    const endTime = Date.now();
-    const startTimeRun = timers[timerId].startTime;
-    const runSeconds = Math.floor((endTime - startTimeRun) / 1000);
-    const baseElapsed = timers[timerId].baseElapsed || 0;
-    const realTimeSeconds = baseElapsed + runSeconds;
-
+    function stopProcess(timerId, skipTotalUpdate=false){
+        const t = timers[timerId];
+        if(!t || !t.interval) return;
+        clearInterval(t.interval);
+        const endTime = Date.now();
+        const runSeconds = Math.floor((endTime - t.startTime)/1000);
+        const realTimeSeconds = (t.baseElapsed||0) + runSeconds;
         const startEl = document.getElementById(`start-${timerId}`);
         const endEl = document.getElementById(`end-${timerId}`);
         const realEl = document.getElementById(`real-${timerId}`);
-
-        endEl.textContent = new Date(endTime).toLocaleTimeString();
-    realEl.textContent = formatTime(realTimeSeconds);
-
-        const [machineId, processId] = timerId.replace('m', '').replace('p', '').split('-');
-
-        if (!skipTotalUpdate) {
-            const prevTime = (completedProcessTimes[timerId] && typeof completedProcessTimes[timerId].time === 'number' ? completedProcessTimes[timerId].time : 0);
-            if (!machineTotals[machineId]) {
-                machineTotals[machineId] = 0;
-            }
-            machineTotals[machineId] = machineTotals[machineId] - prevTime + realTimeSeconds;
-            const firstStart = completedProcessTimes[timerId]?.firstStartTime || startTimeRun;
-            completedProcessTimes[timerId] = { time: realTimeSeconds, startTime: firstStart, firstStartTime: firstStart, endTime: endTime };
-            // Actualizar solo el total de la máquina en el DOM (solo suma los tiempos detenidos)
+        if(endEl) endEl.textContent = new Date(endTime).toLocaleTimeString();
+        if(realEl) realEl.textContent = formatTime(realTimeSeconds);
+        const [machineId] = timerId.replace('m','').split('-');
+        const prevStart = completedProcessTimes[timerId]?.firstStartTime || t.startTime;
+        completedProcessTimes[timerId] = { time: realTimeSeconds, startTime: prevStart, firstStartTime: prevStart, endTime };
+        if(!skipTotalUpdate){
             let totalTime = 0;
-            for (let i = 1; i <= 3; i++) {
-                const tId = `m${machineId}-p${i}`;
-                const t = completedProcessTimes[tId];
-                if (t && typeof t.time === 'number' && !isNaN(t.time)) {
-                    totalTime += t.time;
-                }
-            }
-            // Actualizar el span del total de la máquina usando el id único
+            for(let i=1;i<=3;i++){ const info=completedProcessTimes[`m${machineId}-p${i}`]; if(info && typeof info.time==='number') totalTime += info.time; }
             const totalSpan = document.getElementById(`total-m${machineId}`);
-            if (totalSpan) {
+            if(totalSpan){
                 totalSpan.textContent = formatTime(totalTime);
-                if (totalTime > 2700) {
-                    totalSpan.classList.add('text-red-600');
-                    totalSpan.classList.remove('text-stone-800');
-                } else {
-                    totalSpan.classList.remove('text-red-600');
-                    totalSpan.classList.add('text-stone-800');
-                }
+                if(totalTime>2700){ totalSpan.classList.add('text-red-600'); totalSpan.classList.remove('text-stone-800'); }
+                else { totalSpan.classList.remove('text-red-600'); totalSpan.classList.add('text-stone-800'); }
             }
-            // Actualizar tiempos muertos y total dinámicamente
             updateMuertosYTotal(machineId);
         }
-
         delete timers[timerId];
-        document.querySelector(`button[data-action="start"][data-timer-id="${timerId}"]`).disabled = false;
-        document.querySelector(`button[data-action="stop"][data-timer-id="${timerId}"]`).disabled = true;
+        const startBtn = document.querySelector(`button[data-action="start"][data-timer-id="${timerId}"]`);
+        const stopBtn = document.querySelector(`button[data-action="stop"][data-timer-id="${timerId}"]`);
+        if(startBtn) startBtn.disabled=false;
+        if(stopBtn) stopBtn.disabled=true;
     }
 
     function handleButtonClick(e) {
@@ -2355,7 +2340,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const cont = document.getElementById('machine-cards');
                 if(cont && (!cont.children.length || cont.getAttribute('data-needs-render')==='1')){
-                    if(typeof initMachineCardsIfNeeded==='function') initMachineCardsIfNeeded();
+                    if(typeof createMachineCards==='function') createMachineCards();
                     cont.removeAttribute('data-needs-render');
                 }
             } catch(_){ }
@@ -2678,7 +2663,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleBtn.textContent = isPwd ? 'Ocultar' : 'Mostrar';
             });
         }
-    if (typeof initMachineCardsIfNeeded === 'function') initMachineCardsIfNeeded();
+        if (typeof createMachineCards === 'function') createMachineCards();
 
         // Listeners de pestañas seguros
         if (tabMedicion) tabMedicion.addEventListener('click', () => {
@@ -2691,7 +2676,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tabResultados.classList.remove('tab-btn-active');
             tabTablas.classList.remove('tab-btn-active');
             try{ document.getElementById('section-amasadoras')?.scrollIntoView({behavior:'smooth', block:'start'});}catch(_){ }
-            if (typeof initMachineCardsIfNeeded === 'function') initMachineCardsIfNeeded();
+            if (typeof createMachineCards === 'function') createMachineCards();
         });
         if (tabResultados) tabResultados.addEventListener('click', () => {
             sectionAmas?.classList.remove('hidden');
