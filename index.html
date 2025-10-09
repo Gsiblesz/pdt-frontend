@@ -110,12 +110,76 @@
             Próximamente: módulo de Hornos.
         </div>
     </div>
+    
     <!-- Amasadoras section (existing app) -->
     <div id="section-amasadoras" class="hidden">
         <div class="flex flex-wrap justify-center gap-3 mb-6">
             <button id="tab-medicion" class="tab-btn tab-btn-active">Medición</button>
             <button id="tab-resultados" class="tab-btn">Resultados</button>
             <button id="tab-tablas" class="tab-btn">Tablas</button>
+            <span class="mx-2 text-stone-300">|</span>
+            <button id="tab-mesa" class="tab-btn">Mesa (beta)</button>
+        </div>
+        <!-- Subvista: Mesa (beta) dentro de Amasadoras -->
+        <div id="view-mesa" class="hidden">
+            <div class="flex flex-wrap justify-center gap-3 mb-6">
+                <button id="mesa-tab-medicion" class="tab-btn tab-btn-active">Medición</button>
+                <button id="mesa-tab-resultados" class="tab-btn">Resultados</button>
+            </div>
+            <div id="mesa-view-medicion" class="block">
+                <div class="max-w-3xl mx-auto bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
+                    <h2 class="text-2xl font-extrabold text-stone-900 mb-2">Mesa: Medición rápida</h2>
+                    <p class="text-sm text-stone-600 mb-4">Mide el tiempo en mesa por lote. Esta sección es independiente para no afectar Amasadoras.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Lote</label>
+                            <input id="mesa-input-lote" class="w-full border rounded px-3 py-2" placeholder="Ej: L-123" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Tipo de masa</label>
+                            <input id="mesa-input-tipo" class="w-full border rounded px-3 py-2" placeholder="Ej: Canilla" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Fecha</label>
+                            <input id="mesa-input-fecha" type="date" class="w-full border rounded px-3 py-2" />
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <button id="mesa-btn-iniciar" class="bg-blue-600 text-white px-4 py-2 rounded font-semibold">Iniciar</button>
+                        <button id="mesa-btn-pausa" class="bg-amber-600 text-white px-4 py-2 rounded font-semibold" disabled>Pausa</button>
+                        <button id="mesa-btn-finalizar" class="bg-emerald-600 text-white px-4 py-2 rounded font-semibold" disabled>Finalizar</button>
+                        <span id="mesa-timer" class="text-sm text-stone-700">00:00</span>
+                    </div>
+                    <div id="mesa-estado" class="text-sm text-stone-600"></div>
+                </div>
+            </div>
+            <div id="mesa-view-resultados" class="hidden">
+                <div class="max-w-5xl mx-auto bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-2xl font-extrabold text-stone-900">Registros en mesa</h2>
+                        <div class="flex items-center gap-2">
+                            <button id="mesa-export-csv" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold">Exportar CSV</button>
+                            <button id="mesa-clear" class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold">Borrar todo</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-stone-100 text-stone-700">
+                                <tr>
+                                    <th class="text-left px-3 py-2">Fecha</th>
+                                    <th class="text-left px-3 py-2">Lote</th>
+                                    <th class="text-left px-3 py-2">Tipo</th>
+                                    <th class="text-left px-3 py-2">Inicio</th>
+                                    <th class="text-left px-3 py-2">Fin</th>
+                                    <th class="text-left px-3 py-2">Duración (s)</th>
+                                    <th class="text-left px-3 py-2">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mesa-tabla-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
         <div id="view-tablas" class="hidden">
             <div class="mb-6 text-center">
@@ -2162,7 +2226,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initial: show Menu and ensure sub-vistas de Amasadoras no se "cuelen"
         if (viewMain) viewMain.classList.remove('hidden');
         if (sectionAmas) sectionAmas.classList.add('hidden');
-        // Asegurar todo oculto por defecto fuera de Amasadoras
+    // Asegurar todo oculto por defecto fuera de Amasadoras
         viewMedicion?.classList.add('hidden');
         viewResultados?.classList.add('hidden');
         viewTablas?.classList.add('hidden');
@@ -2226,7 +2290,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         tabMainMenu?.addEventListener('click', ()=> activateMainTab('menu'));
         tabMainAmas?.addEventListener('click', ()=> activateMainTab('amas'));
-        tabMainFerm?.addEventListener('click', ()=> activateMainTab('ferm'));
+    tabMainFerm?.addEventListener('click', ()=> activateMainTab('ferm'));
         tabMainHornos?.addEventListener('click', ()=> activateMainTab('horn'));
         // Force start on Menu to avoid Amasadoras content appearing under Menu
         activateMainTab('menu');
@@ -2302,6 +2366,126 @@ document.addEventListener('DOMContentLoaded', () => {
             tabResultados?.classList.remove('tab-btn-active');
             try{ document.getElementById('view-tablas')?.scrollIntoView({behavior:'smooth', block:'start'});}catch(_){ }
             if (typeof buildTablasVista === 'function') buildTablasVista();
+        });
+        // =============== MESA (beta) como subvista dentro de Amasadoras ===============
+        const tabMesa = document.getElementById('tab-mesa');
+        const viewMesa = document.getElementById('view-mesa');
+        tabMesa?.addEventListener('click', ()=>{
+            sectionAmas?.classList.remove('hidden');
+            viewMedicion?.classList.add('hidden');
+            viewResultados?.classList.add('hidden');
+            viewTablas?.classList.add('hidden');
+            document.getElementById('tab-medicion')?.classList.remove('tab-btn-active');
+            document.getElementById('tab-resultados')?.classList.remove('tab-btn-active');
+            document.getElementById('tab-tablas')?.classList.remove('tab-btn-active');
+            tabMesa.classList.add('tab-btn-active');
+            viewMesa?.classList.remove('hidden');
+        });
+        // Subpestañas Mesa
+        const mesaTabMed = document.getElementById('mesa-tab-medicion');
+        const mesaTabRes = document.getElementById('mesa-tab-resultados');
+        const mesaViewMed = document.getElementById('mesa-view-medicion');
+        const mesaViewRes = document.getElementById('mesa-view-resultados');
+        mesaTabMed?.addEventListener('click', ()=>{
+            mesaViewMed?.classList.remove('hidden');
+            mesaViewRes?.classList.add('hidden');
+            mesaTabMed.classList.add('tab-btn-active');
+            mesaTabRes?.classList.remove('tab-btn-active');
+        });
+        mesaTabRes?.addEventListener('click', ()=>{
+            mesaViewMed?.classList.add('hidden');
+            mesaViewRes?.classList.remove('hidden');
+            mesaTabRes.classList.add('tab-btn-active');
+            mesaTabMed?.classList.remove('tab-btn-active');
+            renderMesaTabla();
+        });
+        // Estado Mesa + pausa/reanudar
+        const MESA_KEY = 'resultadosMesa';
+        function leerMesa(){ try{ return JSON.parse(localStorage.getItem(MESA_KEY)||'[]'); }catch(_){ return []; } }
+        function guardarMesa(arr){ localStorage.setItem(MESA_KEY, JSON.stringify(arr)); }
+        function fmt(t){ return String(t).padStart(2,'0'); }
+        function secsToMMSS(s){ s=Math.max(0, Math.round(s)); const m=Math.floor(s/60), r=s%60; return `${fmt(m)}:${fmt(r)}`; }
+        let mesaTimer=null, mesaStart=null, mesaAccum=0, mesaEnPausa=false, mesaInicioISO=null;
+        const mesaTimerEl = document.getElementById('mesa-timer');
+        const btnIniciar = document.getElementById('mesa-btn-iniciar');
+        const btnPausa = document.getElementById('mesa-btn-pausa');
+        const btnFinal = document.getElementById('mesa-btn-finalizar');
+        const inputLote = document.getElementById('mesa-input-lote');
+        const inputTipo = document.getElementById('mesa-input-tipo');
+        const inputFecha = document.getElementById('mesa-input-fecha');
+        const mesaEstado = document.getElementById('mesa-estado');
+        function setMesaEstado(msg){ if(mesaEstado) mesaEstado.textContent = msg||''; }
+        function updateTimerLabel(){ if(!mesaTimerEl) return; const base = mesaAccum + (mesaStart? ((Date.now()-mesaStart)/1000) : 0); mesaTimerEl.textContent = secsToMMSS(base); }
+        function startTick(){ if(mesaTimer) return; mesaTimer = setInterval(updateTimerLabel, 300); }
+        function stopTick(){ if(mesaTimer){ clearInterval(mesaTimer); mesaTimer=null; } }
+        btnIniciar?.addEventListener('click', ()=>{
+            if(!mesaStart){
+                if(!mesaInicioISO) mesaInicioISO = new Date().toISOString();
+                mesaStart = Date.now();
+                btnFinal && (btnFinal.disabled=false);
+                btnPausa && (btnPausa.disabled=false, btnPausa.textContent = 'Pausa');
+                mesaEnPausa=false;
+                startTick();
+                setMesaEstado('Temporizador en marcha...');
+            }
+        });
+        btnPausa?.addEventListener('click', ()=>{
+            if(!mesaStart && !mesaAccum) return;
+            if(mesaEnPausa){
+                mesaStart = Date.now();
+                mesaEnPausa=false;
+                btnPausa.textContent='Pausa';
+                startTick();
+                setMesaEstado('Reanudado');
+            } else {
+                if(mesaStart){ mesaAccum += (Date.now()-mesaStart)/1000; mesaStart=null; }
+                mesaEnPausa=true;
+                btnPausa.textContent='Reanudar';
+                updateTimerLabel();
+                stopTick();
+                setMesaEstado('Pausado');
+            }
+        });
+        btnFinal?.addEventListener('click', ()=>{
+            if(!mesaInicioISO) return;
+            if(mesaStart){ mesaAccum += (Date.now()-mesaStart)/1000; mesaStart=null; }
+            const endISO = new Date().toISOString();
+            const dur = Math.round(mesaAccum);
+            stopTick();
+            mesaAccum=0; mesaEnPausa=false; mesaInicioISO=null; if(mesaTimerEl) mesaTimerEl.textContent='00:00'; btnFinal && (btnFinal.disabled=true); btnPausa && (btnPausa.disabled=true, btnPausa.textContent='Pausa');
+            const rec = {
+                id: 'mesa-'+Date.now(),
+                fecha: inputFecha?.value || new Date().toISOString().slice(0,10),
+                lote: (inputLote?.value||'').trim(),
+                tipoMasa: (inputTipo?.value||'').trim(),
+                inicio: mesaInicioISO,
+                fin: endISO,
+                duracionSeg: dur
+            };
+            const arr = leerMesa(); arr.push(rec); guardarMesa(arr);
+            setMesaEstado('Registro guardado');
+            if(inputLote) inputLote.value='';
+            renderMesaTabla();
+        });
+        function renderMesaTabla(){
+            const tbody = document.getElementById('mesa-tabla-body'); if(!tbody) return;
+            const arr = leerMesa();
+            tbody.innerHTML = arr.map(r=> `<tr class="border-b border-stone-200">\n                <td class="px-3 py-2">${r.fecha}</td>\n                <td class="px-3 py-2">${r.lote||'-'}</td>\n                <td class="px-3 py-2">${r.tipoMasa||'-'}</td>\n                <td class="px-3 py-2">${(r.inicio||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${(r.fin||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${r.duracionSeg}</td>\n                <td class="px-3 py-2"><button data-id="${r.id}" class="mesa-del text-red-600 hover:underline">Eliminar</button></td>\n            </tr>`).join('');
+            tbody.querySelectorAll('button.mesa-del').forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                    const id = btn.getAttribute('data-id');
+                    const arr = leerMesa().filter(x=> x.id!==id);
+                    guardarMesa(arr); renderMesaTabla();
+                });
+            });
+        }
+        document.getElementById('mesa-clear')?.addEventListener('click', ()=>{ if(confirm('¿Borrar todos los registros de mesa?')){ guardarMesa([]); renderMesaTabla(); }});
+        document.getElementById('mesa-export-csv')?.addEventListener('click', ()=>{
+            const rows = leerMesa();
+            const cols = ['fecha','lote','tipoMasa','inicio','fin','duracionSeg'];
+            const csv = [cols.join(',')].concat(rows.map(r=> cols.map(c=> JSON.stringify(r[c]??'')).join(','))).join('\n');
+            const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+            const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='mesa_registros.csv'; a.click(); URL.revokeObjectURL(a.href);
         });
     });
 
@@ -2650,90 +2834,135 @@ document.addEventListener('DOMContentLoaded', () => {
         const tblResumen=document.getElementById('tabla-resumen'); if(tblResumen) tblResumen.innerHTML=tableFromRows(resumenHeaders,resumenRows);
     // Recalcular panel experimental general de factores si existe (#patrones-panel)
     if(typeof renderPatrones==='function'){ try { renderPatrones(); } catch(_){ } }
-        // ================== PATRÓN AUTOMÁTICO SIMPLE ==================
-    (function patronAutomatico(){
-            const cont = document.getElementById('patron-simple'); if(!cont) return;
-            try{
-                // Construir dataset por máquina con tiempo real y atributos clave
-                const maquinas=[];
-                _TABLAS_DATA_LAST.forEach(r=> (r.maquinas||[]).forEach(m=>{
-                    const p1=m.proceso1, p3=m.proceso3; if(!(p1&&p1.startTime&&p3&&p3.endTime)) return;
-                    const real = Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)); if(real<=0) return;
-                    // Determinar personal usando punto medio del rango si existe
-                    let pmn = parseInt(m.personalMin||r.personalMin);
-                    let pmx = parseInt(m.personalMax||r.personalMax);
-                    if(Number.isNaN(pmn) && !Number.isNaN(pmx)) pmn=pmx;
-                    if(Number.isNaN(pmx) && !Number.isNaN(pmn)) pmx=pmn;
-                    const pers = (!Number.isNaN(pmn) && !Number.isNaN(pmx))? (pmn+pmx)/2 : parseInt(m.personal||r.personal)||NaN;
-                    maquinas.push({
-                        lote:(m.lote||'').toString().trim()||'_sin_',
-                        tipo:(m.tipoMasa||m.tipoPan||'Sin tipo').trim(),
-                        hielo:(m.hielo||'').trim()||'No',
-                        ama:(m.numeroAmasadora||m.id||'?'),
-                        tempMasa: parseFloat(m.tempMasa),
-                        personal: pers,
-                        real
-                    });
-                }));
-                if(!maquinas.length){ cont.textContent='Sin datos suficientes.'; return; }
-                // Agrupar por lote y promedio real
-                const byLote={}; maquinas.forEach(m=>{ (byLote[m.lote]=byLote[m.lote]||[]).push(m); });
-                let lotesArr = Object.entries(byLote).map(([lote, arr])=>({
-                    lote,
-                    n:arr.length,
-                    realProm: arr.reduce((a,b)=>a+b.real,0)/arr.length,
-                    arr
-                }));
-                if(lotesArr.length<2){ cont.textContent='Muy pocos lotes para analizar.'; return; }
-                // Tomar top 20% (al menos 2) de lotes más lentos por realProm
-                lotesArr.sort((a,b)=> b.realProm - a.realProm);
-                const topCount = Math.max(2, Math.round(lotesArr.length*0.2));
-                const topLotes = lotesArr.slice(0, topCount);
-                // Recopilar valores dominantes (moda) en esos top lotes para cada variable categórica
-                function moda(values){ const map={}; values.forEach(v=> map[v]=(map[v]||0)+1); const arr=Object.entries(map).sort((a,b)=> b[1]-a[1]); if(!arr.length) return null; const [valor, freq]=arr[0]; return {valor,freq, pct:freq*100/values.length}; }
-                // Bucketizar personal (si existe) en rangos
-                maquinas.forEach(m=>{ if(Number.isFinite(m.personal)){ if(m.personal<=4) m.personalBucket='≤4'; else if(m.personal<=6) m.personalBucket='5–6'; else m.personalBucket='≥7'; } });
-                const catVars=['tipo','hielo','ama','personalBucket']; // 'tipo' ya representa tipoMasa/tipoPan consolidado
-                const resumenCat = catVars.map(v=>{
-                    const vals = topLotes.flatMap(l=> l.arr.map(m=> m[v]));
-                    const m = moda(vals); return {var:v, moda:m};
+        // =============== MESA (beta) wiring - como subvista ===============
+        const tabMesa = document.getElementById('tab-mesa');
+        const viewMesa = document.getElementById('view-mesa');
+        tabMesa?.addEventListener('click', ()=>{
+            // Esconder sub-vistas de Amasadoras principales
+            viewMedicion?.classList.add('hidden');
+            viewResultados?.classList.add('hidden');
+            viewTablas?.classList.add('hidden');
+            // Activar botón
+            document.getElementById('tab-medicion')?.classList.remove('tab-btn-active');
+            document.getElementById('tab-resultados')?.classList.remove('tab-btn-active');
+            document.getElementById('tab-tablas')?.classList.remove('tab-btn-active');
+            tabMesa.classList.add('tab-btn-active');
+            // Mostrar mesa
+            viewMesa?.classList.remove('hidden');
+        });
+
+        // Subpestañas de mesa
+        const mesaTabMed = document.getElementById('mesa-tab-medicion');
+        const mesaTabRes = document.getElementById('mesa-tab-resultados');
+        const mesaViewMed = document.getElementById('mesa-view-medicion');
+        const mesaViewRes = document.getElementById('mesa-view-resultados');
+        mesaTabMed?.addEventListener('click', ()=>{
+            mesaViewMed?.classList.remove('hidden');
+            mesaViewRes?.classList.add('hidden');
+            mesaTabMed.classList.add('tab-btn-active');
+            mesaTabRes?.classList.remove('tab-btn-active');
+        });
+        mesaTabRes?.addEventListener('click', ()=>{
+            mesaViewMed?.classList.add('hidden');
+            mesaViewRes?.classList.remove('hidden');
+            mesaTabRes.classList.add('tab-btn-active');
+            mesaTabMed?.classList.remove('tab-btn-active');
+            renderMesaTabla();
+        });
+
+        // Mesa state and helpers (isolated storage key)
+        const MESA_KEY = 'resultadosMesa';
+        function leerMesa(){ try{ return JSON.parse(localStorage.getItem(MESA_KEY)||'[]'); }catch(_){ return []; } }
+        function guardarMesa(arr){ localStorage.setItem(MESA_KEY, JSON.stringify(arr)); }
+        function fmt(t){ return String(t).padStart(2,'0'); }
+        function secsToMMSS(s){ s=Math.max(0, Math.round(s)); const m=Math.floor(s/60), r=s%60; return `${fmt(m)}:${fmt(r)}`; }
+        let mesaTimer=null, mesaStart=null, mesaAccum=0, mesaEnPausa=false, mesaInicioISO=null;
+        const mesaTimerEl = document.getElementById('mesa-timer');
+        const btnIniciar = document.getElementById('mesa-btn-iniciar');
+        const btnPausa = document.getElementById('mesa-btn-pausa');
+        const btnFinal = document.getElementById('mesa-btn-finalizar');
+        const inputLote = document.getElementById('mesa-input-lote');
+        const inputTipo = document.getElementById('mesa-input-tipo');
+        const inputFecha = document.getElementById('mesa-input-fecha');
+        const mesaEstado = document.getElementById('mesa-estado');
+        function setMesaEstado(msg){ if(mesaEstado) mesaEstado.textContent = msg||''; }
+        function updateTimerLabel(){ if(!mesaTimerEl) return; const base = mesaAccum + (mesaStart? ((Date.now()-mesaStart)/1000) : 0); mesaTimerEl.textContent = secsToMMSS(base); }
+        function startTick(){ if(mesaTimer) return; mesaTimer = setInterval(updateTimerLabel, 300); }
+        function stopTick(){ if(mesaTimer){ clearInterval(mesaTimer); mesaTimer=null; } }
+        btnIniciar?.addEventListener('click', ()=>{
+            if(!mesaStart){
+                // primera vez o reanudar
+                if(!mesaInicioISO) mesaInicioISO = new Date().toISOString();
+                mesaStart = Date.now();
+                btnFinal && (btnFinal.disabled=false);
+                btnPausa && (btnPausa.disabled=false, btnPausa.textContent = 'Pausa');
+                mesaEnPausa=false;
+                startTick();
+                setMesaEstado('Temporizador en marcha...');
+            }
+        });
+        btnPausa?.addEventListener('click', ()=>{
+            if(!mesaStart && !mesaAccum) return; // nada que pausar
+            if(mesaEnPausa){
+                // reanudar
+                mesaStart = Date.now();
+                mesaEnPausa=false;
+                btnPausa.textContent='Pausa';
+                startTick();
+                setMesaEstado('Reanudado');
+            } else {
+                // pausar
+                if(mesaStart){ mesaAccum += (Date.now()-mesaStart)/1000; mesaStart=null; }
+                mesaEnPausa=true;
+                btnPausa.textContent='Reanudar';
+                updateTimerLabel();
+                stopTick();
+                setMesaEstado('Pausado');
+            }
+        });
+        btnFinal?.addEventListener('click', ()=>{
+            if(!mesaInicioISO) return;
+            // acumular si estaba corriendo
+            if(mesaStart){ mesaAccum += (Date.now()-mesaStart)/1000; mesaStart=null; }
+            const endISO = new Date().toISOString();
+            const dur = Math.round(mesaAccum);
+            stopTick();
+            mesaAccum=0; mesaEnPausa=false; mesaInicioISO=null; if(mesaTimerEl) mesaTimerEl.textContent='00:00'; btnFinal && (btnFinal.disabled=true); btnPausa && (btnPausa.disabled=true, btnPausa.textContent='Pausa');
+            const rec = {
+                id: 'mesa-'+Date.now(),
+                fecha: inputFecha?.value || new Date().toISOString().slice(0,10),
+                lote: (inputLote?.value||'').trim(),
+                tipoMasa: (inputTipo?.value||'').trim(),
+                inicio: mesaInicioISO,
+                fin: endISO,
+                duracionSeg: dur
+            };
+            const arr = leerMesa(); arr.push(rec); guardarMesa(arr);
+            setMesaEstado('Registro guardado');
+            // limpiar inputs suaves
+            if(inputLote) inputLote.value='';
+            renderMesaTabla();
+        });
+        function renderMesaTabla(){
+            const tbody = document.getElementById('mesa-tabla-body'); if(!tbody) return;
+            const arr = leerMesa();
+            tbody.innerHTML = arr.map(r=> `<tr class=\"border-b border-stone-200\">\n                <td class=\"px-3 py-2\">${r.fecha}</td>\n                <td class=\"px-3 py-2\">${r.lote||'-'}</td>\n                <td class=\"px-3 py-2\">${r.tipoMasa||'-'}</td>\n                <td class=\"px-3 py-2\">${(r.inicio||'').slice(11,19)}</td>\n                <td class=\"px-3 py-2\">${(r.fin||'').slice(11,19)}</td>\n                <td class=\"px-3 py-2\">${r.duracionSeg}</td>\n                <td class=\"px-3 py-2\"><button data-id=\"${r.id}\" class=\"mesa-del text-red-600 hover:underline\">Eliminar</button></td>\n            </tr>`).join('');
+            tbody.querySelectorAll('button.mesa-del').forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                    const id = btn.getAttribute('data-id');
+                    const arr = leerMesa().filter(x=> x.id!==id);
+                    guardarMesa(arr); renderMesaTabla();
                 });
-                // Temp de masa: rango y si está concentrada
-                const temps = topLotes.flatMap(l=> l.arr.map(m=> m.tempMasa).filter(x=>Number.isFinite(x)));
-                let tempInfo='n/d';
-                if(temps.length>=3){ temps.sort((a,b)=>a-b); const p=qq=> temps[Math.floor((temps.length-1)*qq)]; const min=temps[0], max=temps[temps.length-1]; const p50=p(0.5); const iqr=p(0.75)-p(0.25); tempInfo = `${min.toFixed(1)}–${max.toFixed(1)} (P50=${p50.toFixed(1)})${iqr?` · IQR=${iqr.toFixed(1)}`:''}`; }
-                // Elegir variable “más común”: mayor porcentaje de moda sobre su universo
-                let mejor = resumenCat.filter(r=> r.moda).sort((a,b)=> b.moda.pct - a.moda.pct)[0] || null;
-                // Si personalBucket existe y su frecuencia relativa es >= 60% y mayor que la siguiente, forzarla como principal
-                const pb = resumenCat.find(r=> r.var==='personalBucket' && r.moda);
-                if(pb && pb.moda.pct>=60){ mejor = pb; }
-                // Frase resultado principal
-                const gap = topLotes[0].realProm - lotesArr[lotesArr.length-1].realProm;
-                let html = `<div class='mb-1'><strong>${topCount}</strong> lotes más lentos (promedio real = <strong>${Math.round(topLotes.reduce((a,b)=>a+b.realProm,0)/topLotes.length)}s</strong>) · Δ respecto al más rápido aprox <strong>${Math.round(gap)}s</strong></div>`;
-                if(mejor){
-                    html += `<div class='mb-1'>Variable común destacada: <span class='font-semibold uppercase'>${mejor.var}</span> → <strong>${mejor.moda.valor}</strong> (${mejor.moda.freq}/${Math.round(mejor.moda.pct)}%)</div>`;
-                }
-                const labelsMap={tipo:'tipo', hielo:'hielo', ama:'amas', personalBucket:'personal'};
-                html += `<div class='mb-1 flex flex-wrap gap-2'>` +
-                    resumenCat.filter(r=> r.moda).map(r=> `<span class='px-2 py-0.5 rounded bg-stone-100 border border-stone-300'>${labelsMap[r.var]||r.var}: ${r.moda.valor} (${Math.round(r.moda.pct)}%)</span>` ).join('') + `</div>`;
-                html += `<div class='text-[11px] text-stone-500'>Temp masa rango (lotes lentos): ${tempInfo}</div>`;
-                cont.innerHTML = html;
-            }catch(e){ cont.textContent='Error cálculo patrón: '+e; }
-        })();
-        // OEE indicador
-        (function(){
-            const el = document.getElementById('oee-indicador'); if(!el) return;
-            const prod = globalProdSum; const real = globalRealSum; if(!(real>0)){ el.textContent='Sin datos suficientes para OEE.'; return; }
-            const oee = (prod*100/real);
-            let color='bg-stone-300 text-stone-800';
-            if(oee>=80) color='bg-emerald-600 text-white'; else if(oee>=60) color='bg-amber-500 text-white'; else color='bg-red-600 text-white';
-            el.innerHTML = `<div class="inline-flex items-center gap-3"><span class="px-3 py-1 rounded ${color} font-semibold">${oee.toFixed(1)}%</span><span class="text-stone-600">Productivo ${formatTime(prod)} / Real ${formatTime(real)} · TM muerto ${(real-prod)>0?formatTime(real-prod):'00:00:00'}</span></div>`;
-        })();
-            // Control Charts (tiempo total y % muerto)
-            (function(){
-                // (Removido try/catch previo que causaba errores de sintaxis)
-            const canvasTiempo = document.getElementById('chart-ctrl-tiempo');
-            const canvasMuerto = document.getElementById('chart-ctrl-muerto');
+            });
+        }
+        document.getElementById('mesa-clear')?.addEventListener('click', ()=>{ if(confirm('¿Borrar todos los registros de mesa?')){ guardarMesa([]); renderMesaTabla(); }});
+        document.getElementById('mesa-export-csv')?.addEventListener('click', ()=>{
+            const rows = leerMesa();
+            const cols = ['fecha','lote','tipoMasa','inicio','fin','duracionSeg'];
+            const csv = [cols.join(',')].concat(rows.map(r=> cols.map(c=> JSON.stringify(r[c]??'')).join(','))).join('\n');
+            const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+            const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='mesa_registros.csv'; a.click(); URL.revokeObjectURL(a.href);
+        });
             if(!canvasTiempo && !canvasMuerto) return;
             // Construir dataset ordenado cronológicamente por fecha y dentro de fecha por amasadora
             const puntosTiempo=[]; const puntosPctMuerto=[]; const labels=[]; const lotes=[]; const detalleFilas=[];
@@ -3043,7 +3272,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderSpark(ordered,'promReal','spark-tiempo','s');
                 renderSpark(ordered,'pctMuerto','spark-muerto','%');
             })();
-        })();
         // Pan table
     const panHeaders=['Tipo masa','N','Prom (s)','Desv (s)','%Desv'];
     const panRows=Object.keys(masaStats).map(k=>{const a=masaStats[k]; const m=Math.round(a.reduce((x,y)=>x+y,0)/a.length); const d=Math.round(std(a)); return [k,a.length,m,d,percent(d,m)];});
