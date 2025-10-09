@@ -2342,21 +2342,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const tRes = document.getElementById('tab-resultados');
             const tTab = document.getElementById('tab-tablas');
             const tMesa = document.getElementById('tab-mesa');
-            // ocultar todas
-            vMed?.classList.add('hidden');
-            vRes?.classList.add('hidden');
-            vTab?.classList.add('hidden');
-            vMesa?.classList.add('hidden');
+            // ocultar todas (clase + inline style por robustez)
+            [vMed, vRes, vTab, vMesa].forEach(v=>{ if(v){ v.classList.add('hidden'); v.style.display='none'; } });
             // desactivar tabs
             tMed?.classList.remove('tab-btn-active');
             tRes?.classList.remove('tab-btn-active');
             tTab?.classList.remove('tab-btn-active');
             tMesa?.classList.remove('tab-btn-active');
-            // mostrar la solicitada
-            if(name==='medicion'){ vMed?.classList.remove('hidden'); tMed?.classList.add('tab-btn-active'); }
-            else if(name==='resultados'){ vRes?.classList.remove('hidden'); tRes?.classList.add('tab-btn-active'); }
-            else if(name==='tablas'){ vTab?.classList.remove('hidden'); tTab?.classList.add('tab-btn-active'); }
-            else if(name==='mesa'){ vMesa?.classList.remove('hidden'); tMesa?.classList.add('tab-btn-active'); }
+            // mostrar la solicitada (quitar hidden + restaurar display)
+            if(name==='medicion' && vMed){ vMed.classList.remove('hidden'); vMed.style.display=''; tMed?.classList.add('tab-btn-active'); }
+            else if(name==='resultados' && vRes){ vRes.classList.remove('hidden'); vRes.style.display=''; tRes?.classList.add('tab-btn-active'); }
+            else if(name==='tablas' && vTab){ vTab.classList.remove('hidden'); vTab.style.display=''; tTab?.classList.add('tab-btn-active'); }
+            else if(name==='mesa' && vMesa){ vMesa.classList.remove('hidden'); vMesa.style.display=''; tMesa?.classList.add('tab-btn-active'); }
             sectionAmas?.classList.remove('hidden');
         }
 
