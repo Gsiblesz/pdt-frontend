@@ -2332,64 +2332,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (typeof createMachineCards === 'function') createMachineCards();
 
+        // Helper: activar una sola subvista de Amasadoras
+        function setAmasadorasView(name){
+            const vMed = document.getElementById('view-medicion');
+            const vRes = document.getElementById('view-resultados');
+            const vTab = document.getElementById('view-tablas');
+            const vMesa = document.getElementById('view-mesa');
+            const tMed = document.getElementById('tab-medicion');
+            const tRes = document.getElementById('tab-resultados');
+            const tTab = document.getElementById('tab-tablas');
+            const tMesa = document.getElementById('tab-mesa');
+            // ocultar todas
+            vMed?.classList.add('hidden');
+            vRes?.classList.add('hidden');
+            vTab?.classList.add('hidden');
+            vMesa?.classList.add('hidden');
+            // desactivar tabs
+            tMed?.classList.remove('tab-btn-active');
+            tRes?.classList.remove('tab-btn-active');
+            tTab?.classList.remove('tab-btn-active');
+            tMesa?.classList.remove('tab-btn-active');
+            // mostrar la solicitada
+            if(name==='medicion'){ vMed?.classList.remove('hidden'); tMed?.classList.add('tab-btn-active'); }
+            else if(name==='resultados'){ vRes?.classList.remove('hidden'); tRes?.classList.add('tab-btn-active'); }
+            else if(name==='tablas'){ vTab?.classList.remove('hidden'); tTab?.classList.add('tab-btn-active'); }
+            else if(name==='mesa'){ vMesa?.classList.remove('hidden'); tMesa?.classList.add('tab-btn-active'); }
+            sectionAmas?.classList.remove('hidden');
+        }
+
         // Listeners de pestañas seguros
         if (tabMedicion) tabMedicion.addEventListener('click', () => {
-            sectionAmas?.classList.remove('hidden');
-            if (!viewMedicion) return;
-            viewMedicion.classList.remove('hidden');
-            viewResultados.classList.add('hidden');
-            viewTablas.classList.add('hidden');
-            // Asegurar que Mesa quede oculta al cambiar a Medición
-            document.getElementById('view-mesa')?.classList.add('hidden');
-            tabMedicion.classList.add('tab-btn-active');
-            tabResultados.classList.remove('tab-btn-active');
-            tabTablas.classList.remove('tab-btn-active');
-            document.getElementById('tab-mesa')?.classList.remove('tab-btn-active');
+            setAmasadorasView('medicion');
             try{ document.getElementById('section-amasadoras')?.scrollIntoView({behavior:'smooth', block:'start'});}catch(_){ }
             if (typeof createMachineCards === 'function') createMachineCards();
         });
         if (tabResultados) tabResultados.addEventListener('click', () => {
-            sectionAmas?.classList.remove('hidden');
-            viewMedicion?.classList.add('hidden');
-            viewResultados?.classList.remove('hidden');
-            viewTablas?.classList.add('hidden');
-            // Asegurar que Mesa quede oculta al cambiar a Resultados
-            document.getElementById('view-mesa')?.classList.add('hidden');
-            tabResultados.classList.add('tab-btn-active');
-            tabMedicion?.classList.remove('tab-btn-active');
-            tabTablas?.classList.remove('tab-btn-active');
-            document.getElementById('tab-mesa')?.classList.remove('tab-btn-active');
+            setAmasadorasView('resultados');
             try{ document.getElementById('view-resultados')?.scrollIntoView({behavior:'smooth', block:'start'});}catch(_){ }
             if (typeof cargarResultados === 'function') cargarResultados();
         });
         if (tabTablas) tabTablas.addEventListener('click', () => {
-            sectionAmas?.classList.remove('hidden');
-            viewMedicion?.classList.add('hidden');
-            viewResultados?.classList.add('hidden');
-            viewTablas?.classList.remove('hidden');
-            // Asegurar que Mesa quede oculta al cambiar a Tablas
-            document.getElementById('view-mesa')?.classList.add('hidden');
-            tabTablas.classList.add('tab-btn-active');
-            tabMedicion?.classList.remove('tab-btn-active');
-            tabResultados?.classList.remove('tab-btn-active');
-            document.getElementById('tab-mesa')?.classList.remove('tab-btn-active');
+            setAmasadorasView('tablas');
             try{ document.getElementById('view-tablas')?.scrollIntoView({behavior:'smooth', block:'start'});}catch(_){ }
             if (typeof buildTablasVista === 'function') buildTablasVista();
         });
         // =============== MESA (beta) como subvista dentro de Amasadoras ===============
         const tabMesa = document.getElementById('tab-mesa');
         const viewMesa = document.getElementById('view-mesa');
-        tabMesa?.addEventListener('click', ()=>{
-            sectionAmas?.classList.remove('hidden');
-            viewMedicion?.classList.add('hidden');
-            viewResultados?.classList.add('hidden');
-            viewTablas?.classList.add('hidden');
-            document.getElementById('tab-medicion')?.classList.remove('tab-btn-active');
-            document.getElementById('tab-resultados')?.classList.remove('tab-btn-active');
-            document.getElementById('tab-tablas')?.classList.remove('tab-btn-active');
-            tabMesa.classList.add('tab-btn-active');
-            viewMesa?.classList.remove('hidden');
-        });
+        tabMesa?.addEventListener('click', ()=>{ setAmasadorasView('mesa'); });
         // Subpestañas Mesa
         const mesaTabMed = document.getElementById('mesa-tab-medicion');
         const mesaTabRes = document.getElementById('mesa-tab-resultados');
