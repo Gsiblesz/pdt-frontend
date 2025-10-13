@@ -162,21 +162,43 @@
                             <button id="mesa-clear" class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold">Borrar todo</button>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-stone-100 text-stone-700">
-                                <tr>
-                                    <th class="text-left px-3 py-2">Fecha</th>
-                                    <th class="text-left px-3 py-2">Lote</th>
-                                    <th class="text-left px-3 py-2">Tipo</th>
-                                    <th class="text-left px-3 py-2">Inicio</th>
-                                    <th class="text-left px-3 py-2">Fin</th>
-                                    <th class="text-left px-3 py-2">Duración (s)</th>
-                                    <th class="text-left px-3 py-2">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="mesa-tabla-body"></tbody>
-                        </table>
+                    <div class="flex justify-center gap-2 mb-4">
+                        <button id="mesa-sub-local" class="tab-btn tab-btn-active">Locales</button>
+                        <button id="mesa-sub-bd" class="tab-btn">Base de datos</button>
+                    </div>
+                    <div id="mesa-local-wrapper">
+                        <div class="flex flex-wrap gap-2 justify-between items-center mb-2">
+                            <div class="text-xs text-stone-600">Locales guardados en este navegador</div>
+                            <div class="flex items-center gap-2">
+                                <button id="mesa-enviar-todo-bd" class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-semibold">Enviar todo a BD</button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-stone-100 text-stone-700">
+                                    <tr>
+                                        <th class="text-left px-3 py-2">Fecha</th>
+                                        <th class="text-left px-3 py-2">Lote</th>
+                                        <th class="text-left px-3 py-2">Tipo</th>
+                                        <th class="text-left px-3 py-2">Inicio</th>
+                                        <th class="text-left px-3 py-2">Fin</th>
+                                        <th class="text-left px-3 py-2">Duración (s)</th>
+                                        <th class="text-left px-3 py-2">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mesa-tabla-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="mesa-bd-wrapper" class="hidden">
+                        <div class="flex flex-wrap gap-2 items-center mb-2">
+                            <label class="text-sm">Desde: <input type="date" id="mesa-bd-desde" class="border rounded px-2 py-1 text-sm" /></label>
+                            <label class="text-sm">Hasta: <input type="date" id="mesa-bd-hasta" class="border rounded px-2 py-1 text-sm" /></label>
+                            <button id="mesa-bd-refresh" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold">Refrescar</button>
+                            <button id="mesa-bd-delete-all" class="bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold">Borrar todo BD</button>
+                            <span id="mesa-bd-status" class="text-xs text-stone-600"></span>
+                        </div>
+                        <div id="mesa-bd-lista" class="mt-2"></div>
                     </div>
                 </div>
             </div>
@@ -2469,12 +2491,23 @@ document.addEventListener('DOMContentLoaded', () => {
         function renderMesaTabla(){
             const tbody = document.getElementById('mesa-tabla-body'); if(!tbody) return;
             const arr = leerMesa();
-            tbody.innerHTML = arr.map(r=> `<tr class="border-b border-stone-200">\n                <td class="px-3 py-2">${r.fecha}</td>\n                <td class="px-3 py-2">${r.lote||'-'}</td>\n                <td class="px-3 py-2">${r.tipoMasa||'-'}</td>\n                <td class="px-3 py-2">${(r.inicio||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${(r.fin||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${r.duracionSeg}</td>\n                <td class="px-3 py-2"><button data-id="${r.id}" class="mesa-del text-red-600 hover:underline">Eliminar</button></td>\n            </tr>`).join('');
+            tbody.innerHTML = arr.map(r=> `<tr class="border-b border-stone-200">\n                <td class="px-3 py-2">${r.fecha}</td>\n                <td class="px-3 py-2">${r.lote||'-'}</td>\n                <td class="px-3 py-2">${r.tipoMasa||'-'}</td>\n                <td class="px-3 py-2">${(r.inicio||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${(r.fin||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${r.duracionSeg}</td>\n                <td class="px-3 py-2 flex gap-2">\n                    <button data-id="${r.id}" class="mesa-send bg-amber-600 text-white px-2 py-0.5 rounded text-xs">Enviar a BD</button>\n                    <button data-id="${r.id}" class="mesa-del text-red-600 hover:underline">Eliminar</button>\n                </td>\n            </tr>`).join('');
             tbody.querySelectorAll('button.mesa-del').forEach(btn=>{
                 btn.addEventListener('click', ()=>{
                     const id = btn.getAttribute('data-id');
                     const arr = leerMesa().filter(x=> x.id!==id);
                     guardarMesa(arr); renderMesaTabla();
+                });
+            });
+            tbody.querySelectorAll('button.mesa-send').forEach(btn=>{
+                btn.addEventListener('click', async ()=>{
+                    const id = btn.getAttribute('data-id');
+                    const rec = leerMesa().find(x=> x.id===id);
+                    if(!rec) return;
+                    try{
+                        await enviarMesaRegistroBD(rec);
+                        mostrarToast('Mesa enviada a BD');
+                    }catch(e){ alert('Error enviando: '+(e.message||e)); }
                 });
             });
         }
@@ -2485,6 +2518,99 @@ document.addEventListener('DOMContentLoaded', () => {
             const csv = [cols.join(',')].concat(rows.map(r=> cols.map(c=> JSON.stringify(r[c]??'')).join(','))).join('\n');
             const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
             const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='mesa_registros.csv'; a.click(); URL.revokeObjectURL(a.href);
+        });
+
+        // Subpestañas Mesa: Locales/BD
+        (function(){
+            const subLocal = document.getElementById('mesa-sub-local');
+            const subBD = document.getElementById('mesa-sub-bd');
+            const wLocal = document.getElementById('mesa-local-wrapper');
+            const wBD = document.getElementById('mesa-bd-wrapper');
+            function showLocal(){ wLocal?.classList.remove('hidden'); wBD?.classList.add('hidden'); subLocal?.classList.add('tab-btn-active'); subBD?.classList.remove('tab-btn-active'); }
+            function showBD(){ wBD?.classList.remove('hidden'); wLocal?.classList.add('hidden'); subBD?.classList.add('tab-btn-active'); subLocal?.classList.remove('tab-btn-active'); loadMesaBD(); }
+            subLocal?.addEventListener('click', showLocal);
+            subBD?.addEventListener('click', showBD);
+        })();
+
+        // Enviar todo locales a BD
+        document.getElementById('mesa-enviar-todo-bd')?.addEventListener('click', async ()=>{
+            const arr = leerMesa(); if(!arr.length) { alert('No hay registros locales de mesa'); return; }
+            let ok=0, fail=0;
+            for(const rec of arr){ try{ await enviarMesaRegistroBD(rec); ok++; } catch(_){ fail++; } }
+            mostrarToast(`Mesa → BD: OK ${ok} / Error ${fail}`, fail? 'error':'success');
+        });
+
+        // ==== API Mesa
+        async function enviarMesaRegistroBD(rec){
+            const base = resolveApiBase();
+            const url = base + '/mesa';
+            const payload = { fecha: rec.fecha, data: rec };
+            const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
+            if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
+            return await r.json();
+        }
+        async function loadMesaBD(){
+            const base = resolveApiBase();
+            const desde = document.getElementById('mesa-bd-desde')?.value || '';
+            const hasta = document.getElementById('mesa-bd-hasta')?.value || '';
+            const status = document.getElementById('mesa-bd-status');
+            const cont = document.getElementById('mesa-bd-lista'); if(!cont) return;
+            cont.innerHTML = '<div class="text-stone-500">Cargando...</div>';
+            try{
+                let q=[]; if(desde) q.push('desde='+encodeURIComponent(desde)); if(hasta) q.push('hasta='+encodeURIComponent(hasta));
+                const url = base + '/mesa' + (q.length? ('?'+q.join('&')):'');
+                const r = await fetch(url, { headers: apiHeaders(false) });
+                if(!r.ok) throw new Error('HTTP '+r.status);
+                const arr = await r.json();
+                renderMesaBDList(arr);
+                if(status){ status.textContent = `Cargados ${arr.length}`; status.className='text-xs text-green-700'; }
+            }catch(e){ cont.innerHTML='<div class="text-red-600">Error cargando: '+(e.message||e)+'</div>'; if(status){ status.textContent=''; } }
+        }
+        function renderMesaBDList(items){
+            const cont = document.getElementById('mesa-bd-lista'); if(!cont) return;
+            if(!Array.isArray(items) || !items.length){ cont.innerHTML = '<div class="text-stone-500">Sin registros en la BD.</div>'; return; }
+            cont.innerHTML = '';
+            items.forEach(it=>{
+                const d = it?.data || {};
+                const card = document.createElement('div');
+                card.className='border border-stone-300 rounded-lg p-3 mb-2 bg-white flex flex-wrap gap-4 items-center justify-between';
+                const inicio = (d.inicio||'').slice(11,19); const fin=(d.fin||'').slice(11,19);
+                card.innerHTML = `
+                    <div class='flex flex-wrap gap-4 text-sm'>
+                        <span><span class='font-semibold'>Fecha:</span> <span class='font-mono'>${it.fecha||d.fecha||''}</span></span>
+                        <span><span class='font-semibold'>Lote:</span> <span class='font-mono'>${d.lote||'-'}</span></span>
+                        <span><span class='font-semibold'>Tipo:</span> <span class='font-mono'>${d.tipoMasa||'-'}</span></span>
+                        <span><span class='font-semibold'>Inicio:</span> <span class='font-mono'>${inicio||'--:--:--'}</span></span>
+                        <span><span class='font-semibold'>Fin:</span> <span class='font-mono'>${fin||'--:--:--'}</span></span>
+                        <span><span class='font-semibold'>Dur:</span> <span class='font-mono'>${d.duracionSeg||0}s</span></span>
+                    </div>
+                    <div class='flex items-center gap-2'>
+                        <button class='mesa-bd-del bg-red-600 text-white text-xs px-2 py-1 rounded' data-id='${it.id}'>Borrar</button>
+                    </div>`;
+                cont.appendChild(card);
+            });
+            cont.querySelectorAll('.mesa-bd-del').forEach(btn=>{
+                btn.addEventListener('click', async ()=>{
+                    if(!confirm('¿Eliminar registro de Mesa en BD?')) return;
+                    const id = btn.getAttribute('data-id');
+                    try{
+                        const base=resolveApiBase();
+                        const r = await fetch(base+'/mesa/'+id, { method:'DELETE', headers: apiHeaders(false) });
+                        if(!r.ok) throw new Error('HTTP '+r.status);
+                        loadMesaBD();
+                    }catch(e){ alert('Error eliminando: '+(e.message||e)); }
+                });
+            });
+        }
+        document.getElementById('mesa-bd-refresh')?.addEventListener('click', loadMesaBD);
+        document.getElementById('mesa-bd-delete-all')?.addEventListener('click', async ()=>{
+            if(!confirm('¿Borrar TODOS los registros de Mesa en la BD?')) return;
+            try{
+                const base = resolveApiBase();
+                const r = await fetch(base+'/mesa', { method:'DELETE', headers: apiHeaders(false) });
+                if(!r.ok) throw new Error('HTTP '+r.status);
+                loadMesaBD();
+            }catch(e){ alert('Error: '+(e.message||e)); }
         });
     });
 
