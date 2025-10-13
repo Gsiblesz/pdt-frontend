@@ -137,11 +137,16 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700">Tipo de masa</label>
-                            <input id="mesa-input-tipo" class="w-full border rounded px-3 py-2" placeholder="Ej: Canilla" />
+                            <select id="mesa-input-tipo" class="w-full border rounded px-3 py-2">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="Tradicional">Tradicional</option>
+                                <option value="Mantequilla">Mantequilla</option>
+                                <option value="Brioche">Brioche</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700">Tipo de pan</label>
-                            <input id="mesa-input-pan" class="w-full border rounded px-3 py-2" placeholder="Ej: Canilla, Hamburguesa" />
+                            <input id="mesa-input-pan" class="w-full border rounded px-3 py-2" placeholder="" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700">Fecha</label>
@@ -734,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <option value="">-- Seleccionar --</option>
                             <option value="Tradicional" ${temp.tipoMasa==='Tradicional'?'selected':''}>Tradicional</option>
                             <option value="Brioche" ${temp.tipoMasa==='Brioche'?'selected':''}>Brioche</option>
-                            <option value="Bs." ${temp.tipoMasa==='Bs.'?'selected':''}>Bs.</option>
+                            <option value="Mantequilla" ${temp.tipoMasa==='Mantequilla'?'selected':''}>Mantequilla</option>
                             <option value="__OTRO__" ${temp.tipoMasa==='__OTRO__'?'selected':''}>Otro...</option>
                         </select>
                         <input type="text" id="tipoMasaOtro-${machine.id}" placeholder="Especificar otro" class="mt-2 px-3 py-2 rounded-lg border border-dashed border-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 tipo-masa-otro${temp.tipoMasa==='__OTRO__'?'':' hidden'}" value="${temp.tipoMasaOtro||''}" />
