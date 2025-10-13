@@ -208,6 +208,9 @@
                     </div>
                     <span id="tablas-status" class="text-xs text-stone-600"></span>
                 </div>
+                <div id="tablas-empty-hint" class="text-center text-stone-500 text-sm mb-4 hidden">
+                    No hay datos para graficar. Guarda resultados en “Resultados → Locales” o selecciona “Fuente: BD” y ajusta la fecha.
+                </div>
             <div class="mb-8 max-w-3xl mx-auto">
                 <!-- NUEVO: Lista de fechas registradas -->
                 <div class="mb-10" id="tablas-fechas-wrapper">
@@ -2590,6 +2593,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let datosParaMostrar = datos;
     if(_modoFechaSel==='dia' && _diaSel){ datosParaMostrar = datos.filter(r=> r.fecha === _diaSel); }
     _TABLAS_DATA_LAST = datosParaMostrar;
+    // Toggle empty-data hint visibility
+    (function(){
+        const emptyHint = document.getElementById('tablas-empty-hint');
+        if(emptyHint){
+            const hasData = Array.isArray(_TABLAS_DATA_LAST) && _TABLAS_DATA_LAST.length > 0;
+            emptyHint.classList.toggle('hidden', hasData);
+        }
+    })();
     // Construir lista de fechas (si existe contenedor)
         try{
             const fechasList = document.getElementById('tablas-fechas-list');
@@ -2830,7 +2841,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const tblResumen=document.getElementById('tabla-resumen'); if(tblResumen) tblResumen.innerHTML=tableFromRows(resumenHeaders,resumenRows);
     // Recalcular panel experimental general de factores si existe (#patrones-panel)
     if(typeof renderPatrones==='function'){ try { renderPatrones(); } catch(_){ } }
-            if(!canvasTiempo && !canvasMuerto) return;
+        // Control charts canvases (Tiempo total y % Muerto)
+        const canvasTiempo = document.getElementById('chart-ctrl-tiempo');
+        const canvasMuerto = document.getElementById('chart-ctrl-muerto');
+        // Nota: No hacemos return global si faltan; sólo se omiten esas 2 gráficas.
             // Construir dataset ordenado cronológicamente por fecha y dentro de fecha por amasadora
             const puntosTiempo=[]; const puntosPctMuerto=[]; const labels=[]; const lotes=[]; const detalleFilas=[];
             _TABLAS_DATA_LAST.slice().sort((a,b)=> (a.fecha||'').localeCompare(b.fecha||''))
