@@ -130,7 +130,7 @@
                 <div class="max-w-3xl mx-auto bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
                     <h2 class="text-2xl font-extrabold text-stone-900 mb-2">Mesa: Medición rápida</h2>
                     <p class="text-sm text-stone-600 mb-4">Mide el tiempo en mesa por lote. Esta sección es independiente para no afectar Amasadoras.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium text-stone-700">Lote</label>
                             <input id="mesa-input-lote" class="w-full border rounded px-3 py-2" placeholder="Ej: L-123" />
@@ -138,6 +138,10 @@
                         <div>
                             <label class="block text-sm font-medium text-stone-700">Tipo de masa</label>
                             <input id="mesa-input-tipo" class="w-full border rounded px-3 py-2" placeholder="Ej: Canilla" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Tipo de pan</label>
+                            <input id="mesa-input-pan" class="w-full border rounded px-3 py-2" placeholder="Ej: Canilla, Hamburguesa" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700">Fecha</label>
@@ -165,6 +169,7 @@
                     <div class="flex justify-center gap-2 mb-4">
                         <button id="mesa-sub-local" class="tab-btn tab-btn-active">Locales</button>
                         <button id="mesa-sub-bd" class="tab-btn">Base de datos</button>
+                        <button id="mesa-sub-tablas" class="tab-btn">Tablas</button>
                     </div>
                     <div id="mesa-local-wrapper">
                         <div class="flex flex-wrap gap-2 justify-between items-center mb-2">
@@ -179,7 +184,8 @@
                                     <tr>
                                         <th class="text-left px-3 py-2">Fecha</th>
                                         <th class="text-left px-3 py-2">Lote</th>
-                                        <th class="text-left px-3 py-2">Tipo</th>
+                                        <th class="text-left px-3 py-2">Tipo masa</th>
+                                        <th class="text-left px-3 py-2">Pan</th>
                                         <th class="text-left px-3 py-2">Inicio</th>
                                         <th class="text-left px-3 py-2">Fin</th>
                                         <th class="text-left px-3 py-2">Duración (s)</th>
@@ -199,6 +205,40 @@
                             <span id="mesa-bd-status" class="text-xs text-stone-600"></span>
                         </div>
                         <div id="mesa-bd-lista" class="mt-2"></div>
+                    </div>
+                    <div id="mesa-tablas-wrapper" class="hidden">
+                        <div class="flex flex-wrap gap-2 items-center mb-3">
+                            <label class="text-sm">Fuente:
+                                <select id="mesa-tablas-source" class="border rounded px-2 py-1 text-sm">
+                                    <option value="local">Locales</option>
+                                    <option value="bd">Base de datos</option>
+                                </select>
+                            </label>
+                            <label class="text-sm">Desde: <input type="date" id="mesa-tablas-desde" class="border rounded px-2 py-1 text-sm" /></label>
+                            <label class="text-sm">Hasta: <input type="date" id="mesa-tablas-hasta" class="border rounded px-2 py-1 text-sm" /></label>
+                            <button id="mesa-tablas-reload" class="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-semibold">Actualizar</button>
+                            <span id="mesa-tablas-status" class="text-xs text-stone-600"></span>
+                        </div>
+                        <div class="space-y-8">
+                            <section>
+                                <h3 class="text-xl font-bold text-stone-800 mb-1">Resumen de duraciones</h3>
+                                <div id="mesa-tablas-resumen" class="overflow-x-auto text-sm"></div>
+                            </section>
+                            <section>
+                                <h3 class="text-xl font-bold text-stone-800 mb-1">Promedio por tipo de masa</h3>
+                                <div id="mesa-tablas-tipo-masa" class="overflow-x-auto text-sm mb-2"></div>
+                                <canvas id="mesa-chart-tipo-masa" height="140"></canvas>
+                            </section>
+                            <section>
+                                <h3 class="text-xl font-bold text-stone-800 mb-1">Promedio por tipo de pan</h3>
+                                <div id="mesa-tablas-tipo-pan" class="overflow-x-auto text-sm mb-2"></div>
+                                <canvas id="mesa-chart-tipo-pan" height="140"></canvas>
+                            </section>
+                            <section>
+                                <h3 class="text-xl font-bold text-stone-800 mb-1">Control de duración (orden cronológico)</h3>
+                                <canvas id="mesa-chart-ctrl" height="150"></canvas>
+                            </section>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2431,8 +2471,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnIniciar = document.getElementById('mesa-btn-iniciar');
         const btnPausa = document.getElementById('mesa-btn-pausa');
         const btnFinal = document.getElementById('mesa-btn-finalizar');
-        const inputLote = document.getElementById('mesa-input-lote');
-        const inputTipo = document.getElementById('mesa-input-tipo');
+    const inputLote = document.getElementById('mesa-input-lote');
+    const inputTipo = document.getElementById('mesa-input-tipo');
+    const inputPan = document.getElementById('mesa-input-pan');
         const inputFecha = document.getElementById('mesa-input-fecha');
         const mesaEstado = document.getElementById('mesa-estado');
         function setMesaEstado(msg){ if(mesaEstado) mesaEstado.textContent = msg||''; }
@@ -2479,6 +2520,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fecha: inputFecha?.value || new Date().toISOString().slice(0,10),
                 lote: (inputLote?.value||'').trim(),
                 tipoMasa: (inputTipo?.value||'').trim(),
+                tipoPan: (inputPan?.value||'').trim(),
                 inicio: mesaInicioISO,
                 fin: endISO,
                 duracionSeg: dur
@@ -2491,7 +2533,7 @@ document.addEventListener('DOMContentLoaded', () => {
         function renderMesaTabla(){
             const tbody = document.getElementById('mesa-tabla-body'); if(!tbody) return;
             const arr = leerMesa();
-            tbody.innerHTML = arr.map(r=> `<tr class="border-b border-stone-200">\n                <td class="px-3 py-2">${r.fecha}</td>\n                <td class="px-3 py-2">${r.lote||'-'}</td>\n                <td class="px-3 py-2">${r.tipoMasa||'-'}</td>\n                <td class="px-3 py-2">${(r.inicio||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${(r.fin||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${r.duracionSeg}</td>\n                <td class="px-3 py-2 flex gap-2">\n                    <button data-id="${r.id}" class="mesa-send bg-amber-600 text-white px-2 py-0.5 rounded text-xs">Enviar a BD</button>\n                    <button data-id="${r.id}" class="mesa-del text-red-600 hover:underline">Eliminar</button>\n                </td>\n            </tr>`).join('');
+            tbody.innerHTML = arr.map(r=> `<tr class="border-b border-stone-200">\n                <td class="px-3 py-2">${r.fecha}</td>\n                <td class="px-3 py-2">${r.lote||'-'}</td>\n                <td class="px-3 py-2">${r.tipoMasa||'-'}</td>\n                <td class="px-3 py-2">${r.tipoPan||'-'}</td>\n                <td class="px-3 py-2">${(r.inicio||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${(r.fin||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${r.duracionSeg}</td>\n                <td class="px-3 py-2 flex gap-2">\n                    <button data-id="${r.id}" class="mesa-send bg-amber-600 text-white px-2 py-0.5 rounded text-xs">Enviar a BD</button>\n                    <button data-id="${r.id}" class="mesa-del text-red-600 hover:underline">Eliminar</button>\n                </td>\n            </tr>`).join('');
             tbody.querySelectorAll('button.mesa-del').forEach(btn=>{
                 btn.addEventListener('click', ()=>{
                     const id = btn.getAttribute('data-id');
@@ -2514,7 +2556,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('mesa-clear')?.addEventListener('click', ()=>{ if(confirm('¿Borrar todos los registros de mesa?')){ guardarMesa([]); renderMesaTabla(); }});
         document.getElementById('mesa-export-csv')?.addEventListener('click', ()=>{
             const rows = leerMesa();
-            const cols = ['fecha','lote','tipoMasa','inicio','fin','duracionSeg'];
+            const cols = ['fecha','lote','tipoMasa','tipoPan','inicio','fin','duracionSeg'];
             const csv = [cols.join(',')].concat(rows.map(r=> cols.map(c=> JSON.stringify(r[c]??'')).join(','))).join('\n');
             const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
             const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='mesa_registros.csv'; a.click(); URL.revokeObjectURL(a.href);
@@ -2524,12 +2566,17 @@ document.addEventListener('DOMContentLoaded', () => {
         (function(){
             const subLocal = document.getElementById('mesa-sub-local');
             const subBD = document.getElementById('mesa-sub-bd');
+            const subTablas = document.getElementById('mesa-sub-tablas');
             const wLocal = document.getElementById('mesa-local-wrapper');
             const wBD = document.getElementById('mesa-bd-wrapper');
-            function showLocal(){ wLocal?.classList.remove('hidden'); wBD?.classList.add('hidden'); subLocal?.classList.add('tab-btn-active'); subBD?.classList.remove('tab-btn-active'); }
-            function showBD(){ wBD?.classList.remove('hidden'); wLocal?.classList.add('hidden'); subBD?.classList.add('tab-btn-active'); subLocal?.classList.remove('tab-btn-active'); loadMesaBD(); }
+            const wTablas = document.getElementById('mesa-tablas-wrapper');
+            function activate(btn){ [subLocal, subBD, subTablas].forEach(b=> b?.classList.remove('tab-btn-active')); btn?.classList.add('tab-btn-active'); }
+            function showLocal(){ wLocal?.classList.remove('hidden'); wBD?.classList.add('hidden'); wTablas?.classList.add('hidden'); activate(subLocal); }
+            function showBD(){ wBD?.classList.remove('hidden'); wLocal?.classList.add('hidden'); wTablas?.classList.add('hidden'); activate(subBD); loadMesaBD(); }
+            function showTablas(){ wTablas?.classList.remove('hidden'); wLocal?.classList.add('hidden'); wBD?.classList.add('hidden'); activate(subTablas); buildMesaTablas(); }
             subLocal?.addEventListener('click', showLocal);
             subBD?.addEventListener('click', showBD);
+            subTablas?.addEventListener('click', showTablas);
         })();
 
         // Enviar todo locales a BD
@@ -2579,7 +2626,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class='flex flex-wrap gap-4 text-sm'>
                         <span><span class='font-semibold'>Fecha:</span> <span class='font-mono'>${it.fecha||d.fecha||''}</span></span>
                         <span><span class='font-semibold'>Lote:</span> <span class='font-mono'>${d.lote||'-'}</span></span>
-                        <span><span class='font-semibold'>Tipo:</span> <span class='font-mono'>${d.tipoMasa||'-'}</span></span>
+                        <span><span class='font-semibold'>Tipo masa:</span> <span class='font-mono'>${d.tipoMasa||'-'}</span></span>
+                        <span><span class='font-semibold'>Pan:</span> <span class='font-mono'>${d.tipoPan||'-'}</span></span>
                         <span><span class='font-semibold'>Inicio:</span> <span class='font-mono'>${inicio||'--:--:--'}</span></span>
                         <span><span class='font-semibold'>Fin:</span> <span class='font-mono'>${fin||'--:--:--'}</span></span>
                         <span><span class='font-semibold'>Dur:</span> <span class='font-mono'>${d.duracionSeg||0}s</span></span>
@@ -2612,6 +2660,110 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadMesaBD();
             }catch(e){ alert('Error: '+(e.message||e)); }
         });
+
+        // ===== Tablas y Gráficos (Mesa) =====
+        let mesaCharts = [];
+        function mesaDestroyCharts(){ mesaCharts.forEach(c=>{ try{ c.destroy(); }catch(_){ } }); mesaCharts=[]; }
+        function table(headers, rows){
+            return `<table class='min-w-full border border-stone-300 text-xs md:text-sm bg-white rounded-lg overflow-hidden'>`+
+                `<thead class='bg-stone-100 text-stone-700'><tr>${headers.map(h=>`<th class='px-3 py-2 border-b border-stone-300 text-left font-semibold'>${h}</th>`).join('')}</tr></thead>`+
+                `<tbody>${rows.map((r,i)=>`<tr class='${i%2?'bg-stone-50':''}'>${r.map(c=>`<td class='px-3 py-1 border-b border-stone-200 font-mono'>${c}</td>`).join('')}</tr>`).join('')}</tbody>`+
+            `</table>`;
+        }
+        async function loadMesaDataset(){
+            const fuenteSel = document.getElementById('mesa-tablas-source');
+            const desdeEl = document.getElementById('mesa-tablas-desde');
+            const hastaEl = document.getElementById('mesa-tablas-hasta');
+            const status = document.getElementById('mesa-tablas-status');
+            const fuente = fuenteSel?.value||'local';
+            try{
+                if(fuente==='local'){
+                    const arr = leerMesa();
+                    if(status) { status.textContent = `Locales: ${arr.length}`; status.className='text-xs text-stone-600'; }
+                    return arr;
+                }
+                // BD
+                const base = resolveApiBase();
+                const q=[]; if(desdeEl?.value) q.push('desde='+encodeURIComponent(desdeEl.value)); if(hastaEl?.value) q.push('hasta='+encodeURIComponent(hastaEl.value));
+                const url = base+'/mesa'+(q.length?('?'+q.join('&')):'');
+                const r = await fetch(url, { headers: apiHeaders(false) });
+                if(!r.ok) throw new Error('HTTP '+r.status);
+                const items = await r.json();
+                const data = (Array.isArray(items)? items: []).map(x=> ({ ...(x.data||{}), fecha: x.fecha||x.data?.fecha||'', id: x.id }));
+                if(status) { status.textContent = `BD: ${data.length}`; status.className='text-xs text-green-700'; }
+                return data;
+            }catch(e){ if(status){ status.textContent='Error: '+(e.message||e); status.className='text-xs text-red-600'; } return []; }
+        }
+        function avg(arr){ return arr.length? arr.reduce((a,b)=>a+b,0)/arr.length: 0; }
+        function stdev(arr){ if(arr.length<2) return 0; const m=avg(arr); return Math.sqrt(arr.reduce((s,v)=>s+(v-m)*(v-m),0)/(arr.length-1)); }
+        async function buildMesaTablas(){
+            mesaDestroyCharts();
+            const datos = await loadMesaDataset();
+            const resDiv = document.getElementById('mesa-tablas-resumen');
+            const masaDiv = document.getElementById('mesa-tablas-tipo-masa');
+            const panDiv = document.getElementById('mesa-tablas-tipo-pan');
+            const cMasa = document.getElementById('mesa-chart-tipo-masa');
+            const cPan = document.getElementById('mesa-chart-tipo-pan');
+            const cCtrl = document.getElementById('mesa-chart-ctrl');
+            if(!Array.isArray(datos) || !datos.length){
+                if(resDiv) resDiv.innerHTML = `<div class='text-stone-500'>Sin datos</div>`;
+                if(masaDiv) masaDiv.innerHTML = '';
+                if(panDiv) panDiv.innerHTML = '';
+                return;
+            }
+            // Resumen global
+            const dur = datos.map(d=> parseFloat(d.duracionSeg)||0).filter(n=> Number.isFinite(n));
+            const resumen = [
+                ['Registros', datos.length],
+                ['Promedio (s)', Math.round(avg(dur))],
+                ['Desv (s)', Math.round(stdev(dur))],
+            ];
+            if(resDiv) resDiv.innerHTML = table(['Métrica','Valor'], resumen);
+            // Por tipo de masa
+            const byMasa = {};
+            datos.forEach(d=>{ const k=(d.tipoMasa||'').trim()||'(vacío)'; (byMasa[k]=byMasa[k]||[]).push(parseFloat(d.duracionSeg)||0); });
+            const masaRows = Object.entries(byMasa).map(([k,arr])=> [k, arr.length, Math.round(avg(arr)), Math.round(stdev(arr))]);
+            masaRows.sort((a,b)=> b[2]-a[2]);
+            if(masaDiv) masaDiv.innerHTML = table(['Tipo masa','n','Prom (s)','Desv (s)'], masaRows);
+            if(cMasa && window.Chart){
+                const ctx=cMasa.getContext('2d');
+                const chart=new Chart(ctx,{ type:'bar', data:{ labels: masaRows.map(r=>r[0]), datasets:[{ label:'Prom (s)', data: masaRows.map(r=>r[2]), backgroundColor:'#60a5fa' }] }, options:{ responsive:true, scales:{ y:{ beginAtZero:true } } } });
+                mesaCharts.push(chart);
+            }
+            // Por tipo de pan
+            const byPan = {};
+            datos.forEach(d=>{ const k=(d.tipoPan||'').trim()||'(vacío)'; (byPan[k]=byPan[k]||[]).push(parseFloat(d.duracionSeg)||0); });
+            const panRows = Object.entries(byPan).map(([k,arr])=> [k, arr.length, Math.round(avg(arr)), Math.round(stdev(arr))]);
+            panRows.sort((a,b)=> b[2]-a[2]);
+            if(panDiv) panDiv.innerHTML = table(['Tipo pan','n','Prom (s)','Desv (s)'], panRows);
+            if(cPan && window.Chart){
+                const ctx=cPan.getContext('2d');
+                const chart=new Chart(ctx,{ type:'bar', data:{ labels: panRows.map(r=>r[0]), datasets:[{ label:'Prom (s)', data: panRows.map(r=>r[2]), backgroundColor:'#34d399' }] }, options:{ responsive:true, scales:{ y:{ beginAtZero:true } } } });
+                mesaCharts.push(chart);
+            }
+            // Control chart sencillo (duración vs índice cronológico)
+            const sorted = datos.slice().sort((a,b)=> String(a.inicio||'').localeCompare(String(b.inicio||'')));
+            const series = sorted.map(d=> parseFloat(d.duracionSeg)||0);
+            const mean = avg(series); const sd = stdev(series);
+            if(cCtrl && window.Chart){
+                const ctx=cCtrl.getContext('2d');
+                const labels=sorted.map((d,i)=> (d.fecha||'') + ' #' + (i+1));
+                const chart=new Chart(ctx,{ type:'line', data:{ labels, datasets:[
+                    { label:'Duración (s)', data: series, borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.15)', tension:.15 },
+                    { label:'CL', data: series.map(_=>mean), borderColor:'#16a34a', borderDash:[6,6], pointRadius:0 },
+                    ...(series.length>=5? [
+                        { label:'UCL', data: series.map(_=> mean+3*sd), borderColor:'#dc2626', borderDash:[4,4], pointRadius:0 },
+                        { label:'LCL', data: series.map(_=> Math.max(0, mean-3*sd)), borderColor:'#dc2626', borderDash:[4,4], pointRadius:0 },
+                    ]: [])
+                ] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom' } }, scales:{ y:{ beginAtZero:true } } } });
+                mesaCharts.push(chart);
+            }
+        }
+        // Eventos Tablas Mesa
+        document.getElementById('mesa-tablas-reload')?.addEventListener('click', buildMesaTablas);
+        document.getElementById('mesa-tablas-source')?.addEventListener('change', buildMesaTablas);
+        document.getElementById('mesa-tablas-desde')?.addEventListener('change', buildMesaTablas);
+        document.getElementById('mesa-tablas-hasta')?.addEventListener('change', buildMesaTablas);
     });
 
     // ================= TABLAS Y GRAFICOS =================
