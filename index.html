@@ -130,19 +130,18 @@
                 <div class="max-w-3xl mx-auto bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
                     <h2 class="text-2xl font-extrabold text-stone-900 mb-2">Mesa: Medición</h2>
                     <p class="text-sm text-stone-600 mb-4">Puedes correr hasta dos temporizadores en paralelo (T#1 y T#2) para registrar solapes.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium text-stone-700">Tipo de masa</label>
-                            <select id="mesa-input-tipo" class="w-full border rounded px-3 py-2">
-                                <option value="">-- Seleccionar --</option>
-                                <option value="Tradicional">Tradicional</option>
-                                <option value="Mantequilla">Mantequilla</option>
-                                <option value="Brioche">Brioche</option>
-                            </select>
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium text-stone-700">Fecha</label>
                             <input id="mesa-input-fecha" type="date" class="w-full border rounded px-3 py-2" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Personas mín</label>
+                            <input id="mesa-pers-min" type="number" inputmode="numeric" class="w-full border rounded px-3 py-2" placeholder="Ej: 4" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Personas máx</label>
+                            <input id="mesa-pers-max" type="number" inputmode="numeric" class="w-full border rounded px-3 py-2" placeholder="Ej: 6" />
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -154,6 +153,16 @@
                                 </label>
                                 <label class="text-sm">Tipo de pan
                                     <input id="mesa1-input-pan" class="w-full border rounded px-3 py-1.5" placeholder="" />
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+                                <label class="text-sm">Tipo de masa
+                                    <select id="mesa1-input-tipo" class="w-full border rounded px-3 py-1.5">
+                                        <option value="">-- Seleccionar --</option>
+                                        <option value="Tradicional">Tradicional</option>
+                                        <option value="Mantequilla">Mantequilla</option>
+                                        <option value="Brioche">Brioche</option>
+                                    </select>
                                 </label>
                             </div>
                             <div class="flex items-center gap-3 mb-2">
@@ -172,6 +181,16 @@
                                 </label>
                                 <label class="text-sm">Tipo de pan
                                     <input id="mesa2-input-pan" class="w-full border rounded px-3 py-1.5" placeholder="" />
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+                                <label class="text-sm">Tipo de masa
+                                    <select id="mesa2-input-tipo" class="w-full border rounded px-3 py-1.5">
+                                        <option value="">-- Seleccionar --</option>
+                                        <option value="Tradicional">Tradicional</option>
+                                        <option value="Mantequilla">Mantequilla</option>
+                                        <option value="Brioche">Brioche</option>
+                                    </select>
                                 </label>
                             </div>
                             <div class="flex items-center gap-3 mb-2">
@@ -2495,8 +2514,10 @@ document.addEventListener('DOMContentLoaded', () => {
         function guardarMesa(arr){ localStorage.setItem(MESA_KEY, JSON.stringify(arr)); }
         function fmt(t){ return String(t).padStart(2,'0'); }
         function secsToMMSS(s){ s=Math.max(0, Math.round(s)); const m=Math.floor(s/60), r=s%60; return `${fmt(m)}:${fmt(r)}`; }
-    const inputTipo = document.getElementById('mesa-input-tipo');
+    // Per-timer tipoMasa; top-level personas
         const inputFecha = document.getElementById('mesa-input-fecha');
+    const inputPersMin = document.getElementById('mesa-pers-min');
+    const inputPersMax = document.getElementById('mesa-pers-max');
 
         const timersMesa = {
             '1': { interval:null, start:null, accum:0, pausa:false, inicioISO:null, els:{ t: '#mesa1-timer', est:'#mesa1-estado', bI:'#mesa1-btn-iniciar', bP:'#mesa1-btn-pausa', bF:'#mesa1-btn-finalizar' } },
@@ -2519,11 +2540,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 canal: parseInt(ch),
                 fecha: inputFecha?.value || new Date().toISOString().slice(0,10),
                 lote: (loteEl?.value||'').trim(),
-                tipoMasa: (inputTipo?.value||'').trim(),
+                tipoMasa: ((q(ch==='1' ? '#mesa1-input-tipo' : '#mesa2-input-tipo')?.value)||'').trim(),
                 tipoPan: (panEl?.value||'').trim(),
                 inicio: inicioISO,
                 fin: endISO,
-                duracionSeg: dur
+                duracionSeg: dur,
+                personalMin: parseInt(inputPersMin?.value)||undefined,
+                personalMax: parseInt(inputPersMax?.value)||undefined
             };
             const arr = leerMesa(); arr.push(rec); guardarMesa(arr); setEstado(ch,'Registro guardado'); renderMesaTabla(); }
         // Bind botones
@@ -2603,7 +2626,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 tipoPan: rec.tipoPan || '',
                 inicio: rec.inicio,
                 fin: rec.fin,
-                duracionSeg: rec.duracionSeg
+                duracionSeg: rec.duracionSeg,
+                personalMin: rec.personalMin,
+                personalMax: rec.personalMax
             };
             const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
