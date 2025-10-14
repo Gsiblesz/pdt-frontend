@@ -118,9 +118,9 @@
             <button id="tab-resultados" class="tab-btn">Resultados</button>
             <button id="tab-tablas" class="tab-btn">Tablas</button>
             <span class="mx-2 text-stone-300">|</span>
-            <button id="tab-mesa" class="tab-btn">Mesa (beta)</button>
+            <button id="tab-mesa" class="tab-btn">Mesa</button>
         </div>
-        <!-- Subvista: Mesa (beta) dentro de Amasadoras -->
+    <!-- Subvista: Mesa dentro de Amasadoras -->
         <div id="view-mesa" class="hidden">
             <div class="flex flex-wrap justify-center gap-3 mb-6">
                 <button id="mesa-tab-medicion" class="tab-btn tab-btn-active">Medición</button>
@@ -128,8 +128,8 @@
             </div>
             <div id="mesa-view-medicion" class="block">
                 <div class="max-w-3xl mx-auto bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
-                    <h2 class="text-2xl font-extrabold text-stone-900 mb-2">Mesa: Medición rápida</h2>
-                    <p class="text-sm text-stone-600 mb-4">Mide el tiempo en mesa por lote. Esta sección es independiente para no afectar Amasadoras.</p>
+                    <h2 class="text-2xl font-extrabold text-stone-900 mb-2">Mesa: Medición</h2>
+                    <p class="text-sm text-stone-600 mb-4">Puedes correr hasta dos temporizadores en paralelo (T#1 y T#2) para registrar solapes.</p>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium text-stone-700">Lote</label>
@@ -153,13 +153,28 @@
                             <input id="mesa-input-fecha" type="date" class="w-full border rounded px-3 py-2" />
                         </div>
                     </div>
-                    <div class="flex items-center gap-3 mb-4">
-                        <button id="mesa-btn-iniciar" class="bg-blue-600 text-white px-4 py-2 rounded font-semibold">Iniciar</button>
-                        <button id="mesa-btn-pausa" class="bg-amber-600 text-white px-4 py-2 rounded font-semibold" disabled>Pausa</button>
-                        <button id="mesa-btn-finalizar" class="bg-emerald-600 text-white px-4 py-2 rounded font-semibold" disabled>Finalizar</button>
-                        <span id="mesa-timer" class="text-sm text-stone-700">00:00</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-3 border border-stone-200 rounded-lg bg-stone-50">
+                            <div class="font-semibold mb-2">Temporizador T#1</div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <button id="mesa1-btn-iniciar" class="bg-blue-600 text-white px-3 py-1.5 rounded font-semibold">Iniciar</button>
+                                <button id="mesa1-btn-pausa" class="bg-amber-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Pausa</button>
+                                <button id="mesa1-btn-finalizar" class="bg-emerald-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Finalizar</button>
+                                <span id="mesa1-timer" class="text-sm text-stone-700">00:00</span>
+                            </div>
+                            <div id="mesa1-estado" class="text-xs text-stone-600"></div>
+                        </div>
+                        <div class="p-3 border border-stone-200 rounded-lg bg-stone-50">
+                            <div class="font-semibold mb-2">Temporizador T#2</div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <button id="mesa2-btn-iniciar" class="bg-blue-600 text-white px-3 py-1.5 rounded font-semibold">Iniciar</button>
+                                <button id="mesa2-btn-pausa" class="bg-amber-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Pausa</button>
+                                <button id="mesa2-btn-finalizar" class="bg-emerald-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Finalizar</button>
+                                <span id="mesa2-timer" class="text-sm text-stone-700">00:00</span>
+                            </div>
+                            <div id="mesa2-estado" class="text-xs text-stone-600"></div>
+                        </div>
                     </div>
-                    <div id="mesa-estado" class="text-sm text-stone-600"></div>
                 </div>
             </div>
             <div id="mesa-view-resultados" class="hidden">
@@ -187,6 +202,7 @@
                             <table class="min-w-full text-sm">
                                 <thead class="bg-stone-100 text-stone-700">
                                     <tr>
+                                        <th class="text-left px-3 py-2">T#</th>
                                         <th class="text-left px-3 py-2">Fecha</th>
                                         <th class="text-left px-3 py-2">Lote</th>
                                         <th class="text-left px-3 py-2">Tipo masa</th>
@@ -2465,80 +2481,53 @@ document.addEventListener('DOMContentLoaded', () => {
             mesaTabMed?.classList.remove('tab-btn-active');
             renderMesaTabla();
         });
-        // Estado Mesa + pausa/reanudar
+        // Estado Mesa con dos temporizadores (T#1 y T#2)
         const MESA_KEY = 'resultadosMesa';
         function leerMesa(){ try{ return JSON.parse(localStorage.getItem(MESA_KEY)||'[]'); }catch(_){ return []; } }
         function guardarMesa(arr){ localStorage.setItem(MESA_KEY, JSON.stringify(arr)); }
         function fmt(t){ return String(t).padStart(2,'0'); }
         function secsToMMSS(s){ s=Math.max(0, Math.round(s)); const m=Math.floor(s/60), r=s%60; return `${fmt(m)}:${fmt(r)}`; }
-        let mesaTimer=null, mesaStart=null, mesaAccum=0, mesaEnPausa=false, mesaInicioISO=null;
-        const mesaTimerEl = document.getElementById('mesa-timer');
-        const btnIniciar = document.getElementById('mesa-btn-iniciar');
-        const btnPausa = document.getElementById('mesa-btn-pausa');
-        const btnFinal = document.getElementById('mesa-btn-finalizar');
-    const inputLote = document.getElementById('mesa-input-lote');
-    const inputTipo = document.getElementById('mesa-input-tipo');
-    const inputPan = document.getElementById('mesa-input-pan');
+        const inputLote = document.getElementById('mesa-input-lote');
+        const inputTipo = document.getElementById('mesa-input-tipo');
+        const inputPan = document.getElementById('mesa-input-pan');
         const inputFecha = document.getElementById('mesa-input-fecha');
-        const mesaEstado = document.getElementById('mesa-estado');
-        function setMesaEstado(msg){ if(mesaEstado) mesaEstado.textContent = msg||''; }
-        function updateTimerLabel(){ if(!mesaTimerEl) return; const base = mesaAccum + (mesaStart? ((Date.now()-mesaStart)/1000) : 0); mesaTimerEl.textContent = secsToMMSS(base); }
-        function startTick(){ if(mesaTimer) return; mesaTimer = setInterval(updateTimerLabel, 300); }
-        function stopTick(){ if(mesaTimer){ clearInterval(mesaTimer); mesaTimer=null; } }
-        btnIniciar?.addEventListener('click', ()=>{
-            if(!mesaStart){
-                if(!mesaInicioISO) mesaInicioISO = new Date().toISOString();
-                mesaStart = Date.now();
-                btnFinal && (btnFinal.disabled=false);
-                btnPausa && (btnPausa.disabled=false, btnPausa.textContent = 'Pausa');
-                mesaEnPausa=false;
-                startTick();
-                setMesaEstado('Temporizador en marcha...');
-            }
-        });
-        btnPausa?.addEventListener('click', ()=>{
-            if(!mesaStart && !mesaAccum) return;
-            if(mesaEnPausa){
-                mesaStart = Date.now();
-                mesaEnPausa=false;
-                btnPausa.textContent='Pausa';
-                startTick();
-                setMesaEstado('Reanudado');
-            } else {
-                if(mesaStart){ mesaAccum += (Date.now()-mesaStart)/1000; mesaStart=null; }
-                mesaEnPausa=true;
-                btnPausa.textContent='Reanudar';
-                updateTimerLabel();
-                stopTick();
-                setMesaEstado('Pausado');
-            }
-        });
-        btnFinal?.addEventListener('click', ()=>{
-            if(!mesaInicioISO) return;
-            if(mesaStart){ mesaAccum += (Date.now()-mesaStart)/1000; mesaStart=null; }
-            const endISO = new Date().toISOString();
-            const dur = Math.round(mesaAccum);
-            stopTick();
-            mesaAccum=0; mesaEnPausa=false; mesaInicioISO=null; if(mesaTimerEl) mesaTimerEl.textContent='00:00'; btnFinal && (btnFinal.disabled=true); btnPausa && (btnPausa.disabled=true, btnPausa.textContent='Pausa');
+
+        const timersMesa = {
+            '1': { interval:null, start:null, accum:0, pausa:false, inicioISO:null, els:{ t: '#mesa1-timer', est:'#mesa1-estado', bI:'#mesa1-btn-iniciar', bP:'#mesa1-btn-pausa', bF:'#mesa1-btn-finalizar' } },
+            '2': { interval:null, start:null, accum:0, pausa:false, inicioISO:null, els:{ t: '#mesa2-timer', est:'#mesa2-estado', bI:'#mesa2-btn-iniciar', bP:'#mesa2-btn-pausa', bF:'#mesa2-btn-finalizar' } },
+        };
+        function q(sel){ return document.querySelector(sel); }
+        function updateLabel(ch){ const st=timersMesa[ch]; const el=q(st.els.t); const base = st.accum + (st.start? ((Date.now()-st.start)/1000) : 0); if(el) el.textContent = secsToMMSS(base); }
+        function startTick(ch){ const st=timersMesa[ch]; if(st.interval) return; st.interval=setInterval(()=>updateLabel(ch),300); }
+        function stopTick(ch){ const st=timersMesa[ch]; if(st.interval){ clearInterval(st.interval); st.interval=null; } }
+        function setEstado(ch,msg){ const el=q(timersMesa[ch].els.est); if(el) el.textContent = msg||''; }
+        function iniciar(ch){ const st=timersMesa[ch]; if(!st.start){ if(!st.inicioISO) st.inicioISO=new Date().toISOString(); st.start=Date.now(); const bF=q(st.els.bF), bP=q(st.els.bP); if(bF) bF.disabled=false; if(bP){ bP.disabled=false; bP.textContent='Pausa'; } st.pausa=false; startTick(ch); setEstado(ch,'Temporizador en marcha...'); } }
+        function pausarReanudar(ch){ const st=timersMesa[ch]; const bP=q(st.els.bP); if(!st.start && !st.accum) return; if(st.pausa){ st.start=Date.now(); st.pausa=false; if(bP) bP.textContent='Pausa'; startTick(ch); setEstado(ch,'Reanudado'); } else { if(st.start){ st.accum += (Date.now()-st.start)/1000; st.start=null; } st.pausa=true; if(bP) bP.textContent='Reanudar'; updateLabel(ch); stopTick(ch); setEstado(ch,'Pausado'); } }
+        function finalizar(ch){ const st=timersMesa[ch]; const bF=q(st.els.bF), bP=q(st.els.bP), tEl=q(st.els.t); if(!st.inicioISO) return; if(st.start){ st.accum += (Date.now()-st.start)/1000; st.start=null; }
+            const endISO=new Date().toISOString(); const dur=Math.round(st.accum); stopTick(ch); st.accum=0; st.pausa=false; const inicioISO=st.inicioISO; st.inicioISO=null; if(tEl) tEl.textContent='00:00'; if(bF) bF.disabled=true; if(bP){ bP.disabled=true; bP.textContent='Pausa'; }
             const rec = {
-                id: 'mesa-'+Date.now(),
+                id: 'mesa-'+Date.now()+"-"+ch,
+                canal: parseInt(ch),
                 fecha: inputFecha?.value || new Date().toISOString().slice(0,10),
                 lote: (inputLote?.value||'').trim(),
                 tipoMasa: (inputTipo?.value||'').trim(),
                 tipoPan: (inputPan?.value||'').trim(),
-                inicio: mesaInicioISO,
+                inicio: inicioISO,
                 fin: endISO,
                 duracionSeg: dur
             };
-            const arr = leerMesa(); arr.push(rec); guardarMesa(arr);
-            setMesaEstado('Registro guardado');
-            if(inputLote) inputLote.value='';
-            renderMesaTabla();
-        });
+            const arr = leerMesa(); arr.push(rec); guardarMesa(arr); setEstado(ch,'Registro guardado'); renderMesaTabla(); }
+        // Bind botones
+        q('#mesa1-btn-iniciar')?.addEventListener('click', ()=>iniciar('1'));
+        q('#mesa1-btn-pausa')?.addEventListener('click', ()=>pausarReanudar('1'));
+        q('#mesa1-btn-finalizar')?.addEventListener('click', ()=>finalizar('1'));
+        q('#mesa2-btn-iniciar')?.addEventListener('click', ()=>iniciar('2'));
+        q('#mesa2-btn-pausa')?.addEventListener('click', ()=>pausarReanudar('2'));
+        q('#mesa2-btn-finalizar')?.addEventListener('click', ()=>finalizar('2'));
         function renderMesaTabla(){
             const tbody = document.getElementById('mesa-tabla-body'); if(!tbody) return;
             const arr = leerMesa();
-            tbody.innerHTML = arr.map(r=> `<tr class="border-b border-stone-200">\n                <td class="px-3 py-2">${r.fecha}</td>\n                <td class="px-3 py-2">${r.lote||'-'}</td>\n                <td class="px-3 py-2">${r.tipoMasa||'-'}</td>\n                <td class="px-3 py-2">${r.tipoPan||'-'}</td>\n                <td class="px-3 py-2">${(r.inicio||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${(r.fin||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${r.duracionSeg}</td>\n                <td class="px-3 py-2 flex gap-2">\n                    <button data-id="${r.id}" class="mesa-send bg-amber-600 text-white px-2 py-0.5 rounded text-xs">Enviar a BD</button>\n                    <button data-id="${r.id}" class="mesa-del text-red-600 hover:underline">Eliminar</button>\n                </td>\n            </tr>`).join('');
+            tbody.innerHTML = arr.map(r=> `<tr class="border-b border-stone-200">\n                <td class="px-3 py-2">${r.canal||1}</td>\n                <td class="px-3 py-2">${r.fecha}</td>\n                <td class="px-3 py-2">${r.lote||'-'}</td>\n                <td class="px-3 py-2">${r.tipoMasa||'-'}</td>\n                <td class="px-3 py-2">${r.tipoPan||'-'}</td>\n                <td class="px-3 py-2">${(r.inicio||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${(r.fin||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${r.duracionSeg}</td>\n                <td class="px-3 py-2 flex gap-2">\n                    <button data-id="${r.id}" class="mesa-send bg-amber-600 text-white px-2 py-0.5 rounded text-xs">Enviar a BD</button>\n                    <button data-id="${r.id}" class="mesa-del text-red-600 hover:underline">Eliminar</button>\n                </td>\n            </tr>`).join('');
             tbody.querySelectorAll('button.mesa-del').forEach(btn=>{
                 btn.addEventListener('click', ()=>{
                     const id = btn.getAttribute('data-id');
@@ -2561,7 +2550,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('mesa-clear')?.addEventListener('click', ()=>{ if(confirm('¿Borrar todos los registros de mesa?')){ guardarMesa([]); renderMesaTabla(); }});
         document.getElementById('mesa-export-csv')?.addEventListener('click', ()=>{
             const rows = leerMesa();
-            const cols = ['fecha','lote','tipoMasa','tipoPan','inicio','fin','duracionSeg'];
+            const cols = ['canal','fecha','lote','tipoMasa','tipoPan','inicio','fin','duracionSeg'];
             const csv = [cols.join(',')].concat(rows.map(r=> cols.map(c=> JSON.stringify(r[c]??'')).join(','))).join('\n');
             const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
             const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='mesa_registros.csv'; a.click(); URL.revokeObjectURL(a.href);
@@ -2596,7 +2585,17 @@ document.addEventListener('DOMContentLoaded', () => {
         async function enviarMesaRegistroBD(rec){
             const base = resolveApiBase();
             const url = base + '/mesa';
-            const payload = { fecha: rec.fecha, data: rec };
+            // Enviar aplanado para que BD guarde campos en data al mismo nivel
+            const payload = {
+                fecha: rec.fecha,
+                canal: rec.canal || 1,
+                lote: rec.lote || '',
+                tipoMasa: rec.tipoMasa || '',
+                tipoPan: rec.tipoPan || '',
+                inicio: rec.inicio,
+                fin: rec.fin,
+                duracionSeg: rec.duracionSeg
+            };
             const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             return await r.json();
@@ -2623,13 +2622,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!Array.isArray(items) || !items.length){ cont.innerHTML = '<div class="text-stone-500">Sin registros en la BD.</div>'; return; }
             cont.innerHTML = '';
             items.forEach(it=>{
-                const d = it?.data || {};
+                const raw = it?.data || {};
+                const d = raw && raw.data ? raw.data : raw; // compatibilidad con registros antiguos anidados
                 const card = document.createElement('div');
                 card.className='border border-stone-300 rounded-lg p-3 mb-2 bg-white flex flex-wrap gap-4 items-center justify-between';
                 const inicio = (d.inicio||'').slice(11,19); const fin=(d.fin||'').slice(11,19);
                 card.innerHTML = `
                     <div class='flex flex-wrap gap-4 text-sm'>
                         <span><span class='font-semibold'>Fecha:</span> <span class='font-mono'>${it.fecha||d.fecha||''}</span></span>
+                        <span><span class='font-semibold'>T#:</span> <span class='font-mono'>${d.canal||1}</span></span>
                         <span><span class='font-semibold'>Lote:</span> <span class='font-mono'>${d.lote||'-'}</span></span>
                         <span><span class='font-semibold'>Tipo masa:</span> <span class='font-mono'>${d.tipoMasa||'-'}</span></span>
                         <span><span class='font-semibold'>Pan:</span> <span class='font-mono'>${d.tipoPan||'-'}</span></span>
@@ -2666,7 +2667,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }catch(e){ alert('Error: '+(e.message||e)); }
         });
 
-        // ===== Tablas y Gráficos (Mesa) =====
+    // ===== Tablas y Gráficos (Mesa) =====
         let mesaCharts = [];
         function mesaDestroyCharts(){ mesaCharts.forEach(c=>{ try{ c.destroy(); }catch(_){ } }); mesaCharts=[]; }
         function table(headers, rows){
@@ -2694,7 +2695,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const r = await fetch(url, { headers: apiHeaders(false) });
                 if(!r.ok) throw new Error('HTTP '+r.status);
                 const items = await r.json();
-                const data = (Array.isArray(items)? items: []).map(x=> ({ ...(x.data||{}), fecha: x.fecha||x.data?.fecha||'', id: x.id }));
+                const data = (Array.isArray(items)? items: []).map(x=> { const raw=x.data||{}; const d = raw && raw.data ? raw.data : raw; return { ...d, fecha: x.fecha || d.fecha || '', id: x.id }; });
                 if(status) { status.textContent = `BD: ${data.length}`; status.className='text-xs text-green-700'; }
                 return data;
             }catch(e){ if(status){ status.textContent='Error: '+(e.message||e); status.className='text-xs text-red-600'; } return []; }
