@@ -171,6 +171,9 @@
                                 <button id="mesa1-btn-finalizar" class="bg-emerald-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Finalizar</button>
                                 <span id="mesa1-timer" class="text-sm text-stone-700">00:00</span>
                             </div>
+                            <label class="text-sm block mb-2">Observaciones
+                                <textarea id="mesa1-input-obs" rows="2" class="w-full border rounded px-3 py-1.5" placeholder="Notas, incidencias, etc."></textarea>
+                            </label>
                             <div id="mesa1-estado" class="text-xs text-stone-600"></div>
                         </div>
                         <div class="p-3 border border-stone-200 rounded-lg bg-stone-50">
@@ -199,6 +202,9 @@
                                 <button id="mesa2-btn-finalizar" class="bg-emerald-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Finalizar</button>
                                 <span id="mesa2-timer" class="text-sm text-stone-700">00:00</span>
                             </div>
+                            <label class="text-sm block mb-2">Observaciones
+                                <textarea id="mesa2-input-obs" rows="2" class="w-full border rounded px-3 py-1.5" placeholder="Notas, incidencias, etc."></textarea>
+                            </label>
                             <div id="mesa2-estado" class="text-xs text-stone-600"></div>
                         </div>
                     </div>
@@ -225,24 +231,7 @@
                                 <button id="mesa-enviar-todo-bd" class="bg-amber-600 text-white px-3 py-1 rounded text-sm font-semibold">Enviar todo a BD</button>
                             </div>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm">
-                                <thead class="bg-stone-100 text-stone-700">
-                                    <tr>
-                                        <th class="text-left px-3 py-2">T#</th>
-                                        <th class="text-left px-3 py-2">Fecha</th>
-                                        <th class="text-left px-3 py-2">Lote</th>
-                                        <th class="text-left px-3 py-2">Tipo masa</th>
-                                        <th class="text-left px-3 py-2">Pan</th>
-                                        <th class="text-left px-3 py-2">Inicio</th>
-                                        <th class="text-left px-3 py-2">Fin</th>
-                                        <th class="text-left px-3 py-2">Duración (mm:ss)</th>
-                                        <th class="text-left px-3 py-2">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="mesa-tabla-body"></tbody>
-                            </table>
-                        </div>
+                        <div id="mesa-local-cards" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                     </div>
                     <div id="mesa-bd-wrapper" class="hidden">
                         <div class="flex flex-wrap gap-2 items-center mb-2">
@@ -2545,6 +2534,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 inicio: inicioISO,
                 fin: endISO,
                 duracionSeg: dur,
+                observaciones: (q(ch==='1' ? '#mesa1-input-obs' : '#mesa2-input-obs')?.value||'').trim(),
                 personalMin: parseInt(inputPersMin?.value)||undefined,
                 personalMax: parseInt(inputPersMax?.value)||undefined
             };
@@ -2557,25 +2547,48 @@ document.addEventListener('DOMContentLoaded', () => {
         q('#mesa2-btn-pausa')?.addEventListener('click', ()=>pausarReanudar('2'));
         q('#mesa2-btn-finalizar')?.addEventListener('click', ()=>finalizar('2'));
         function renderMesaTabla(){
-            const tbody = document.getElementById('mesa-tabla-body'); if(!tbody) return;
+            const cont = document.getElementById('mesa-local-cards'); if(!cont) return;
             const arr = leerMesa();
-            tbody.innerHTML = arr.map(r=> `<tr class="border-b border-stone-200">\n                <td class="px-3 py-2">${r.canal||1}</td>\n                <td class="px-3 py-2">${r.fecha}</td>\n                <td class="px-3 py-2">${r.lote||'-'}</td>\n                <td class="px-3 py-2">${r.tipoMasa||'-'}</td>\n                <td class="px-3 py-2">${r.tipoPan||'-'}</td>\n                <td class="px-3 py-2">${(r.inicio||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${(r.fin||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${secsToMMSS(parseFloat(r.duracionSeg)||0)}</td>\n                <td class="px-3 py-2 flex gap-2">\n                    <button data-id="${r.id}" class="mesa-send bg-amber-600 text-white px-2 py-0.5 rounded text-xs">Enviar a BD</button>\n                    <button data-id="${r.id}" class="mesa-del text-red-600 hover:underline">Eliminar</button>\n                </td>\n            </tr>`).join('');
-            tbody.querySelectorAll('button.mesa-del').forEach(btn=>{
+            if(!arr.length){ cont.innerHTML = '<div class="text-stone-500">No hay registros locales.</div>'; return; }
+            cont.innerHTML = '';
+            arr.forEach(r=>{
+                const inicio=(r.inicio||'').slice(11,19), fin=(r.fin||'').slice(11,19), dur=secsToMMSS(parseFloat(r.duracionSeg)||0);
+                const card=document.createElement('div');
+                card.className='border border-stone-300 rounded-lg p-3 bg-white flex flex-col gap-2';
+                card.innerHTML = `
+                    <div class='flex flex-wrap gap-3 text-sm items-center'>
+                        <span><span class='font-semibold'>Fecha:</span> <span class='font-mono'>${r.fecha}</span></span>
+                        <span><span class='font-semibold'>T#:</span> <span class='font-mono'>${r.canal||1}</span></span>
+                        <span><span class='font-semibold'>Lote:</span> <span class='font-mono'>${r.lote||'-'}</span></span>
+                        <span><span class='font-semibold'>Tipo masa:</span> <span class='font-mono'>${r.tipoMasa||'-'}</span></span>
+                        <span><span class='font-semibold'>Pan:</span> <span class='font-mono'>${r.tipoPan||'-'}</span></span>
+                        <span><span class='font-semibold'>Inicio:</span> <span class='font-mono'>${inicio||'--:--:--'}</span></span>
+                        <span><span class='font-semibold'>Fin:</span> <span class='font-mono'>${fin||'--:--:--'}</span></span>
+                        <span><span class='font-semibold'>Dur:</span> <span class='font-mono'>${dur}</span></span>
+                        ${(Number.isFinite(parseInt(r.personalMin))||Number.isFinite(parseInt(r.personalMax)))?`<span><span class='font-semibold'>Personas:</span> <span class='font-mono'>${r.personalMin??''}${(r.personalMin||r.personalMax)?'–':''}${r.personalMax??''}</span></span>`:''}
+                    </div>
+                    ${r.observaciones? `<div class='text-[12px] text-stone-700'><span class='font-semibold'>Obs:</span> ${String(r.observaciones).replace(/</g,'&lt;')}</div>`:''}
+                    <div class='flex items-center gap-2'>
+                        <button data-id='${r.id}' class='mesa-send bg-amber-600 text-white px-2 py-1 rounded text-xs'>Enviar a BD</button>
+                        <button data-id='${r.id}' class='mesa-del text-red-600 text-xs underline'>Eliminar</button>
+                    </div>
+                `;
+                cont.appendChild(card);
+            });
+            cont.querySelectorAll('button.mesa-del').forEach(btn=>{
                 btn.addEventListener('click', ()=>{
                     const id = btn.getAttribute('data-id');
                     const arr = leerMesa().filter(x=> x.id!==id);
                     guardarMesa(arr); renderMesaTabla();
                 });
             });
-            tbody.querySelectorAll('button.mesa-send').forEach(btn=>{
+            cont.querySelectorAll('button.mesa-send').forEach(btn=>{
                 btn.addEventListener('click', async ()=>{
                     const id = btn.getAttribute('data-id');
                     const rec = leerMesa().find(x=> x.id===id);
                     if(!rec) return;
-                    try{
-                        await enviarMesaRegistroBD(rec);
-                        mostrarToast('Mesa enviada a BD');
-                    }catch(e){ alert('Error enviando: '+(e.message||e)); }
+                    try{ await enviarMesaRegistroBD(rec); mostrarToast('Mesa enviada a BD'); }
+                    catch(e){ alert('Error enviando: '+(e.message||e)); }
                 });
             });
         }
@@ -2672,7 +2685,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span><span class='font-semibold'>Inicio:</span> <span class='font-mono'>${inicio||'--:--:--'}</span></span>
                         <span><span class='font-semibold'>Fin:</span> <span class='font-mono'>${fin||'--:--:--'}</span></span>
                         <span><span class='font-semibold'>Dur:</span> <span class='font-mono'>${durMMSS}</span></span>
+                        ${(Number.isFinite(parseInt(d.personalMin))||Number.isFinite(parseInt(d.personalMax)))?`<span><span class='font-semibold'>Personas:</span> <span class='font-mono'>${d.personalMin??''}${(d.personalMin||d.personalMax)?'–':''}${d.personalMax??''}</span></span>`:''}
                     </div>
+                    ${d.observaciones? `<div class='text-[12px] text-stone-700 mt-1'><span class='font-semibold'>Obs:</span> ${String(d.observaciones).replace(/</g,'&lt;')}</div>`:''}
                     <div class='flex items-center gap-2'>
                         <button class='mesa-bd-del bg-red-600 text-white text-xs px-2 py-1 rounded' data-id='${it.id}'>Borrar</button>
                     </div>`;
