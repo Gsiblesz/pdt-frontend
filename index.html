@@ -130,11 +130,7 @@
                 <div class="max-w-3xl mx-auto bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
                     <h2 class="text-2xl font-extrabold text-stone-900 mb-2">Mesa: Medición</h2>
                     <p class="text-sm text-stone-600 mb-4">Puedes correr hasta dos temporizadores en paralelo (T#1 y T#2) para registrar solapes.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium text-stone-700">Lote</label>
-                            <input id="mesa-input-lote" class="w-full border rounded px-3 py-2" placeholder="Ej: L-123" />
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium text-stone-700">Tipo de masa</label>
                             <select id="mesa-input-tipo" class="w-full border rounded px-3 py-2">
@@ -145,10 +141,6 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-stone-700">Tipo de pan</label>
-                            <input id="mesa-input-pan" class="w-full border rounded px-3 py-2" placeholder="" />
-                        </div>
-                        <div>
                             <label class="block text-sm font-medium text-stone-700">Fecha</label>
                             <input id="mesa-input-fecha" type="date" class="w-full border rounded px-3 py-2" />
                         </div>
@@ -156,6 +148,14 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="p-3 border border-stone-200 rounded-lg bg-stone-50">
                             <div class="font-semibold mb-2">Temporizador T#1</div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+                                <label class="text-sm">Lote
+                                    <input id="mesa1-input-lote" class="w-full border rounded px-3 py-1.5" placeholder="Ej: L-123" />
+                                </label>
+                                <label class="text-sm">Tipo de pan
+                                    <input id="mesa1-input-pan" class="w-full border rounded px-3 py-1.5" placeholder="" />
+                                </label>
+                            </div>
                             <div class="flex items-center gap-3 mb-2">
                                 <button id="mesa1-btn-iniciar" class="bg-blue-600 text-white px-3 py-1.5 rounded font-semibold">Iniciar</button>
                                 <button id="mesa1-btn-pausa" class="bg-amber-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Pausa</button>
@@ -166,6 +166,14 @@
                         </div>
                         <div class="p-3 border border-stone-200 rounded-lg bg-stone-50">
                             <div class="font-semibold mb-2">Temporizador T#2</div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+                                <label class="text-sm">Lote
+                                    <input id="mesa2-input-lote" class="w-full border rounded px-3 py-1.5" placeholder="Ej: L-124" />
+                                </label>
+                                <label class="text-sm">Tipo de pan
+                                    <input id="mesa2-input-pan" class="w-full border rounded px-3 py-1.5" placeholder="" />
+                                </label>
+                            </div>
                             <div class="flex items-center gap-3 mb-2">
                                 <button id="mesa2-btn-iniciar" class="bg-blue-600 text-white px-3 py-1.5 rounded font-semibold">Iniciar</button>
                                 <button id="mesa2-btn-pausa" class="bg-amber-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Pausa</button>
@@ -209,7 +217,7 @@
                                         <th class="text-left px-3 py-2">Pan</th>
                                         <th class="text-left px-3 py-2">Inicio</th>
                                         <th class="text-left px-3 py-2">Fin</th>
-                                        <th class="text-left px-3 py-2">Duración (s)</th>
+                                        <th class="text-left px-3 py-2">Duración (mm:ss)</th>
                                         <th class="text-left px-3 py-2">Acciones</th>
                                     </tr>
                                 </thead>
@@ -2487,9 +2495,7 @@ document.addEventListener('DOMContentLoaded', () => {
         function guardarMesa(arr){ localStorage.setItem(MESA_KEY, JSON.stringify(arr)); }
         function fmt(t){ return String(t).padStart(2,'0'); }
         function secsToMMSS(s){ s=Math.max(0, Math.round(s)); const m=Math.floor(s/60), r=s%60; return `${fmt(m)}:${fmt(r)}`; }
-        const inputLote = document.getElementById('mesa-input-lote');
-        const inputTipo = document.getElementById('mesa-input-tipo');
-        const inputPan = document.getElementById('mesa-input-pan');
+    const inputTipo = document.getElementById('mesa-input-tipo');
         const inputFecha = document.getElementById('mesa-input-fecha');
 
         const timersMesa = {
@@ -2505,13 +2511,16 @@ document.addEventListener('DOMContentLoaded', () => {
         function pausarReanudar(ch){ const st=timersMesa[ch]; const bP=q(st.els.bP); if(!st.start && !st.accum) return; if(st.pausa){ st.start=Date.now(); st.pausa=false; if(bP) bP.textContent='Pausa'; startTick(ch); setEstado(ch,'Reanudado'); } else { if(st.start){ st.accum += (Date.now()-st.start)/1000; st.start=null; } st.pausa=true; if(bP) bP.textContent='Reanudar'; updateLabel(ch); stopTick(ch); setEstado(ch,'Pausado'); } }
         function finalizar(ch){ const st=timersMesa[ch]; const bF=q(st.els.bF), bP=q(st.els.bP), tEl=q(st.els.t); if(!st.inicioISO) return; if(st.start){ st.accum += (Date.now()-st.start)/1000; st.start=null; }
             const endISO=new Date().toISOString(); const dur=Math.round(st.accum); stopTick(ch); st.accum=0; st.pausa=false; const inicioISO=st.inicioISO; st.inicioISO=null; if(tEl) tEl.textContent='00:00'; if(bF) bF.disabled=true; if(bP){ bP.disabled=true; bP.textContent='Pausa'; }
+            // Leer campos por temporizador
+            const loteEl = q(ch==='1' ? '#mesa1-input-lote' : '#mesa2-input-lote');
+            const panEl = q(ch==='1' ? '#mesa1-input-pan' : '#mesa2-input-pan');
             const rec = {
                 id: 'mesa-'+Date.now()+"-"+ch,
                 canal: parseInt(ch),
                 fecha: inputFecha?.value || new Date().toISOString().slice(0,10),
-                lote: (inputLote?.value||'').trim(),
+                lote: (loteEl?.value||'').trim(),
                 tipoMasa: (inputTipo?.value||'').trim(),
-                tipoPan: (inputPan?.value||'').trim(),
+                tipoPan: (panEl?.value||'').trim(),
                 inicio: inicioISO,
                 fin: endISO,
                 duracionSeg: dur
@@ -2527,7 +2536,7 @@ document.addEventListener('DOMContentLoaded', () => {
         function renderMesaTabla(){
             const tbody = document.getElementById('mesa-tabla-body'); if(!tbody) return;
             const arr = leerMesa();
-            tbody.innerHTML = arr.map(r=> `<tr class="border-b border-stone-200">\n                <td class="px-3 py-2">${r.canal||1}</td>\n                <td class="px-3 py-2">${r.fecha}</td>\n                <td class="px-3 py-2">${r.lote||'-'}</td>\n                <td class="px-3 py-2">${r.tipoMasa||'-'}</td>\n                <td class="px-3 py-2">${r.tipoPan||'-'}</td>\n                <td class="px-3 py-2">${(r.inicio||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${(r.fin||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${r.duracionSeg}</td>\n                <td class="px-3 py-2 flex gap-2">\n                    <button data-id="${r.id}" class="mesa-send bg-amber-600 text-white px-2 py-0.5 rounded text-xs">Enviar a BD</button>\n                    <button data-id="${r.id}" class="mesa-del text-red-600 hover:underline">Eliminar</button>\n                </td>\n            </tr>`).join('');
+            tbody.innerHTML = arr.map(r=> `<tr class="border-b border-stone-200">\n                <td class="px-3 py-2">${r.canal||1}</td>\n                <td class="px-3 py-2">${r.fecha}</td>\n                <td class="px-3 py-2">${r.lote||'-'}</td>\n                <td class="px-3 py-2">${r.tipoMasa||'-'}</td>\n                <td class="px-3 py-2">${r.tipoPan||'-'}</td>\n                <td class="px-3 py-2">${(r.inicio||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${(r.fin||'').slice(11,19)}</td>\n                <td class="px-3 py-2">${secsToMMSS(parseFloat(r.duracionSeg)||0)}</td>\n                <td class="px-3 py-2 flex gap-2">\n                    <button data-id="${r.id}" class="mesa-send bg-amber-600 text-white px-2 py-0.5 rounded text-xs">Enviar a BD</button>\n                    <button data-id="${r.id}" class="mesa-del text-red-600 hover:underline">Eliminar</button>\n                </td>\n            </tr>`).join('');
             tbody.querySelectorAll('button.mesa-del').forEach(btn=>{
                 btn.addEventListener('click', ()=>{
                     const id = btn.getAttribute('data-id');
@@ -2627,6 +2636,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const card = document.createElement('div');
                 card.className='border border-stone-300 rounded-lg p-3 mb-2 bg-white flex flex-wrap gap-4 items-center justify-between';
                 const inicio = (d.inicio||'').slice(11,19); const fin=(d.fin||'').slice(11,19);
+                const durMMSS = secsToMMSS(parseFloat(d.duracionSeg)||0);
                 card.innerHTML = `
                     <div class='flex flex-wrap gap-4 text-sm'>
                         <span><span class='font-semibold'>Fecha:</span> <span class='font-mono'>${it.fecha||d.fecha||''}</span></span>
@@ -2636,7 +2646,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span><span class='font-semibold'>Pan:</span> <span class='font-mono'>${d.tipoPan||'-'}</span></span>
                         <span><span class='font-semibold'>Inicio:</span> <span class='font-mono'>${inicio||'--:--:--'}</span></span>
                         <span><span class='font-semibold'>Fin:</span> <span class='font-mono'>${fin||'--:--:--'}</span></span>
-                        <span><span class='font-semibold'>Dur:</span> <span class='font-mono'>${d.duracionSeg||0}s</span></span>
+                        <span><span class='font-semibold'>Dur:</span> <span class='font-mono'>${durMMSS}</span></span>
                     </div>
                     <div class='flex items-center gap-2'>
                         <button class='mesa-bd-del bg-red-600 text-white text-xs px-2 py-1 rounded' data-id='${it.id}'>Borrar</button>
