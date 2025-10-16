@@ -2558,15 +2558,20 @@ document.addEventListener('DOMContentLoaded', () => {
         q('#mesa2-btn-iniciar')?.addEventListener('click', ()=>iniciar('2'));
         q('#mesa2-btn-pausa')?.addEventListener('click', ()=>pausarReanudar('2'));
         q('#mesa2-btn-finalizar')?.addEventListener('click', ()=>finalizar('2'));
-        // Habilitar/Deshabilitar 'Tipo de pan' según 'Tipo de masa' (solo aplica para Tradicional)
+        // Mostrar/Ocultar 'Tipo de pan' según 'Tipo de masa' (oculto para Brioche/Mantequilla)
         function updateMesaPanState(ch){
             const sel = q(ch==='1' ? '#mesa1-input-tipo' : '#mesa2-input-tipo');
             const inp = q(ch==='1' ? '#mesa1-input-pan' : '#mesa2-input-pan');
             if(!inp) return;
             const v = (sel?.value||'').trim();
-            const disable = (v==='Brioche' || v==='Mantequilla');
-            if(disable){ inp.value=''; inp.disabled=true; inp.classList.add('opacity-60'); }
-            else { inp.disabled=false; inp.classList.remove('opacity-60'); }
+            const ocultar = (v==='Brioche' || v==='Mantequilla');
+            const label = inp.closest('label');
+            if(ocultar){
+                inp.value='';
+                if(label) label.classList.add('hidden');
+            } else {
+                if(label) label.classList.remove('hidden');
+            }
         }
         q('#mesa1-input-tipo')?.addEventListener('change', ()=> updateMesaPanState('1'));
         q('#mesa2-input-tipo')?.addEventListener('change', ()=> updateMesaPanState('2'));
