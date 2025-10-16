@@ -3497,8 +3497,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 const showE = (localStorage.getItem('EWMA_TIEMPO_SHOW')||'0')==='1';
                 const alphaE = parseFloat(localStorage.getItem('EWMA_TIEMPO_ALPHA')||'0.25');
                 const chkE = document.getElementById('ewma-tiempo-show'); const inpE = document.getElementById('ewma-tiempo-alpha');
-                if(chkE){ chkE.checked = showE; chkE.onchange = ()=>{ const y=window.scrollY; localStorage.setItem('EWMA_TIEMPO_SHOW', chkE.checked?'1':'0'); buildTablasVista(); requestAnimationFrame(()=>window.scrollTo(0,y)); }; }
-                if(inpE){ inpE.value = String(alphaE); inpE.onchange = ()=>{ let v=parseFloat(inpE.value)||0.25; v=Math.min(0.9, Math.max(0.05, v)); const y=window.scrollY; localStorage.setItem('EWMA_TIEMPO_ALPHA', String(v)); buildTablasVista(); requestAnimationFrame(()=>window.scrollTo(0,y)); }; }
+                if(chkE){
+                    chkE.checked = showE;
+                    chkE.onchange = ()=>{
+                        const y = window.scrollY;
+                        const activeId = document.activeElement && document.activeElement.id ? document.activeElement.id : null;
+                        // Prefer anchoring near the Tiempo chart when rebuilding
+                        const anchor = document.getElementById('chart-ctrl-tiempo');
+                        const anchorY = anchor ? (anchor.getBoundingClientRect().top + window.scrollY - 16) : y;
+                        localStorage.setItem('EWMA_TIEMPO_SHOW', chkE.checked ? '1' : '0');
+                        Promise.resolve(buildTablasVista()).then(()=>{
+                            requestAnimationFrame(()=>{
+                                window.scrollTo(0, anchorY);
+                                if(activeId){ const el = document.getElementById(activeId); try{ el?.focus({ preventScroll: true }); }catch(_){}
+                                }
+                            });
+                        });
+                    };
+                }
+                if(inpE){
+                    inpE.value = String(alphaE);
+                    inpE.onchange = ()=>{
+                        let v = parseFloat(inpE.value) || 0.25;
+                        v = Math.min(0.9, Math.max(0.05, v));
+                        const y = window.scrollY;
+                        const activeId = document.activeElement && document.activeElement.id ? document.activeElement.id : null;
+                        const anchor = document.getElementById('chart-ctrl-tiempo');
+                        const anchorY = anchor ? (anchor.getBoundingClientRect().top + window.scrollY - 16) : y;
+                        localStorage.setItem('EWMA_TIEMPO_ALPHA', String(v));
+                        Promise.resolve(buildTablasVista()).then(()=>{
+                            requestAnimationFrame(()=>{
+                                window.scrollTo(0, anchorY);
+                                if(activeId){ const el = document.getElementById(activeId); try{ el?.focus({ preventScroll: true }); }catch(_){}
+                                }
+                            });
+                        });
+                    };
+                }
                 if(showE){ const ew = (function(a){ let s=null; return puntosTiempo.map((x,i)=>{ s = (i===0? x : a*x + (1-a)*s); return s; }); })(alphaE); ds.push({label:`EWMA (α=${alphaE})`, data:ew, borderColor:'#0ea5e9', pointRadius:0, tension:.2}); }
                 const optTiempo = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label(ctx){ return `Valor: ${ctx.parsed.y}s`; }, afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const fila = detalleFilas[idx]; const metaLinea = fila? [`Fecha: ${fila.fecha}`, `Amas: M${fila.amasadora}`, `Lote: ${fila.lote||''}`, `Segmento desde #${stxTiempo.segFrom[idx]}`] : [`Segmento desde #${stxTiempo.segFrom[idx]}`]; const evs = (eventosPorMetrica['Tiempo total'][idx]||[]).map(e=>'• '+e.tipo); return [...metaLinea, ...(evs.length?['Eventos:'].concat(evs):[])]; }}}}, scales:{y:{beginAtZero:true}}};
                 mkChart(canvasTiempo,'line',{labels, datasets:ds}, optTiempo);
@@ -3542,8 +3577,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 const showE2 = (localStorage.getItem('EWMA_MUERTO_SHOW')||'0')==='1';
                 const alphaE2 = parseFloat(localStorage.getItem('EWMA_MUERTO_ALPHA')||'0.25');
                 const chkE2 = document.getElementById('ewma-muerto-show'); const inpE2 = document.getElementById('ewma-muerto-alpha');
-                if(chkE2){ chkE2.checked = showE2; chkE2.onchange = ()=>{ const y=window.scrollY; localStorage.setItem('EWMA_MUERTO_SHOW', chkE2.checked?'1':'0'); buildTablasVista(); requestAnimationFrame(()=>window.scrollTo(0,y)); }; }
-                if(inpE2){ inpE2.value = String(alphaE2); inpE2.onchange = ()=>{ let v=parseFloat(inpE2.value)||0.25; v=Math.min(0.9, Math.max(0.05, v)); const y=window.scrollY; localStorage.setItem('EWMA_MUERTO_ALPHA', String(v)); buildTablasVista(); requestAnimationFrame(()=>window.scrollTo(0,y)); }; }
+                if(chkE2){
+                    chkE2.checked = showE2;
+                    chkE2.onchange = ()=>{
+                        const y = window.scrollY;
+                        const activeId = document.activeElement && document.activeElement.id ? document.activeElement.id : null;
+                        const anchor = document.getElementById('chart-ctrl-muerto');
+                        const anchorY = anchor ? (anchor.getBoundingClientRect().top + window.scrollY - 16) : y;
+                        localStorage.setItem('EWMA_MUERTO_SHOW', chkE2.checked ? '1' : '0');
+                        Promise.resolve(buildTablasVista()).then(()=>{
+                            requestAnimationFrame(()=>{
+                                window.scrollTo(0, anchorY);
+                                if(activeId){ const el = document.getElementById(activeId); try{ el?.focus({ preventScroll: true }); }catch(_){}
+                                }
+                            });
+                        });
+                    };
+                }
+                if(inpE2){
+                    inpE2.value = String(alphaE2);
+                    inpE2.onchange = ()=>{
+                        let v = parseFloat(inpE2.value) || 0.25;
+                        v = Math.min(0.9, Math.max(0.05, v));
+                        const y = window.scrollY;
+                        const activeId = document.activeElement && document.activeElement.id ? document.activeElement.id : null;
+                        const anchor = document.getElementById('chart-ctrl-muerto');
+                        const anchorY = anchor ? (anchor.getBoundingClientRect().top + window.scrollY - 16) : y;
+                        localStorage.setItem('EWMA_MUERTO_ALPHA', String(v));
+                        Promise.resolve(buildTablasVista()).then(()=>{
+                            requestAnimationFrame(()=>{
+                                window.scrollTo(0, anchorY);
+                                if(activeId){ const el = document.getElementById(activeId); try{ el?.focus({ preventScroll: true }); }catch(_){}
+                                }
+                            });
+                        });
+                    };
+                }
                 if(showE2){ const ew2 = (function(a){ let s=null; return puntosPctMuerto.map((x,i)=>{ s = (i===0? x : a*x + (1-a)*s); return s; }); })(alphaE2); ds2.push({label:`EWMA (α=${alphaE2})`, data:ew2, borderColor:'#06b6d4', pointRadius:0, tension:.2}); }
                 const optMuerto = {responsive:true, plugins:{legend:{position:'bottom'}, tooltip:{callbacks:{label(ctx){ return `%: ${ctx.parsed.y.toFixed(2)}%`; }, afterBody(items){ if(!items.length) return; const idx=items[0].dataIndex; const fila = detalleFilas[idx]; const metaLinea = fila? [`Fecha: ${fila.fecha}`, `Amas: M${fila.amasadora}`, `Lote: ${fila.lote||''}`, `Segmento desde #${stxMuerto.segFrom[idx]}`] : [`Segmento desde #${stxMuerto.segFrom[idx]}`]; const evs = (eventosPorMetrica['% Muerto'][idx]||[]).map(e=>'• '+e.tipo); return [...metaLinea, ...(evs.length?['Eventos:'].concat(evs):[])]; }}}}, scales:{y:{beginAtZero:true, title:{display:true,text:'%'}}}};
                 mkChart(canvasMuerto,'line',{labels, datasets:ds2}, optMuerto);
