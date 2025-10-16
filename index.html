@@ -169,6 +169,7 @@
                                 <button id="mesa1-btn-iniciar" class="bg-blue-600 text-white px-3 py-1.5 rounded font-semibold">Iniciar</button>
                                 <button id="mesa1-btn-pausa" class="bg-amber-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Pausa</button>
                                 <button id="mesa1-btn-finalizar" class="bg-emerald-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Finalizar</button>
+                                <button id="mesa1-btn-clear" class="bg-stone-500 text-white px-3 py-1.5 rounded font-semibold">Limpiar</button>
                                 <span id="mesa1-timer" class="text-sm text-stone-700">00:00</span>
                             </div>
                             <label class="text-sm block mb-2">Observaciones
@@ -200,6 +201,7 @@
                                 <button id="mesa2-btn-iniciar" class="bg-blue-600 text-white px-3 py-1.5 rounded font-semibold">Iniciar</button>
                                 <button id="mesa2-btn-pausa" class="bg-amber-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Pausa</button>
                                 <button id="mesa2-btn-finalizar" class="bg-emerald-600 text-white px-3 py-1.5 rounded font-semibold" disabled>Finalizar</button>
+                                <button id="mesa2-btn-clear" class="bg-stone-500 text-white px-3 py-1.5 rounded font-semibold">Limpiar</button>
                                 <span id="mesa2-timer" class="text-sm text-stone-700">00:00</span>
                             </div>
                             <label class="text-sm block mb-2">Observaciones
@@ -2529,7 +2531,34 @@ document.addEventListener('DOMContentLoaded', () => {
         function startTick(ch){ const st=timersMesa[ch]; if(st.interval) return; st.interval=setInterval(()=>updateLabel(ch),300); }
         function stopTick(ch){ const st=timersMesa[ch]; if(st.interval){ clearInterval(st.interval); st.interval=null; } }
         function setEstado(ch,msg){ const el=q(timersMesa[ch].els.est); if(el) el.textContent = msg||''; }
-        function iniciar(ch){ const st=timersMesa[ch]; if(!st.start){ if(!st.inicioISO) st.inicioISO=new Date().toISOString(); st.start=Date.now(); const bF=q(st.els.bF), bP=q(st.els.bP); if(bF) bF.disabled=false; if(bP){ bP.disabled=false; bP.textContent='Pausa'; } st.pausa=false; startTick(ch); setEstado(ch,'Temporizador en marcha...'); } }
+        // Formatea hora local HH:MM:SS a partir de ISO
+        function fmtLocalTime(iso){ if(!iso) return '--:--:--'; const d=new Date(iso); if(isNaN(d)) return '--:--:--'; return d.toLocaleTimeString(undefined,{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+        // Limpiar cronómetro (sin borrar inputs)
+        function clearTimer(ch){
+            const st=timersMesa[ch];
+            if(!st) return;
+            stopTick(ch);
+            st.start=null; st.accum=0; st.pausa=false; st.inicioISO=null;
+            const t=q(st.els.t), bI=q(st.els.bI), bP=q(st.els.bP), bF=q(st.els.bF);
+            if(t) t.textContent='00:00';
+            if(bI) bI.disabled=false;
+            if(bP){ bP.disabled=true; bP.textContent='Pausa'; }
+            if(bF) bF.disabled=true;
+            setEstado(ch,'');
+        }
+        function iniciar(ch){
+            const st=timersMesa[ch];
+            if(!st.start){
+                if(!st.inicioISO) st.inicioISO=new Date().toISOString();
+                st.start=Date.now();
+                const bF=q(st.els.bF), bP=q(st.els.bP);
+                if(bF) bF.disabled=false;
+                if(bP){ bP.disabled=false; bP.textContent='Pausa'; }
+                st.pausa=false;
+                startTick(ch);
+                setEstado(ch,'Temporizador en marcha...');
+            }
+        }
         function pausarReanudar(ch){ const st=timersMesa[ch]; const bP=q(st.els.bP); if(!st.start && !st.accum) return; if(st.pausa){ st.start=Date.now(); st.pausa=false; if(bP) bP.textContent='Pausa'; startTick(ch); setEstado(ch,'Reanudado'); } else { if(st.start){ st.accum += (Date.now()-st.start)/1000; st.start=null; } st.pausa=true; if(bP) bP.textContent='Reanudar'; updateLabel(ch); stopTick(ch); setEstado(ch,'Pausado'); } }
         function finalizar(ch){ const st=timersMesa[ch]; const bF=q(st.els.bF), bP=q(st.els.bP), tEl=q(st.els.t); if(!st.inicioISO) return; if(st.start){ st.accum += (Date.now()-st.start)/1000; st.start=null; }
             const endISO=new Date().toISOString(); const dur=Math.round(st.accum); stopTick(ch); st.accum=0; st.pausa=false; const inicioISO=st.inicioISO; st.inicioISO=null; if(tEl) tEl.textContent='00:00'; if(bF) bF.disabled=true; if(bP){ bP.disabled=true; bP.textContent='Pausa'; }
@@ -2555,9 +2584,11 @@ document.addEventListener('DOMContentLoaded', () => {
         q('#mesa1-btn-iniciar')?.addEventListener('click', ()=>iniciar('1'));
         q('#mesa1-btn-pausa')?.addEventListener('click', ()=>pausarReanudar('1'));
         q('#mesa1-btn-finalizar')?.addEventListener('click', ()=>finalizar('1'));
+    q('#mesa1-btn-clear')?.addEventListener('click', ()=>clearTimer('1'));
         q('#mesa2-btn-iniciar')?.addEventListener('click', ()=>iniciar('2'));
         q('#mesa2-btn-pausa')?.addEventListener('click', ()=>pausarReanudar('2'));
         q('#mesa2-btn-finalizar')?.addEventListener('click', ()=>finalizar('2'));
+    q('#mesa2-btn-clear')?.addEventListener('click', ()=>clearTimer('2'));
         // Mostrar/Ocultar 'Tipo de pan' según 'Tipo de masa' (oculto para Brioche/Mantequilla)
         function updateMesaPanState(ch){
             const sel = q(ch==='1' ? '#mesa1-input-tipo' : '#mesa2-input-tipo');
@@ -2584,7 +2615,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!arr.length){ cont.innerHTML = '<div class="text-stone-500">No hay registros locales.</div>'; return; }
             cont.innerHTML = '';
             arr.forEach(r=>{
-                const inicio=(r.inicio||'').slice(11,19), fin=(r.fin||'').slice(11,19), dur=secsToMMSS(parseFloat(r.duracionSeg)||0);
+                const inicio=fmtLocalTime(r.inicio), fin=fmtLocalTime(r.fin), dur=secsToMMSS(parseFloat(r.duracionSeg)||0);
                 const card=document.createElement('div');
                 card.className='border border-stone-300 rounded-lg p-3 bg-white flex flex-col gap-2';
                 card.innerHTML = `
@@ -2705,7 +2736,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const d = raw && raw.data ? raw.data : raw; // compatibilidad con registros antiguos anidados
                 const card = document.createElement('div');
                 card.className='border border-stone-300 rounded-lg p-3 mb-2 bg-white flex flex-wrap gap-4 items-center justify-between';
-                const inicio = (d.inicio||'').slice(11,19); const fin=(d.fin||'').slice(11,19);
+                const inicio = fmtLocalTime(d.inicio);
+                const fin = fmtLocalTime(d.fin);
                 const durMMSS = secsToMMSS(parseFloat(d.duracionSeg)||0);
                 card.innerHTML = `
                     <div class='flex flex-wrap gap-4 text-sm'>
