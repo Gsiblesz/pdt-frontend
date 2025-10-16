@@ -276,10 +276,6 @@
                                 <canvas id="mesa-chart-ctrl" height="150"></canvas>
                             </section>
                             <section>
-                                <h3 class="text-xl font-bold text-stone-800 mb-1">Promedio por T# (canal)</h3>
-                                <canvas id="mesa-chart-canal" height="140"></canvas>
-                            </section>
-                            <section>
                                 <h3 class="text-xl font-bold text-stone-800 mb-1">Histograma de duración</h3>
                                 <canvas id="mesa-chart-hist" height="140"></canvas>
                             </section>
@@ -2777,7 +2773,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const cMasa = document.getElementById('mesa-chart-tipo-masa');
             const cPan = document.getElementById('mesa-chart-tipo-pan');
             const cCtrl = document.getElementById('mesa-chart-ctrl');
-            const cCanal = document.getElementById('mesa-chart-canal');
             const cHist = document.getElementById('mesa-chart-hist');
             const cScatter = document.getElementById('mesa-chart-scatter-personal');
             const cTrend = document.getElementById('mesa-chart-trend-dia');
@@ -2834,16 +2829,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom' }, tooltip:{
                         callbacks:{ label: (ctx)=> `${ctx.dataset.label||'y'}: ${secsToMMSS(ctx.parsed.y||0)}` }
                     } }, scales:{ y:{ beginAtZero:true, ticks:{ callback:(v)=> secsToMMSS(v) } } } } });
-                mesaCharts.push(chart);
-            }
-            // Promedio por canal (T#)
-            if(cCanal && window.Chart){
-                const byCanal = {};
-                datos.forEach(d=>{ const k=String(d.canal||1); (byCanal[k]=byCanal[k]||[]).push(parseFloat(d.duracionSeg)||0); });
-                const labels = Object.keys(byCanal).sort();
-                const means = labels.map(k=> Math.round(avg(byCanal[k])));
-                const ctx=cCanal.getContext('2d');
-                const chart=new Chart(ctx,{ type:'bar', data:{ labels, datasets:[{ label:'Promedio', data: means, backgroundColor:'#f59e0b' }] }, options:{ responsive:true, scales:{ y:{ beginAtZero:true, ticks:{ callback:(v)=> secsToMMSS(v) } } }, plugins:{ tooltip:{ callbacks:{ label:(ctx)=> `Promedio: ${secsToMMSS(ctx.parsed.y||0)}` } } } } });
                 mesaCharts.push(chart);
             }
             // Histograma de duración
