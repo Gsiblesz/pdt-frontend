@@ -689,6 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 // ======================= GLOBAL VARIABLES AND DATA =======================
+    const GOOGLE_SHEETS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyV8oEWmm1vkw5z63AsgDuKVkJu_N9Y31kO9IFN8FcXs-xn6DLsRuZFJsuWn3JNxBHIgw/exec';
     // Datos de amasadoras
     const machineData = [
         {
@@ -724,6 +725,44 @@ document.addEventListener('DOMContentLoaded', () => {
     let timers = {};
     let machineTotals = {};
     let completedProcessTimes = {};
+
+    async function enviarRegistroASheets(payload) {
+        if (!GOOGLE_SHEETS_WEBAPP_URL) {
+            return { ok: false, error: 'Endpoint no configurado' };
+        }
+        const body = JSON.stringify(payload);
+        try {
+            const resp = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                body,
+                mode: 'cors'
+            });
+            const maybeJSON = await resp.text();
+            let data = null;
+            try { data = maybeJSON ? JSON.parse(maybeJSON) : null; } catch (_) { /* ignore */ }
+            if (!resp.ok) {
+                const message = data?.message || resp.statusText || 'Error en Apps Script';
+                throw new Error(message);
+            }
+            return { ok: true, data };
+        } catch (err) {
+            const message = err?.message || String(err);
+            if (message.includes('Failed to fetch') || message.includes('CORS')) {
+                try {
+                    await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body
+                    });
+                    return { ok: true, data: { fallback: true } };
+                } catch (inner) {
+                    return { ok: false, error: inner?.message || String(inner) };
+                }
+            }
+            return { ok: false, error: message };
+        }
+    }
 
     function formatTime(seconds) {
         if (isNaN(seconds) || seconds === null) return '00:00:00';
@@ -1160,7 +1199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         guardarResultadosPorMaquina(machineId, btn);
     });
 
-    function guardarResultadosPorMaquina(machineId, btn) {
+    async function guardarResultadosPorMaquina(machineId, btn) {
         const fecha = document.getElementById('fecha').value;
         if (!fecha) {
         // Fin de la función pasarFechaABD
@@ -1348,10 +1387,45 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarMsgMaquina(machineId, 'Completa procesos: '+incompletos.join(', '), false);
             return;
         }
-    let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
-    resultados.push({ fecha, maquinas: [maquinaObj] });
-    localStorage.setItem('resultadosMezclado', JSON.stringify(resultados));
-    mostrarMsgMaquina(machineId, '¡Resultados guardados correctamente!', true);
+
+        const originalBtnLabel = btn ? btn.textContent : '';
+        const originalBtnDisabled = btn ? btn.disabled : false;
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+        }
+
+        try {
+            let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
+            resultados.push({ fecha, maquinas: [maquinaObj] });
+            localStorage.setItem('resultadosMezclado', JSON.stringify(resultados));
+            mostrarMsgMaquina(machineId, 'Resultados guardados. Enviando a Google Sheets...', true);
+            const payload = {
+                fecha,
+                maquina: maquinaObj,
+                fuente: 'guardar-maquina',
+                timestamp: new Date().toISOString()
+            };
+            const envio = await enviarRegistroASheets(payload);
+            if (envio.ok) {
+                if (envio.data?.fallback) {
+                    mostrarMsgMaquina(machineId, 'Resultados guardados y enviados a Sheets (sin confirmación por CORS). Verifica en el documento.', true);
+                } else {
+                    mostrarMsgMaquina(machineId, 'Resultados guardados y enviados a Google Sheets.', true);
+                }
+            } else {
+                console.error('Google Sheets error', envio.error);
+                mostrarMsgMaquina(machineId, 'Guardado local, pero falló el envío a Google Sheets: ' + envio.error, false);
+            }
+        } catch (err) {
+            console.error('Guardar resultados', err);
+            mostrarMsgMaquina(machineId, 'Error al guardar resultados: ' + (err?.message || err), false);
+        } finally {
+            if (btn) {
+                btn.disabled = originalBtnDisabled;
+                btn.textContent = originalBtnLabel || 'Guardar resultados';
+            }
+        }
     }
 
     function mostrarMsgMaquina(machineId, msg, ok) {
@@ -4426,7 +4500,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // API auth helpers: read key from session/local and build headers
     function getApiKey(){
-        return sessionStorage.getItem('API_KEY') || localStorage.getItem('API_KEY_PERSIST') || '';
+        const stored = sessionStorage.getItem('API_KEY') || localStorage.getItem('API_KEY_PERSIST');
+        return stored || DEFAULT_PASS || '';
     }
     function apiHeaders(withJson){
         const h = {};
@@ -4470,6 +4545,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // ========= Seguridad simple: clave local =========
     const DEFAULT_PASS = 'pasantias'; // Clave fija para acceso y API
+    function seedDefaultApiKey(){
+        const existing = sessionStorage.getItem('API_KEY') || localStorage.getItem('API_KEY_PERSIST');
+        if(existing) return;
+        sessionStorage.setItem('API_KEY', DEFAULT_PASS);
+        localStorage.setItem('API_KEY_PERSIST', DEFAULT_PASS);
+    }
     async function sha256Hex(str){
         const enc = new TextEncoder(); const data = enc.encode(str);
         const hash = await crypto.subtle.digest('SHA-256', data);
@@ -4502,6 +4583,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const ov = document.getElementById('auth-overlay'); if(!ov) return;
         // Forzar hash de clave fija
     try{ sha256Hex(DEFAULT_PASS).then(h=> localStorage.setItem('APP_PASS_HASH', h)); }catch(_){ }
+        seedDefaultApiKey();
+        sessionStorage.setItem('APP_UNLOCKED','1');
+        localStorage.removeItem('APP_LOCKED');
+        markRemembered(true);
+        hideAuthOverlay();
+        try{ updateAjustesVisibility(); }catch(_){ }
         // Rate limiting simple
         function authMeta(){
             try{ return JSON.parse(localStorage.getItem('AUTH_META')||'{}'); }catch(_){ return {}; }
@@ -4551,16 +4638,12 @@ document.addEventListener('DOMContentLoaded', () => {
             hideAuthOverlay();
             registerSuccess();
         });
-        showAuthOverlay();
     }
     function guardRoute(){
-        const hasPass = !!localStorage.getItem('APP_PASS_HASH');
-        const unlockedSession = sessionStorage.getItem('APP_UNLOCKED')==='1';
-        const remembered = isRemembered();
-        if(!hasPass){ return; } // sin clave, no bloquear
-    if(isLocked()) { showAuthOverlay(); return; }
-        if(remembered){ hideAuthOverlay(); return; }
-        if(!unlockedSession){ showAuthOverlay(); }
+        seedDefaultApiKey();
+        sessionStorage.setItem('APP_UNLOCKED','1');
+        localStorage.removeItem('APP_LOCKED');
+        hideAuthOverlay();
     }
     function mergeLocalRemote(localRegs, remoteRegs){
         const sigSet = new Set();
