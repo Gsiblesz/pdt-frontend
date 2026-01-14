@@ -4530,11 +4530,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = getSheetsUrl();
         if(!url){ return { skipped:true, reason:'Sin URL Sheets configurada' }; }
         try{
-            const r = await fetch(url,{ method:'POST', mode:'cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-            // Apps Script devuelve 200 con CORS si lo permitimos; si es opaque, marcar ok best-effort
-            if(r.type === 'opaque'){ return { ok:true, opaque:true }; }
-            if(!r.ok){ const txt = await r.text(); return { ok:false, error:'HTTP '+r.status+' '+txt }; }
-            return { ok:true };
+            // Modo no-cors + text/plain evita el preflight que bloquea Apps Script; la app no puede leer la respuesta
+            await fetch(url,{
+                method:'POST',
+                mode:'no-cors',
+                headers:{'Content-Type':'text/plain;charset=utf-8'},
+                body: JSON.stringify(payload)
+            });
+            return { ok:true, opaque:true };
         }catch(e){ return { ok:false, error: e?.message || String(e) }; }
     }
     // API auth helpers: read key from session/local and build headers
