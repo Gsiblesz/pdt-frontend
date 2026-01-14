@@ -119,6 +119,16 @@
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="fer-cards"></div>
+            <div class="bg-white border border-stone-200 rounded-xl p-6 shadow-sm mt-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-bold text-stone-800">Resultados fermentadora</h3>
+                    <div class="flex items-center gap-2 text-sm">
+                        <button id="fer-refresh-local" class="px-3 py-1 rounded border border-stone-300">Locales</button>
+                        <button id="fer-refresh-bd" class="px-3 py-1 rounded border border-stone-300">BD</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto text-sm" id="fer-table"></div>
+            </div>
         </div>
     </div>
 
@@ -138,6 +148,16 @@
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="horno-cards"></div>
+            <div class="bg-white border border-stone-200 rounded-xl p-6 shadow-sm mt-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-bold text-stone-800">Resultados hornos</h3>
+                    <div class="flex items-center gap-2 text-sm">
+                        <button id="horno-refresh-local" class="px-3 py-1 rounded border border-stone-300">Locales</button>
+                        <button id="horno-refresh-bd" class="px-3 py-1 rounded border border-stone-300">BD</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto text-sm" id="horno-table"></div>
+            </div>
         </div>
     </div>
     
@@ -863,6 +883,103 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 function leerFecha(){ return document.getElementById('fecha')?.value || ''; }
 
+                const ferColumns = [
+                    { key:'fecha', label:'Fecha' },
+                    { key:'tarjeta', label:'Tarjeta' },
+                    { key:'producto', label:'Producto' },
+                    { key:'lote', label:'Lote' },
+                    { key:'tipoMasa', label:'Tipo masa' },
+                    { key:'temperatura', label:'Temp (°C)' },
+                    { key:'duracionSeg', label:'Duración', fmt:(v)=>formatMMSS(v||0) }
+                ];
+                const hornoColumns = [
+                    { key:'fecha', label:'Fecha' },
+                    { key:'horno', label:'Horno' },
+                    { key:'producto', label:'Producto' },
+                    { key:'lote', label:'Lote' },
+                    { key:'duracionSeg', label:'Duración', fmt:(v)=>formatMMSS(v||0) }
+                ];
+
+                function renderSimpleTable(targetId, rows, columns){
+                    const container = document.getElementById(targetId);
+                    if(!container) return;
+                    if(!rows || !rows.length){ container.innerHTML = '<div class="text-sm text-stone-500">Sin datos.</div>'; return; }
+                    const thead = '<tr>' + columns.map(c=>`<th class="px-2 py-1 text-left text-stone-600 border-b">${c.label}</th>`).join('') + '</tr>';
+                    const tbody = rows.map(r=>'<tr>'+columns.map(c=>{
+                        const val = c.fmt ? c.fmt(r[c.key]) : (r[c.key] ?? '');
+                        return `<td class="px-2 py-1 border-b">${val}</td>`;
+                    }).join('')+'</tr>').join('');
+                    container.innerHTML = `<table class="min-w-full text-sm"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+                }
+
+                function renderFerLocal(){
+                    const fecha = leerFecha();
+                    let list = [];
+                    try{ list = JSON.parse(localStorage.getItem('fermentadoraRegistros')||'[]'); }catch(_){ }
+                    if(fecha) list = list.filter(r=>r.fecha===fecha);
+                    renderSimpleTable('fer-table', list, ferColumns);
+                }
+
+                async function renderFerBD(){
+                    const fecha = leerFecha();
+                    const container = document.getElementById('fer-table');
+                    if(container) container.innerHTML = '<div class="text-sm text-stone-500">Cargando...</div>';
+                    try{
+                        const base = resolveApiBase();
+                        const r = await fetch(base+'/registros', { headers: apiHeaders(false) });
+                        if(!r.ok) throw new Error('HTTP '+r.status+' '+await r.text());
+                        const data = await r.json();
+                        const rows = (Array.isArray(data)?data:[]).flatMap(item=>{
+                            const arr = Array.isArray(item.data?.fermentadoras)? item.data.fermentadoras : [];
+                            const fx = item.data?.fecha || item.fecha || '';
+                            return arr.map(rec=>({
+                                fecha: rec.fecha || fx,
+                                tarjeta: rec.tarjeta || rec.id || '',
+                                producto: rec.producto || rec.tipo || '',
+                                lote: rec.lote || '',
+                                tipoMasa: rec.tipoMasa || '',
+                                temperatura: rec.temperatura,
+                                duracionSeg: rec.duracionSeg
+                            }));
+                        });
+                        const filtered = fecha ? rows.filter(r=>r.fecha===fecha) : rows;
+                        renderSimpleTable('fer-table', filtered, ferColumns);
+                    }catch(err){ if(container) container.innerHTML = '<div class="text-sm text-red-600">Error: '+(err.message||err)+'</div>'; }
+                }
+
+                function renderHornoLocal(){
+                    const fecha = leerFecha();
+                    let list = [];
+                    try{ list = JSON.parse(localStorage.getItem('hornoRegistros')||'[]'); }catch(_){ }
+                    if(fecha) list = list.filter(r=>r.fecha===fecha);
+                    renderSimpleTable('horno-table', list, hornoColumns);
+                }
+
+                async function renderHornoBD(){
+                    const fecha = leerFecha();
+                    const container = document.getElementById('horno-table');
+                    if(container) container.innerHTML = '<div class="text-sm text-stone-500">Cargando...</div>';
+                    try{
+                        const base = resolveApiBase();
+                        const r = await fetch(base+'/registros', { headers: apiHeaders(false) });
+                        if(!r.ok) throw new Error('HTTP '+r.status+' '+await r.text());
+                        const data = await r.json();
+                        const rows = (Array.isArray(data)?data:[]).flatMap(item=>{
+                            const arr = Array.isArray(item.data?.hornos)? item.data.hornos : [];
+                            const fx = item.data?.fecha || item.fecha || '';
+                            return arr.map(rec=>({
+                                fecha: rec.fecha || fx,
+                                horno: rec.horno || rec.id || '',
+                                producto: rec.producto || rec.tipo || '',
+                                lote: rec.lote || '',
+                                duracionSeg: rec.duracionSeg
+                            }));
+                        });
+                        const filtered = fecha ? rows.filter(r=>r.fecha===fecha) : rows;
+                        renderSimpleTable('horno-table', filtered, hornoColumns);
+                    }catch(err){ if(container) container.innerHTML = '<div class="text-sm text-red-600">Error: '+(err.message||err)+'</div>'; }
+                }
+
                 function pushLocal(key, record){
                     try{
                         const arr = JSON.parse(localStorage.getItem(key)||'[]');
@@ -908,6 +1025,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 function initFermentadora(){
                     renderFerCards();
                     setInterval(actualizarTimersUI, 1000);
+                    renderFerLocal();
                     const wrap = document.getElementById('fer-cards');
                     wrap?.addEventListener('click', async (e)=>{
                         const btn = e.target.closest('button'); if(!btn) return;
@@ -948,6 +1066,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if(resp.backend.ok && resp.sheets.ok){ mensaje('fer-msg-'+id,'Enviado a BD + Sheets.', true); }
                             else { mensaje('fer-msg-'+id,'Guardado local, error enviando: '+((!resp.backend.ok && resp.backend.error)||resp.sheets.error||'desconocido'), false); }
                             resetTimer(ferTimers,id); actualizarTimersUI();
+                            renderFerLocal();
                         }
                     });
 
@@ -968,10 +1087,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             status.textContent = sRes.ok ? 'Enviado a BD + Sheets.' : 'Enviado a BD, Sheets falló.';
                         }catch(err){ status.textContent='Error: '+(err.message||err); }
                     });
+
+                    document.getElementById('fer-refresh-local')?.addEventListener('click', renderFerLocal);
+                    document.getElementById('fer-refresh-bd')?.addEventListener('click', renderFerBD);
                 }
 
                 function initHornos(){
                     renderHornoCards();
+                    renderHornoLocal();
                     const wrap = document.getElementById('horno-cards');
                     wrap?.addEventListener('click', async (e)=>{
                         const btn = e.target.closest('button'); if(!btn) return;
@@ -1005,6 +1128,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if(resp.backend.ok && resp.sheets.ok){ mensaje('horno-msg-'+id,'Enviado a BD + Sheets.', true); }
                             else { mensaje('horno-msg-'+id,'Guardado local, error enviando: '+((!resp.backend.ok && resp.backend.error)||resp.sheets.error||'desconocido'), false); }
                             resetTimer(hornoTimers,id); actualizarTimersUI();
+                            renderHornoLocal();
                         }
                     });
 
@@ -1025,6 +1149,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             status.textContent = sRes.ok ? 'Enviado a BD + Sheets.' : 'Enviado a BD, Sheets falló.';
                         }catch(err){ status.textContent='Error: '+(err.message||err); }
                     });
+
+                    document.getElementById('horno-refresh-local')?.addEventListener('click', renderHornoLocal);
+                    document.getElementById('horno-refresh-bd')?.addEventListener('click', renderHornoBD);
                 }
 
     const machineCardsContainer = document.getElementById('machine-cards');
