@@ -695,7 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 // ======================= GLOBAL VARIABLES AND DATA =======================
-    const GOOGLE_SHEETS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyV8oEWmm1vkw5z63AsgDuKVkJu_N9Y31kO9IFN8FcXs-xn6DLsRuZFJsuWn3JNxBHIgw/exec';
+    const GOOGLE_SHEETS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx0etyI4EBcGLB9k1PSLs7kFq5Zf474ebEo_7vOgwCdWIRoMKDAwpPNxMnG1Wj1wjx31g/exec';
     // Datos de amasadoras
     const machineData = [
         {
@@ -1405,23 +1405,49 @@ document.addEventListener('DOMContentLoaded', () => {
             let resultados = JSON.parse(localStorage.getItem('resultadosMezclado') || '[]');
             resultados.push({ fecha, maquinas: [maquinaObj] });
             localStorage.setItem('resultadosMezclado', JSON.stringify(resultados));
-            mostrarMsgMaquina(machineId, 'Resultados guardados. Enviando a Google Sheets...', true);
-            const payload = {
+            // Construir payload compatible con Apps Script (amasadoras)
+            const p1 = maquinaObj.proceso1 || {};
+            const p2 = maquinaObj.proceso2 || {};
+            const p3 = maquinaObj.proceso3 || {};
+            const toSecs = (pp)=> (parseInt(pp?.minutos)||0)*60 + (parseInt(pp?.segundos)||0);
+            const sumProcesosSeg = toSecs(p1)+toSecs(p2)+toSecs(p3);
+            const tm1Seg = (p1?.endTime && p2?.startTime) ? Math.max(0, Math.floor((p2.startTime - p1.endTime)/1000)) : '';
+            const tm2Seg = (p2?.endTime && p3?.startTime) ? Math.max(0, Math.floor((p3.startTime - p2.endTime)/1000)) : '';
+            const muertosSeg = (tm1Seg||0) + (tm2Seg||0);
+            const totalRealSeg = (p1?.startTime && p3?.endTime) ? Math.max(0, Math.floor((p3.endTime - p1.startTime)/1000)) : '';
+            const procesosArr = [p1,p2,p3].map((p,i)=>({ id: i+1, minutos: parseInt(p.minutos)||0, segundos: parseInt(p.segundos)||0, startTime: p.startTime||null, endTime: p.endTime||null }));
+            const payloadSheets = {
                 fecha,
-                maquina: maquinaObj,
-                fuente: 'guardar-maquina',
-                timestamp: new Date().toISOString()
+                tempAmbiente: maquinaObj.tempAmbiente,
+                humedad: maquinaObj.humedad,
+                personalMin: maquinaObj.personalMin,
+                personalMax: maquinaObj.personalMax,
+                amasadoras: [{
+                    id: maquinaObj.id,
+                    nombre: maquinaObj.nombre,
+                    numeroAmasadora: maquinaObj.numeroAmasadora,
+                    tipoMasa: maquinaObj.tipoMasa,
+                    tipoPan: maquinaObj.tipoPan,
+                    hielo: maquinaObj.hielo,
+                    lote: maquinaObj.lote,
+                    tempMasa: maquinaObj.tempMasa,
+                    observaciones: maquinaObj.observaciones,
+                    personalMin: maquinaObj.personalMin,
+                    personalMax: maquinaObj.personalMax,
+                    tempAmbiente: maquinaObj.tempAmbiente,
+                    humedad: maquinaObj.humedad,
+                    tm1Seg, tm2Seg, muertosSeg, totalRealSeg, totalProcesosSeg: sumProcesosSeg,
+                    procesos: procesosArr
+                }]
             };
-            const envio = await enviarRegistroASheets(payload);
+            mostrarMsgMaquina(machineId, 'Resultados guardados. Enviando a Google Sheets...', true);
+            const envio = await postToSheets(payloadSheets);
             if (envio.ok) {
-                if (envio.data?.fallback) {
-                    mostrarMsgMaquina(machineId, 'Resultados guardados y enviados a Sheets (sin confirmación por CORS). Verifica en el documento.', true);
-                } else {
-                    mostrarMsgMaquina(machineId, 'Resultados guardados y enviados a Google Sheets.', true);
-                }
+                const nota = envio.opaque ? ' (envío silencioso, sin confirmación por CORS)' : '';
+                mostrarMsgMaquina(machineId, 'Resultados guardados y enviados a Google Sheets'+nota+'.', true);
             } else {
                 console.error('Google Sheets error', envio.error);
-                mostrarMsgMaquina(machineId, 'Guardado local, pero falló el envío a Google Sheets: ' + envio.error, false);
+                mostrarMsgMaquina(machineId, 'Guardado local, pero falló el envío a Google Sheets: ' + (envio.error||envio.reason||'desconocido'), false);
             }
         } catch (err) {
             console.error('Guardar resultados', err);
