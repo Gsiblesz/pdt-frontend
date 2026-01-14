@@ -1678,19 +1678,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }catch(_){ /* ignore dedupe errors */ }
             const base=resolveApiBase();
             const url = base + '/registros';
-            const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
+            // Enviar en paralelo: BD y Sheets (best effort)
+            const backendReq = fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
+            const sheetsReq = (getSheetsUrl() ? postToSheets(payload) : Promise.resolve({skipped:true}));
+            const [r, sRes] = await Promise.all([backendReq, sheetsReq]);
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             const n = payload.amasadoras?.length || 0;
             let extra='';
-            const sheetsUrl = getSheetsUrl();
-            if(sheetsUrl){
-                const sRes = await postToSheets(payload);
-                if(sRes.ok){ extra = ' + Sheets'; } else { extra = ' (Sheets falló: '+(sRes.error||sRes.reason||'')+')'; }
-            }
+            if(sRes && sRes.ok){ extra=' + Sheets'; }
+            if(sRes && sRes.ok===false){ extra=' (Sheets falló: '+(sRes.error||sRes.reason||'')+')'; }
             status.textContent = `¡Enviado a BD${extra||''} correctamente! (${n} amasadora${n===1?'':'s'})`; status.className='text-xs text-green-600 text-center';
-            // Marcar firmas enviadas
             try { (payload.amasadoras||[]).forEach(m=> __markSent(__sig(payload.fecha,m))); } catch(_){ }
-        }catch(e){ status.textContent = 'Error enviando: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
+        }catch(e){ status.textContent = 'Error enviando: '+(e.message||e); status.className='text-xs text-red-600 text-center'; console.error('Envio BD/Sheets falló', e); }
         finally{ _sendingAllInFlight = false; }
     });
 
@@ -1775,17 +1774,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
             }catch(_){ /* ignore */ }
-            const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
+            const backendReq = fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
+            const sheetsReq = (getSheetsUrl() ? postToSheets(payload) : Promise.resolve({skipped:true}));
+            const [r, sRes] = await Promise.all([backendReq, sheetsReq]);
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             let extra='';
-            const sheetsUrl = getSheetsUrl();
-            if(sheetsUrl){
-                const sRes = await postToSheets(payload);
-                if(sRes.ok){ extra=' + Sheets'; } else { extra=' (Sheets falló: '+(sRes.error||sRes.reason||'')+')'; }
-            }
+            if(sRes && sRes.ok){ extra=' + Sheets'; }
+            if(sRes && sRes.ok===false){ extra=' (Sheets falló: '+(sRes.error||sRes.reason||'')+')'; }
             status.textContent = '¡Tarjeta enviada a BD'+(extra||'')+' correctamente!'; status.className='text-xs text-green-600 text-center';
             try { const sig = __sig(payload.fecha, payload.amasadoras?.[0]||{}); __markSent(sig); }catch(_){ }
-        }catch(err){ status.textContent = 'Error enviando tarjeta: '+(err.message||err); status.className='text-xs text-red-600 text-center'; }
+        }catch(err){ status.textContent = 'Error enviando tarjeta: '+(err.message||err); status.className='text-xs text-red-600 text-center'; console.error('Envio tarjeta BD/Sheets falló', err); }
         finally{ _sendingCardInFlight = false; }
     });
 
@@ -4532,7 +4530,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = getSheetsUrl();
         if(!url){ return { skipped:true, reason:'Sin URL Sheets configurada' }; }
         try{
-            await fetch(url,{ method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            const r = await fetch(url,{ method:'POST', mode:'cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            // Apps Script devuelve 200 con CORS si lo permitimos; si es opaque, marcar ok best-effort
+            if(r.type === 'opaque'){ return { ok:true, opaque:true }; }
+            if(!r.ok){ const txt = await r.text(); return { ok:false, error:'HTTP '+r.status+' '+txt }; }
             return { ok:true };
         }catch(e){ return { ok:false, error: e?.message || String(e) }; }
     }
@@ -4842,17 +4843,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const base=resolveApiBase();
             // Siempre usar /registros directo, sin /api
             const url = base + '/registros';
-            const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
+            const backendReq = fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
+            const sheetsReq = (getSheetsUrl() ? postToSheets(payload) : Promise.resolve({skipped:true}));
+            const [r, sRes] = await Promise.all([backendReq, sheetsReq]);
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             let extra='';
-            const sheetsUrl = getSheetsUrl();
-            if(sheetsUrl){
-                const sRes = await postToSheets(payload);
-                if(sRes.ok){ extra=' + Sheets'; } else { extra=' (Sheets falló: '+(sRes.error||sRes.reason||'')+')'; }
-            }
+            if(sRes && sRes.ok){ extra=' + Sheets'; }
+            if(sRes && sRes.ok===false){ extra=' (Sheets falló: '+(sRes.error||sRes.reason||'')+')'; }
             setStatus('¡Resultados guardados exitosamente en la base de datos'+(extra||'')+'!', 'ok');
             mostrarToast('¡Resultados guardados exitosamente en la base de datos'+(extra||'')+'!', 'success');
-        }catch(e){ setStatus('Error enviando: '+(e.message||e),'err'); mostrarToast('Error enviando: '+(e.message||e),'error'); }
+        }catch(e){ setStatus('Error enviando: '+(e.message||e),'err'); mostrarToast('Error enviando: '+(e.message||e),'error'); console.error('Envio fecha BD/Sheets falló', e); }
     }
     function initApiLogic(){
         document.getElementById('btn-sync-bd')?.addEventListener('click', syncDesdeBD);
