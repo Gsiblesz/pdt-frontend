@@ -4514,6 +4514,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ================= BACKEND SYNC / API DINÁMICA =================
+    const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyQSSmFbVThMqkJekALZY9zRsrTNvufu-X9dNUbkgtdYVmW3oVBsydEyFsV5s0zZx-5ZA/exec';
     function getDefaultApiBase(){
         try{
             // Siempre usar la URL pública del backend
@@ -4525,7 +4526,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return (override && override.trim()) || getDefaultApiBase();
     }
     function getSheetsUrl(){
-        return (localStorage.getItem('SHEETS_URL_OVERRIDE')||'').trim();
+        return (localStorage.getItem('SHEETS_URL_OVERRIDE')||'').trim() || DEFAULT_SHEETS_URL;
     }
     async function postToSheets(payload){
         const url = getSheetsUrl();
