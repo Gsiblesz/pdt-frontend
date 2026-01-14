@@ -47,10 +47,11 @@
         </div>
     </div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <!-- Main app tabs: Menu | Amasadoras | Fermentadora | Hornos -->
+    <!-- Main app tabs: Menú | Amasadoras | Mesas | Fermentadora | Hornos -->
     <div class="flex flex-wrap justify-center gap-4 mb-8">
         <button id="tab-main-menu" class="tab-btn main-tab tab-btn-active">Menú</button>
         <button id="tab-main-amasadoras" class="tab-btn main-tab">Amasadoras</button>
+        <button id="tab-main-mesas" class="tab-btn main-tab">Mesas</button>
         <button id="tab-main-fermentadora" class="tab-btn main-tab">Fermentadora</button>
         <button id="tab-main-hornos" class="tab-btn main-tab">Hornos</button>
     </div>
@@ -168,7 +169,7 @@
             <button id="tab-resultados" class="tab-btn">Resultados</button>
             <button id="tab-tablas" class="tab-btn">Tablas</button>
             <span class="mx-2 text-stone-300">|</span>
-            <button id="tab-mesa" class="tab-btn">Mesa</button>
+            <button id="tab-mesa" class="tab-btn">Mesas</button>
         </div>
     <!-- Subvista: Mesa dentro de Amasadoras -->
         <div id="view-mesa" class="hidden">
@@ -2888,11 +2889,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const sectionHornos = document.getElementById('section-hornos');
     const tabMainMenu = document.getElementById('tab-main-menu');
     const tabMainAmas = document.getElementById('tab-main-amasadoras');
+    const tabMainMesas = document.getElementById('tab-main-mesas');
     const tabMainFerm = document.getElementById('tab-main-fermentadora');
     const tabMainHornos = document.getElementById('tab-main-hornos');
         const tabMedicion = document.getElementById('tab-medicion');
         const tabResultados = document.getElementById('tab-resultados');
         const tabTablas = document.getElementById('tab-tablas');
+        const tabMesa = document.getElementById('tab-mesa');
+        const viewMesa = document.getElementById('view-mesa');
 
         // Estado inicial
         // Initial: show Menu and ensure sub-vistas de Amasadoras no se "cuelen"
@@ -2909,9 +2913,11 @@ document.addEventListener('DOMContentLoaded', () => {
             viewMedicion?.classList.add('hidden');
             viewResultados?.classList.add('hidden');
             viewTablas?.classList.add('hidden');
+            viewMesa?.classList.add('hidden');
             tabMedicion?.classList.remove('tab-btn-active');
             tabResultados?.classList.remove('tab-btn-active');
             tabTablas?.classList.remove('tab-btn-active');
+            tabMesa?.classList.remove('tab-btn-active');
         }
 
         function showMedicionDefault(){
@@ -2919,14 +2925,16 @@ document.addEventListener('DOMContentLoaded', () => {
             viewMedicion?.classList.remove('hidden');
             viewResultados?.classList.add('hidden');
             viewTablas?.classList.add('hidden');
+            viewMesa?.classList.add('hidden');
             tabMedicion?.classList.add('tab-btn-active');
             tabResultados?.classList.remove('tab-btn-active');
             tabTablas?.classList.remove('tab-btn-active');
+            tabMesa?.classList.remove('tab-btn-active');
         }
 
         function activateMainTab(which){
             // Reset classes
-            [tabMainMenu, tabMainAmas, tabMainFerm, tabMainHornos].forEach(b=> b?.classList.remove('tab-btn-active'));
+            [tabMainMenu, tabMainAmas, tabMainMesas, tabMainFerm, tabMainHornos].forEach(b=> b?.classList.remove('tab-btn-active'));
             // Hide all main sections by default
             viewMain?.classList.add('hidden');
             sectionAmas?.classList.add('hidden');
@@ -2947,6 +2955,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 showMedicionDefault();
                 return;
             }
+            if(which==='mesas'){
+                tabMainMesas?.classList.add('tab-btn-active');
+                sectionAmas?.classList.remove('hidden');
+                setAmasadorasView('mesa');
+                return;
+            }
             if(which==='ferm'){
                 tabMainFerm?.classList.add('tab-btn-active');
                 // Mostrar sólo la sección de Fermentadora (top-level)
@@ -2962,6 +2976,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         tabMainMenu?.addEventListener('click', ()=> activateMainTab('menu'));
         tabMainAmas?.addEventListener('click', ()=> activateMainTab('amas'));
+    tabMainMesas?.addEventListener('click', ()=> activateMainTab('mesas'));
     tabMainFerm?.addEventListener('click', ()=> activateMainTab('ferm'));
         tabMainHornos?.addEventListener('click', ()=> activateMainTab('horn'));
         // Force start on Menu to avoid Amasadoras content appearing under Menu
@@ -3054,8 +3069,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof buildTablasVista === 'function') buildTablasVista();
         });
         // =============== MESA (beta) como subvista dentro de Amasadoras ===============
-        const tabMesa = document.getElementById('tab-mesa');
-        const viewMesa = document.getElementById('view-mesa');
         tabMesa?.addEventListener('click', ()=>{ setAmasadorasView('mesa'); });
         // Subpestañas Mesa
         const mesaTabMed = document.getElementById('mesa-tab-medicion');
