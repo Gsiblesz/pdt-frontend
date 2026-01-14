@@ -83,6 +83,12 @@
                         <button id="settings-save-api" class="mt-2 bg-stone-700 text-white px-4 py-2 rounded">Guardar URL</button>
                     </div>
                     <div>
+                        <label class="block font-semibold text-stone-700">URL de Apps Script (Sheets)</label>
+                        <input id="settings-sheets-url" class="w-full border rounded px-3 py-2 text-base" placeholder="https://script.google.com/macros/s/XXX/exec" />
+                        <button id="settings-save-sheets" class="mt-2 bg-stone-700 text-white px-4 py-2 rounded">Guardar URL Sheets</button>
+                        <p class="text-xs text-stone-500 mt-1">Se enviará el mismo payload que va al backend para registrar en Google Sheets.</p>
+                    </div>
+                    <div>
                         <label class="block font-semibold text-stone-700">Clave de API</label>
                         <div class="relative flex items-center gap-2">
                             <input id="settings-api-key" type="password" class="w-full border rounded px-3 py-2 text-base pr-16" placeholder="••••••" />
@@ -1675,7 +1681,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
             const n = payload.amasadoras?.length || 0;
-            status.textContent = `¡Enviado a BD correctamente! (${n} amasadora${n===1?'':'s'})`; status.className='text-xs text-green-600 text-center';
+            let extra='';
+            const sheetsUrl = getSheetsUrl();
+            if(sheetsUrl){
+                const sRes = await postToSheets(payload);
+                if(sRes.ok){ extra = ' + Sheets'; } else { extra = ' (Sheets falló: '+(sRes.error||sRes.reason||'')+')'; }
+            }
+            status.textContent = `¡Enviado a BD${extra||''} correctamente! (${n} amasadora${n===1?'':'s'})`; status.className='text-xs text-green-600 text-center';
             // Marcar firmas enviadas
             try { (payload.amasadoras||[]).forEach(m=> __markSent(__sig(payload.fecha,m))); } catch(_){ }
         }catch(e){ status.textContent = 'Error enviando: '+(e.message||e); status.className='text-xs text-red-600 text-center'; }
@@ -1765,7 +1777,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }catch(_){ /* ignore */ }
             const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
-            status.textContent = '¡Tarjeta enviada a BD correctamente!'; status.className='text-xs text-green-600 text-center';
+            let extra='';
+            const sheetsUrl = getSheetsUrl();
+            if(sheetsUrl){
+                const sRes = await postToSheets(payload);
+                if(sRes.ok){ extra=' + Sheets'; } else { extra=' (Sheets falló: '+(sRes.error||sRes.reason||'')+')'; }
+            }
+            status.textContent = '¡Tarjeta enviada a BD'+(extra||'')+' correctamente!'; status.className='text-xs text-green-600 text-center';
             try { const sig = __sig(payload.fecha, payload.amasadoras?.[0]||{}); __markSent(sig); }catch(_){ }
         }catch(err){ status.textContent = 'Error enviando tarjeta: '+(err.message||err); status.className='text-xs text-red-600 text-center'; }
         finally{ _sendingCardInFlight = false; }
@@ -2501,6 +2519,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Settings bindings
         const settingsApiUrl = document.getElementById('settings-api-url');
         const settingsSaveApi = document.getElementById('settings-save-api');
+        const settingsSheetsUrl = document.getElementById('settings-sheets-url');
+        const settingsSaveSheets = document.getElementById('settings-save-sheets');
     const settingsApiKey = document.getElementById('settings-api-key');
     const settingsRememberKey = document.getElementById('settings-remember-key');
     const settingsSaveKey = document.getElementById('settings-save-key');
@@ -2509,6 +2529,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const v = (settingsApiUrl?.value||'').trim();
             if(v){ localStorage.setItem('API_URL_OVERRIDE', v); mostrarToast('URL API guardada'); }
             else { localStorage.removeItem('API_URL_OVERRIDE'); mostrarToast('URL API borrada'); }
+        });
+        if(settingsSheetsUrl){ settingsSheetsUrl.value = getSheetsUrl(); }
+        settingsSaveSheets?.addEventListener('click', ()=>{
+            const v = (settingsSheetsUrl?.value||'').trim();
+            if(v){ localStorage.setItem('SHEETS_URL_OVERRIDE', v); mostrarToast('URL Sheets guardada'); }
+            else { localStorage.removeItem('SHEETS_URL_OVERRIDE'); mostrarToast('URL Sheets borrada'); }
         });
         settingsSaveKey?.addEventListener('click', async ()=>{
             const k = settingsApiKey?.value||'';
@@ -4498,6 +4524,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const override = localStorage.getItem('API_URL_OVERRIDE');
         return (override && override.trim()) || getDefaultApiBase();
     }
+    function getSheetsUrl(){
+        return (localStorage.getItem('SHEETS_URL_OVERRIDE')||'').trim();
+    }
+    async function postToSheets(payload){
+        const url = getSheetsUrl();
+        if(!url){ return { skipped:true, reason:'Sin URL Sheets configurada' }; }
+        try{
+            await fetch(url,{ method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            return { ok:true };
+        }catch(e){ return { ok:false, error: e?.message || String(e) }; }
+    }
     // API auth helpers: read key from session/local and build headers
     function getApiKey(){
         const stored = sessionStorage.getItem('API_KEY') || localStorage.getItem('API_KEY_PERSIST');
@@ -4806,8 +4843,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = base + '/registros';
             const r = await fetch(url,{ method:'POST', headers: apiHeaders(true), body: JSON.stringify(payload) });
             if(!r.ok){ const txt=await r.text(); throw new Error('HTTP '+r.status+' '+txt); }
-            setStatus('¡Resultados guardados exitosamente en la base de datos!', 'ok');
-            mostrarToast('¡Resultados guardados exitosamente en la base de datos!', 'success');
+            let extra='';
+            const sheetsUrl = getSheetsUrl();
+            if(sheetsUrl){
+                const sRes = await postToSheets(payload);
+                if(sRes.ok){ extra=' + Sheets'; } else { extra=' (Sheets falló: '+(sRes.error||sRes.reason||'')+')'; }
+            }
+            setStatus('¡Resultados guardados exitosamente en la base de datos'+(extra||'')+'!', 'ok');
+            mostrarToast('¡Resultados guardados exitosamente en la base de datos'+(extra||'')+'!', 'success');
         }catch(e){ setStatus('Error enviando: '+(e.message||e),'err'); mostrarToast('Error enviando: '+(e.message||e),'error'); }
     }
     function initApiLogic(){
